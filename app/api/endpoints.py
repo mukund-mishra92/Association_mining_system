@@ -10,6 +10,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Request/Response models
+class DatabaseConfig(BaseModel):
+    host: Optional[str] = None
+    user: Optional[str] = None
+    password: Optional[str] = None
+    database: Optional[str] = None
+    order_table: Optional[str] = None
+    sku_master_table: Optional[str] = None
+    recommendations_table: Optional[str] = None
+
 class MiningRequest(BaseModel):
     days_back: Optional[int] = None
     min_support: Optional[float] = None
@@ -17,6 +26,7 @@ class MiningRequest(BaseModel):
     use_enhanced_mining: Optional[bool] = True
     time_weighting_method: Optional[str] = "exponential_decay"  # exponential_decay, linear_decay, seasonal_patterns, recency_frequency, trend_adaptive
     time_segmentation: Optional[str] = "weekly"  # weekly, monthly, daily
+    db_config: Optional[DatabaseConfig] = None  # Database configuration from UI
 
 class RecommendationResponse(BaseModel):
     recommended_item: str
@@ -46,13 +56,23 @@ class TaskStatusResponse(BaseModel):
     result: Optional[dict] = None
 
 # Background task for mining
-def run_mining_task(task_id: str, days_back=None, use_enhanced_mining=True, time_weighting_method="exponential_decay", time_segmentation="weekly"):
+def run_mining_task(task_id: str, days_back=None, use_enhanced_mining=True, time_weighting_method="exponential_decay", time_segmentation="weekly", db_config=None):
     """Background task to run mining pipeline with progress tracking"""
     try:
         # Mark task as started
         task_manager.start_task(task_id, "Initializing mining process...")
         
-        db = DatabaseConnection()
+        # Log received configuration
+        if db_config:
+            logger.info(f"Mining task using custom configuration with table: {db_config.get('recommendations_table', 'NOT SET')}")
+        else:
+            logger.info("Mining task using default configuration")
+        
+        # Initialize database connection with custom config if provided
+        if db_config:
+            db = DatabaseConnection(custom_config=db_config)
+        else:
+            db = DatabaseConnection()
         
         # Use the clean mining service for all operations
         mining_service = CleanAssociationMiningService(task_id=task_id, task_manager=task_manager)
@@ -183,9 +203,13 @@ async def mine_association_rules(
                 "days_back": request.days_back,
                 "use_enhanced_mining": request.use_enhanced_mining,
                 "time_weighting_method": request.time_weighting_method,
-                "time_segmentation": request.time_segmentation
+                "time_segmentation": request.time_segmentation,
+                "db_config": request.db_config.dict() if request.db_config else None
             }
         )
+        
+        # Convert db_config to dict if provided
+        db_config_dict = request.db_config.dict() if request.db_config else None
         
         # Add mining task to background
         background_tasks.add_task(
@@ -194,7 +218,8 @@ async def mine_association_rules(
             days_back=request.days_back,
             use_enhanced_mining=request.use_enhanced_mining,
             time_weighting_method=request.time_weighting_method,
-            time_segmentation=request.time_segmentation
+            time_segmentation=request.time_segmentation,
+            db_config=db_config_dict
         )
         
         mining_type = "Enhanced" if request.use_enhanced_mining else "Standard"

@@ -7,15 +7,37 @@ from datetime import datetime
 import json
 import os
 import time
+import logging
 from mlxtend.frequent_patterns import apriori, association_rules
 import warnings
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('association_mining.log'),
+        logging.StreamHandler()
+    ]
+)
+
 # Configuration - Updated for port 8001
 BASE_URL = "http://127.0.0.1:8001"
 API_BASE = f"{BASE_URL}/api/v1"
+
+# Global variable to store user-defined database configuration
+USER_DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'neo',
+    'order_table': 'wms_to_wcs_order_line_request_data',
+    'sku_master_table': 'sku_master',
+    'recommendations_table': 'sku_recommendations'
+}
 
 def load_config():
     """Load database configuration"""
@@ -36,18 +58,89 @@ def test_server_connection():
     except Exception as e:
         return False, str(e)
 
-def generate_rules_top_skus(config, top_n=20, days_back=60):
+def save_rules_to_database(user_config, rules_df):
+    """Save association rules to database"""
+    try:
+        logger = logging.getLogger(__name__)
+        logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
+        
+        # Connect to database
+        connection = mysql.connector.connect(
+            host=user_config['host'],
+            user=user_config['user'],
+            password=user_config['password'],
+            database=user_config['database']
+        )
+        cursor = connection.cursor()
+        
+        # First ensure the table exists with correct schema
+        table_name = user_config['recommendations_table']
+        
+        # Drop and recreate table to ensure correct schema
+        drop_query = f"DROP TABLE IF EXISTS {table_name}"
+        cursor.execute(drop_query)
+        logger.info(f"Recreated table: {table_name}")
+        
+        create_query = f"""
+        CREATE TABLE {table_name} (
+            SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
+            PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
+            CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
+            PROXIMITY_SCORE DECIMAL(10,3) NULL,
+            PRIMARY KEY (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID),
+            KEY SCORE_ID_INDEX (SCORE_ID)
+        )
+        """
+        cursor.execute(create_query)
+        
+        # Prepare rules data for insertion
+        recommendations_data = []
+        for _, rule in rules_df.iterrows():
+            recommendations_data.append((
+                rule['sku1'],  # PARENT_ARTICLE_ID
+                rule['sku2'],  # CHILD_ARTICLE_ID
+                float(rule['association_composite_score'])  # PROXIMITY_SCORE
+            ))
+        
+        # Insert recommendations
+        insert_query = f"""
+        INSERT INTO {table_name} 
+        (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
+        VALUES (%s, %s, %s)
+        """
+        
+        cursor.executemany(insert_query, recommendations_data)
+        connection.commit()
+        
+        logger.info(f"Successfully saved {len(recommendations_data)} recommendations to {table_name}")
+        
+        cursor.close()
+        connection.close()
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Database save error: {e}")
+        return False
+
+def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
     """
     Ultra-conservative: Top N SKUs only with high support threshold
-    Integrated from working notebook version
+    Uses user-defined database configuration
     """
     try:
-        # Connect to database
+        start_time = time.time()
+        
+        # Use user config or fall back to default
+        if user_config is None:
+            user_config = USER_DB_CONFIG
+            
+        # Connect to database using user configuration
         conn = mysql.connector.connect(
-            host=config.DB_HOST,
-            user=config.DB_USER,
-            password=config.DB_PASSWORD,
-            database=config.DB_NAME
+            host=user_config['host'],
+            user=user_config['user'],
+            password=user_config['password'],
+            database=user_config['database']
         )
         
         # Get top N most popular SKUs
@@ -55,8 +148,8 @@ def generate_rules_top_skus(config, top_n=20, days_back=60):
         SELECT 
             s.SKU_NAME,
             COUNT(DISTINCT o.ORDER_ID) as order_count
-        FROM {config.ORDER_TABLE} o
-        JOIN {config.SKU_MASTER_TABLE} s ON o.ARTICLE_ID = s.SKU_ID
+        FROM {user_config['order_table']} o
+        JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
         WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
         AND s.SKU_NAME IS NOT NULL
         GROUP BY s.SKU_NAME
@@ -79,8 +172,8 @@ def generate_rules_top_skus(config, top_n=20, days_back=60):
             o.ORDER_ID,
             s.SKU_NAME,
             DATEDIFF(CURDATE(), DATE(o.INSERTED_TIMESTAMP)) as days_ago
-        FROM {config.ORDER_TABLE} o
-        JOIN {config.SKU_MASTER_TABLE} s ON o.ARTICLE_ID = s.SKU_ID
+        FROM {user_config['order_table']} o
+        JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
         WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
         AND s.SKU_NAME IN ({placeholders})
         """
@@ -127,16 +220,28 @@ def generate_rules_top_skus(config, top_n=20, days_back=60):
                 final_rules = rules[['sku1', 'sku2', 'association_composite_score', 'confidence', 'lift', 'support']].copy()
                 final_rules = final_rules.sort_values('association_composite_score', ascending=False)
                 
+                # Save to database
+                database_saved = False
+                try:
+                    database_saved = save_rules_to_database(user_config, final_rules)
+                except Exception as db_error:
+                    print(f"Database save failed: {db_error}")
+                
                 # Save to CSV
                 csv_filename = f"association_rules_ui_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
                 export_df = final_rules[['sku1', 'sku2', 'association_composite_score']].copy()
                 export_df.to_csv(csv_filename, index=False)
+                
+                end_time = time.time()
+                mining_duration = f"{end_time - start_time:.2f}s"
                 
                 stats = {
                     "total_rules": len(final_rules),
                     "top_n_skus": len(popular_sku_list),
                     "total_orders": df['ORDER_ID'].nunique(),
                     "csv_filename": csv_filename,
+                    "database_saved": database_saved,
+                    "mining_duration": mining_duration,
                     "score_range": {
                         "min": float(final_rules['association_composite_score'].min()),
                         "max": float(final_rules['association_composite_score'].max())
@@ -150,14 +255,129 @@ def generate_rules_top_skus(config, top_n=20, days_back=60):
     except Exception as e:
         return {"error": str(e)}, None
 
-def direct_mining(config, days_back=30):
-    """Direct mining without API - updated to use working function"""
-    return generate_rules_top_skus(config, top_n=20, days_back=days_back)
+def direct_mining(user_config=None, days_back=30):
+    """Direct mining without API - updated to use user configuration"""
+    return generate_rules_top_skus(user_config, top_n=20, days_back=days_back)
 
 @app.route('/')
 def index():
-    """Main dashboard page"""
-    return render_template('index.html')
+    """Main dashboard page - Complete integrated system"""
+    return render_template('complete_dashboard_enhanced.html')
+
+@app.route('/api/db-config', methods=['GET'])
+def get_db_config():
+    """Get current database configuration"""
+    return jsonify({
+        "success": True,
+        "config": USER_DB_CONFIG
+    })
+
+@app.route('/api/db-config', methods=['GET', 'POST'])
+def handle_db_config():
+    """Handle database configuration - GET to retrieve, POST to update"""
+    logger = logging.getLogger(__name__)
+    
+    if request.method == 'GET':
+        return jsonify({
+            "success": True,
+            "config": USER_DB_CONFIG
+        })
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            
+            # Update global configuration
+            USER_DB_CONFIG.update({
+                'host': data.get('host', 'localhost'),
+                'user': data.get('user', 'root'),
+                'password': data.get('password', ''),
+                'database': data.get('database', 'neo'),
+                'order_table': data.get('order_table', 'wms_to_wcs_order_line_request_data'),
+                'sku_master_table': data.get('sku_master_table', 'sku_master'),
+                'recommendations_table': data.get('recommendations_table', 'sku_recommendations')
+            })
+            
+            logger.info(f"Database configuration updated - recommendations table: {USER_DB_CONFIG['recommendations_table']}")
+            
+            return jsonify({
+                "success": True,
+                "message": "Database configuration updated successfully",
+                "config": USER_DB_CONFIG
+            })
+        except Exception as e:
+            logger.error(f"Database configuration update failed: {e}")
+            return jsonify({
+                "success": False,
+                "error": str(e)
+            })
+
+@app.route('/api/test-db-connection', methods=['POST'])
+def test_db_connection():
+    """Test database connection with user-provided configuration"""
+    logger = logging.getLogger(__name__)
+    
+    try:
+        data = request.get_json() if request.get_json() else USER_DB_CONFIG
+        
+        logger.info("Testing database connection")
+        
+        # Test database connection
+        conn = mysql.connector.connect(
+            host=data.get('host', 'localhost'),
+            user=data.get('user', 'root'),
+            password=data.get('password', ''),
+            database=data.get('database', 'neo'),
+            connection_timeout=5
+        )
+        
+        cursor = conn.cursor()
+        cursor.execute("SELECT VERSION()")
+        version = cursor.fetchone()
+        
+        # Test if tables exist - use CURRENT USER CONFIGURATION
+        tables_status = {}
+        test_tables = {
+            'order': data.get('order_table', 'wms_to_wcs_order_line_request_data'),
+            'sku_master': data.get('sku_master_table', 'sku_master'), 
+            'recommendations': data.get('recommendations_table', 'sku_recommendations')
+        }
+        
+        logger.info(f"Testing tables: {list(test_tables.keys())}")
+        
+        for table_key, table_name in test_tables.items():
+            if table_name:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table_name} LIMIT 1")
+                    count = cursor.fetchone()[0]
+                    tables_status[table_key] = {"exists": True, "count": count}
+                    logger.info(f"Table {table_name}: {count} records")
+                except mysql.connector.Error as e:
+                    tables_status[table_key] = {"exists": False, "count": 0}
+                    logger.warning(f"Table {table_name} does not exist: {e}")
+            else:
+                tables_status[table_key] = {"exists": False, "count": 0}
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "Database connection successful",
+            "mysql_version": version[0] if version else "Unknown",
+            "tables": tables_status
+        })
+        
+    except mysql.connector.Error as e:
+        return jsonify({
+            "success": False,
+            "error": f"Database connection failed: {str(e)}"
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
 
 @app.route('/api/test-connection')
 def test_connection():
@@ -192,17 +412,14 @@ def test_connection():
 
 @app.route('/api/mine-direct', methods=['POST'])
 def mine_direct():
-    """Direct mining endpoint using the working function"""
-    config = load_config()
-    if not config:
-        return jsonify({"success": False, "error": "Could not load configuration"})
-    
+    """Direct mining endpoint using user-defined database configuration"""
     data = request.get_json()
     days_back = data.get('days_back', 60)
     top_skus = data.get('top_skus', 20)
     
     try:
-        stats, rules = generate_rules_top_skus(config, top_n=top_skus, days_back=days_back)
+        # Use user-defined database configuration
+        stats, rules = generate_rules_top_skus(USER_DB_CONFIG, top_n=top_skus, days_back=days_back)
         
         if 'error' in stats:
             return jsonify({"success": False, "error": stats['error']})
@@ -235,7 +452,8 @@ def mine_api():
     payload = {
         "days_back": data.get('days_back', 30),
         "use_enhanced_mining": data.get('use_enhanced_mining', False),
-        "time_weighting_method": data.get('time_weighting_method', 'exponential_decay')
+        "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
+        "db_config": USER_DB_CONFIG  # Include database configuration
     }
     
     try:
@@ -368,14 +586,18 @@ def get_mining_progress():
 def mine_enhanced():
     """Enhanced Temporal Mining using FastAPI backend"""
     global api_mining_status
+    logger = logging.getLogger(__name__)
     
     data = request.get_json()
     
     payload = {
         "days_back": data.get('days_back', 30),
         "use_enhanced_mining": True,  # Always use enhanced for this endpoint
-        "time_weighting_method": "exponential_decay"
+        "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
+        "db_config": USER_DB_CONFIG  # Include database configuration
     }
+    
+    logger.info(f"Starting enhanced mining with recommendations table: {USER_DB_CONFIG['recommendations_table']}")
     
     try:
         # Start mining request to FastAPI backend

@@ -7,18 +7,39 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DatabaseConnection:
-    def __init__(self):
+    def __init__(self, custom_config=None):
         self.connection = None
         self.cursor = None
+        self.custom_config = custom_config
+        
+        # Set configuration - use custom config if provided, otherwise use default
+        if custom_config:
+            self.db_host = custom_config.get('host', config.DB_HOST)
+            self.db_user = custom_config.get('user', config.DB_USER)
+            self.db_password = custom_config.get('password', config.DB_PASSWORD)
+            self.db_name = custom_config.get('database', config.DB_NAME)
+            self.order_table = custom_config.get('order_table', config.ORDER_TABLE)
+            self.sku_master_table = custom_config.get('sku_master_table', config.SKU_MASTER_TABLE)
+            self.recommendations_table = custom_config.get('recommendations_table', config.RECOMMENDATIONS_TABLE)
+            logger.info(f"DatabaseConnection initialized with custom configuration - table: {self.recommendations_table}")
+        else:
+            self.db_host = config.DB_HOST
+            self.db_user = config.DB_USER
+            self.db_password = config.DB_PASSWORD
+            self.db_name = config.DB_NAME
+            self.order_table = config.ORDER_TABLE
+            self.sku_master_table = config.SKU_MASTER_TABLE
+            self.recommendations_table = config.RECOMMENDATIONS_TABLE
+            logger.info(f"DatabaseConnection initialized with default configuration - table: {self.recommendations_table}")
     
     def connect(self):
         """Establish database connection"""
         try:
             self.connection = mysql.connector.connect(
-                host=config.DB_HOST,
-                user=config.DB_USER,
-                password=config.DB_PASSWORD,
-                database=config.DB_NAME
+                host=self.db_host,
+                user=self.db_user,
+                password=self.db_password,
+                database=self.db_name
             )
             self.cursor = self.connection.cursor()
             logger.info("Database connection established")
@@ -46,8 +67,8 @@ class DatabaseConnection:
                 s.SKU_NAME,
                 o.INSERTED_TIMESTAMP,
                 DATEDIFF(CURDATE(), DATE(o.INSERTED_TIMESTAMP)) as days_ago
-            FROM {config.ORDER_TABLE} o
-            JOIN {config.SKU_MASTER_TABLE} s ON o.ARTICLE_ID = s.SKU_ID
+            FROM {self.order_table} o
+            JOIN {self.sku_master_table} s ON o.ARTICLE_ID = s.SKU_ID
             WHERE s.SKU_NAME IS NOT NULL
             """
             
@@ -78,7 +99,7 @@ class DatabaseConnection:
             self._ensure_recommendations_table_exists()
             
             # Clear existing recommendations
-            self.cursor.execute(f"DELETE FROM {config.RECOMMENDATIONS_TABLE}")
+            self.cursor.execute(f"DELETE FROM {self.recommendations_table}")
             logger.info("Cleared existing recommendations")
             
             # Sort recommendations by composite_score descending (highest scores first)
@@ -97,11 +118,11 @@ class DatabaseConnection:
             else:
                 # Normalize to 0.001 - 0.999 range
                 normalized_scores = (0.001 + (scores - min_score) / (max_score - min_score) * 0.998).tolist()
-                logger.info(f"Normalized scores: {min_score:.3f}-{max_score:.3f} → 0.001-0.999")
+                logger.info(f"Normalized scores: {min_score:.3f}-{max_score:.3f} to 0.001-0.999")
             
             # Insert new recommendations using your simplified schema with duplicate handling
             insert_query = f"""
-            INSERT IGNORE INTO {config.RECOMMENDATIONS_TABLE} 
+            INSERT IGNORE INTO {self.recommendations_table} 
             (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
             VALUES (%s, %s, %s)
             """
@@ -136,7 +157,7 @@ class DatabaseConnection:
             
             query = f"""
             SELECT CHILD_ARTICLE_ID, PROXIMITY_SCORE, SCORE_ID
-            FROM {config.RECOMMENDATIONS_TABLE} 
+            FROM {self.recommendations_table} 
             WHERE PARENT_ARTICLE_ID = %s 
             ORDER BY PROXIMITY_SCORE DESC 
             LIMIT %s
@@ -161,14 +182,16 @@ class DatabaseConnection:
     def _ensure_recommendations_table_exists(self):
         """Ensure the recommendations table exists with SKU ID schema"""
         try:
+            logger.info(f"Creating/ensuring recommendations table exists: {self.recommendations_table}")
+            
             # Drop existing table to ensure correct schema
-            drop_table_query = f"DROP TABLE IF EXISTS {config.RECOMMENDATIONS_TABLE}"
+            drop_table_query = f"DROP TABLE IF EXISTS {self.recommendations_table}"
             self.cursor.execute(drop_table_query)
-            logger.info(f"Dropped existing table {config.RECOMMENDATIONS_TABLE}")
+            logger.info(f"Dropped existing table {self.recommendations_table}")
             
             # Create table with SKU ID schema
             create_table_query = f"""
-            CREATE TABLE {config.RECOMMENDATIONS_TABLE} (
+            CREATE TABLE {self.recommendations_table} (
                 SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
                 PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
                 CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
@@ -178,7 +201,7 @@ class DatabaseConnection:
             )
             """
             self.cursor.execute(create_table_query)
-            logger.info(f"Created table {config.RECOMMENDATIONS_TABLE} with SKU ID schema")
+            logger.info(f"Created table {self.recommendations_table} with SKU ID schema")
         except Error as e:
             logger.error(f"Error creating recommendations table: {e}")
             raise
