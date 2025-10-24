@@ -1,78 +1,81 @@
 # Database Connection Guide
 
-## Current Issue
-The MySQL server on `10.102.246.10` is configured to only accept connections from `localhost`, not from remote IPs.
+## Setup Overview
 
-## Solutions
+**Your Setup:**
+- **Your Computer:** Where this application runs
+- **Remote MySQL Server:** 10.102.246.9 or 10.102.246.10
+- **MySQL Configuration:** Binds to `localhost` (not accessible externally)
+- **MySQL Port:** 6033
+- **Database:** neo
+- **Password:** Configured in UI
 
-### Option 1: SSH Tunnel (Recommended)
+## Solution: SSH Tunnel (REQUIRED)
 
-1. Open a terminal and create an SSH tunnel:
-   ```bash
-   ssh -L 6033:localhost:6033 your_username@10.102.246.10
-   ```
-   Leave this terminal open while using the application.
+Since the MySQL server only accepts connections from `localhost`, you MUST use an SSH tunnel to access it from your computer.
 
-2. Update `.env` file:
-   ```env
-   DB_HOST=localhost
-   DB_PORT=6033
-   DB_USER=root
-   DB_PASSWORD=Falcon@WCS@123
-   DB_NAME=neo
-   ```
+### Quick Start
 
-3. Restart the application
-
-### Option 2: Configure MySQL for Remote Access (Requires Server Admin)
-
-On the server `10.102.246.10`, an administrator needs to:
-
-1. Edit MySQL config file (`my.cnf` or `my.ini`):
-   ```ini
-   [mysqld]
-   bind-address = 0.0.0.0
-   port = 6033
+1. **Start the application with SSH tunnel:**
+   ```cmd
+   .\start_with_tunnel.bat
    ```
 
-2. Grant remote access to root user:
-   ```sql
-   CREATE USER 'root'@'%' IDENTIFIED BY 'Falcon@WCS@123';
-   GRANT ALL PRIVILEGES ON neo.* TO 'root'@'%';
-   FLUSH PRIVILEGES;
-   ```
+2. **Enter when prompted:**
+   - Remote server IP: `10.102.246.9` or `10.102.246.10`
+   - SSH username: Your username on the remote server
+   - SSH password: Your password for the remote server
 
-3. Configure firewall to allow port 6033
+3. **Keep the SSH tunnel window open!**
 
-4. Restart MySQL service
+4. **Access the application:**
+   - Open browser: http://localhost:5500
+   - Enter database password in the UI
 
-### Option 3: Use a Different User Account
+### How It Works
 
-Create a dedicated user for remote access:
-
-```sql
-CREATE USER 'remote_user'@'%' IDENTIFIED BY 'secure_password';
-GRANT ALL PRIVILEGES ON neo.* TO 'remote_user'@'%';
-FLUSH PRIVILEGES;
+```
+Your Computer                SSH Tunnel              Remote Server
+┌─────────────┐             ┌──────────┐             ┌─────────────┐
+│ Application │ ────────────> localhost │ ────────────> MySQL       │
+│ localhost:  │   Secure    │ :6033    │   Local     │ localhost:  │
+│ 6033        │   Encrypted │          │   Connection│ 6033        │
+└─────────────┘             └──────────┘             └─────────────┘
 ```
 
-Then update `.env`:
+The SSH tunnel:
+1. Creates a secure encrypted connection to the remote server
+2. Forwards local port 6033 to the remote server's localhost:6033
+3. Allows your application to connect to "localhost:6033" which is actually the remote MySQL
+
+### Manual Setup (Alternative)
+
+**Step 1: Start SSH Tunnel (in a separate terminal)**
+```cmd
+.\start_ssh_tunnel.bat
+```
+
+**Step 2: Start Application (in another terminal)**
+```cmd
+.\start.bat
+```
+
+### Testing Connection
+
+After starting the SSH tunnel, test it:
+```cmd
+.\test_connection.bat
+```
+
+### Configuration
+
+Your `.env` file should have:
 ```env
-DB_HOST=10.102.246.10
+DB_HOST=localhost
 DB_PORT=6033
-DB_USER=remote_user
-DB_PASSWORD=secure_password
+DB_USER=root
+DB_PASSWORD=Falcon@WCS@123
 DB_NAME=neo
 ```
 
-## Testing Connection
-
-Test if MySQL is accessible:
-```powershell
-Test-NetConnection -ComputerName 10.102.246.10 -Port 6033
-```
-
-Test MySQL login:
-```bash
-mysql -h 10.102.246.10 -P 6033 -u root -p neo
-```
+**Note:** When using SSH tunnel, always use `DB_HOST=localhost`!
