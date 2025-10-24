@@ -24,8 +24,8 @@ logging.basicConfig(
     ]
 )
 
-# Configuration - Updated for port 8001
-BASE_URL = "http://127.0.0.1:8001"
+# Configuration - Updated for port 8080
+BASE_URL = "http://127.0.0.1:8080"
 API_BASE = f"{BASE_URL}/api/v1"
 
 # Global variable to store user-defined database configuration
@@ -1554,7 +1554,7 @@ if __name__ == '__main__':
         f.write(html_content)
     
     print("🚀 Starting Enhanced Association Rule Mining Dashboard...")
-    print("📍 Open your browser to: http://localhost:5000")
-    print("⚠️  FastAPI server should be running on http://127.0.0.1:8001 for API-based mining")
+    print("📍 Open your browser to: http://localhost:5500")
+    print("⚠️  FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5500)
