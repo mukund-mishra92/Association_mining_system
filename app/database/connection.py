@@ -15,6 +15,7 @@ class DatabaseConnection:
         # Set configuration - use custom config if provided, otherwise use default
         if custom_config:
             self.db_host = custom_config.get('host', config.DB_HOST)
+            self.db_port = custom_config.get('port', config.DB_PORT)
             self.db_user = custom_config.get('user', config.DB_USER)
             self.db_password = custom_config.get('password', config.DB_PASSWORD)
             self.db_name = custom_config.get('database', config.DB_NAME)
@@ -24,6 +25,7 @@ class DatabaseConnection:
             logger.info(f"DatabaseConnection initialized with custom configuration - table: {self.recommendations_table}")
         else:
             self.db_host = config.DB_HOST
+            self.db_port = config.DB_PORT
             self.db_user = config.DB_USER
             self.db_password = config.DB_PASSWORD
             self.db_name = config.DB_NAME
@@ -37,12 +39,13 @@ class DatabaseConnection:
         try:
             self.connection = mysql.connector.connect(
                 host=self.db_host,
+                port=self.db_port,
                 user=self.db_user,
                 password=self.db_password,
                 database=self.db_name
             )
             self.cursor = self.connection.cursor()
-            logger.info("Database connection established")
+            logger.info(f"Database connection established to {self.db_host}:{self.db_port}")
             return True
         except Error as e:
             logger.error(f"Error connecting to database: {e}")
