@@ -30,7 +30,7 @@ API_BASE = f"{BASE_URL}/api/v1"
 
 # Global variable to store user-defined database configuration
 USER_DB_CONFIG = {
-    'host': '10.102.246.10',
+    'host': 'localhost',
     'port': 6033,
     'user': 'root',
     'password': 'Falcon@WCS@123',
