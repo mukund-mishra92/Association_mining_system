@@ -30,9 +30,10 @@ API_BASE = f"{BASE_URL}/api/v1"
 
 # Global variable to store user-defined database configuration
 USER_DB_CONFIG = {
-    'host': 'localhost',
+    'host': '10.102.246.10',
+    'port': 6033,
     'user': 'root',
-    'password': '',
+    'password': 'root',
     'database': 'neo',
     'order_table': 'wms_to_wcs_order_line_request_data',
     'sku_master_table': 'sku_master',
@@ -67,6 +68,7 @@ def save_rules_to_database(user_config, rules_df):
         # Connect to database
         connection = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 6033),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -138,6 +140,7 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
         # Connect to database using user configuration
         conn = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 6033),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -325,6 +328,7 @@ def test_db_connection():
         # Test database connection
         conn = mysql.connector.connect(
             host=data.get('host', 'localhost'),
+            port=data.get('port', 6033),
             user=data.get('user', 'root'),
             password=data.get('password', ''),
             database=data.get('database', 'neo'),
@@ -395,6 +399,7 @@ def test_connection():
     try:
         conn = mysql.connector.connect(
             host=config.DB_HOST,
+            port=config.DB_PORT,
             user=config.DB_USER,
             password=config.DB_PASSWORD,
             database=config.DB_NAME
@@ -1553,8 +1558,10 @@ if __name__ == '__main__':
     with open('templates/index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    print("🚀 Starting Enhanced Association Rule Mining Dashboard...")
-    print("📍 Open your browser to: http://localhost:5500")
-    print("⚠️  FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
+    print("=" * 80)
+    print("Starting Enhanced Association Rule Mining Dashboard...")
+    print("Open your browser to: http://localhost:5500")
+    print("FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
+    print("=" * 80)
     
     app.run(debug=True, host='0.0.0.0', port=5500)
