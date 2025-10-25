@@ -33,7 +33,7 @@ USER_DB_CONFIG = {
     'host': '10.102.246.10',
     'port': 6033,
     'user': 'root',
-    'password': '',
+    'password': 'Falcon@123@WCS',
     'database': 'neo',
     'order_table': 'wms_to_wcs_order_line_request_data',
     'sku_master_table': 'sku_master',
