@@ -4,10 +4,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # Database Configuration
-    DB_HOST = os.getenv("DB_HOST", "localhost")
+    # Database Configuration - Remote MySQL Support
+    DB_HOST = os.getenv("DB_HOST", "10.102.246.10")
+    DB_PORT = int(os.getenv("DB_PORT", "6033"))
     DB_USER = os.getenv("DB_USER", "root")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "")
     DB_NAME = os.getenv("DB_NAME", "neo")
     
     # Source tables (where to read data from)

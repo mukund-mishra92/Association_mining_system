@@ -28,9 +28,10 @@ logging.basicConfig(
 BASE_URL = "http://127.0.0.1:8001"
 API_BASE = f"{BASE_URL}/api/v1"
 
-# Global variable to store user-defined database configuration
+# Global variable to store user-defined database configuration - Remote MySQL
 USER_DB_CONFIG = {
-    'host': 'localhost',
+    'host': '10.102.246.10',
+    'port': 6033,
     'user': 'root',
     'password': '',
     'database': 'neo',
@@ -67,6 +68,7 @@ def save_rules_to_database(user_config, rules_df):
         # Connect to database
         connection = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -138,6 +140,7 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
         # Connect to database using user configuration
         conn = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -287,9 +290,10 @@ def handle_db_config():
         try:
             data = request.get_json()
             
-            # Update global configuration
+            # Update global configuration - Remote MySQL with port support
             USER_DB_CONFIG.update({
-                'host': data.get('host', 'localhost'),
+                'host': data.get('host', '10.102.246.10'),
+                'port': int(data.get('port', 6033)),
                 'user': data.get('user', 'root'),
                 'password': data.get('password', ''),
                 'database': data.get('database', 'neo'),
@@ -322,13 +326,14 @@ def test_db_connection():
         
         logger.info("Testing database connection")
         
-        # Test database connection
+        # Test database connection - Remote MySQL with port
         conn = mysql.connector.connect(
-            host=data.get('host', 'localhost'),
+            host=data.get('host', '10.102.246.10'),
+            port=int(data.get('port', 6033)),
             user=data.get('user', 'root'),
             password=data.get('password', ''),
             database=data.get('database', 'neo'),
-            connection_timeout=5
+            connection_timeout=10
         )
         
         cursor = conn.cursor()
@@ -395,6 +400,7 @@ def test_connection():
     try:
         conn = mysql.connector.connect(
             host=config.DB_HOST,
+            port=config.DB_PORT,
             user=config.DB_USER,
             password=config.DB_PASSWORD,
             database=config.DB_NAME

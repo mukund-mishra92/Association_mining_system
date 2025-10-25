@@ -15,28 +15,31 @@ class DatabaseConnection:
         # Set configuration - use custom config if provided, otherwise use default
         if custom_config:
             self.db_host = custom_config.get('host', config.DB_HOST)
+            self.db_port = custom_config.get('port', config.DB_PORT)
             self.db_user = custom_config.get('user', config.DB_USER)
             self.db_password = custom_config.get('password', config.DB_PASSWORD)
             self.db_name = custom_config.get('database', config.DB_NAME)
             self.order_table = custom_config.get('order_table', config.ORDER_TABLE)
             self.sku_master_table = custom_config.get('sku_master_table', config.SKU_MASTER_TABLE)
             self.recommendations_table = custom_config.get('recommendations_table', config.RECOMMENDATIONS_TABLE)
-            logger.info(f"DatabaseConnection initialized with custom configuration - table: {self.recommendations_table}")
+            logger.info(f"DatabaseConnection initialized with custom configuration - Host: {self.db_host}:{self.db_port}, Table: {self.recommendations_table}")
         else:
             self.db_host = config.DB_HOST
+            self.db_port = config.DB_PORT
             self.db_user = config.DB_USER
             self.db_password = config.DB_PASSWORD
             self.db_name = config.DB_NAME
             self.order_table = config.ORDER_TABLE
             self.sku_master_table = config.SKU_MASTER_TABLE
             self.recommendations_table = config.RECOMMENDATIONS_TABLE
-            logger.info(f"DatabaseConnection initialized with default configuration - table: {self.recommendations_table}")
+            logger.info(f"DatabaseConnection initialized with default configuration - Host: {self.db_host}:{self.db_port}, Table: {self.recommendations_table}")
     
     def connect(self):
         """Establish database connection"""
         try:
             self.connection = mysql.connector.connect(
                 host=self.db_host,
+                port=self.db_port,
                 user=self.db_user,
                 password=self.db_password,
                 database=self.db_name

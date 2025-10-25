@@ -78,13 +78,19 @@
             
             <form id="dbConfigForm">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="mb-3">
                             <label class="form-label">Database Host</label>
-                            <input type="text" class="form-control" id="dbHost" value="localhost" placeholder="localhost">
+                            <input type="text" class="form-control" id="dbHost" value="10.102.246.10" placeholder="10.102.246.10">
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Port</label>
+                            <input type="number" class="form-control" id="dbPort" value="6033" placeholder="6033">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
                         <div class="mb-3">
                             <label class="form-label">Database Name</label>
                             <input type="text" class="form-control" id="dbName" value="neo" placeholder="neo">
@@ -210,6 +216,7 @@
         function testConnection() {
             const config = {
                 host: document.getElementById('dbHost').value,
+                port: document.getElementById('dbPort').value,
                 user: document.getElementById('dbUser').value,
                 password: document.getElementById('dbPassword').value,
                 database: document.getElementById('dbName').value,
@@ -254,6 +261,7 @@
         function saveConfig() {
             const config = {
                 host: document.getElementById('dbHost').value,
+                port: document.getElementById('dbPort').value,
                 user: document.getElementById('dbUser').value,
                 password: document.getElementById('dbPassword').value,
                 database: document.getElementById('dbName').value,
@@ -292,10 +300,11 @@
                 .then(data => {
                     if (data.success) {
                         const config = data.config;
-                        document.getElementById('dbHost').value = config.host || 'localhost';
+                        document.getElementById('dbHost').value = config.host || '10.102.246.10';
+                        document.getElementById('dbPort').value = config.port || '6033';
                         document.getElementById('dbName').value = config.database || 'neo';
                         document.getElementById('dbUser').value = config.user || 'root';
-                        document.getElementById('dbPassword').value = config.password || 'root';
+                        document.getElementById('dbPassword').value = config.password || '';
                         document.getElementById('orderTable').value = config.order_table || 'wms_to_wcs_order_line_request_data';
                         document.getElementById('skuTable').value = config.sku_master_table || 'sku_master';
                         document.getElementById('recTable').value = config.recommendations_table || 'sku_recommendations';
