@@ -15,7 +15,7 @@ timeout /t 3 /nobreak >nul
 echo [3/3] Starting FastAPI Backend Server...
 echo     URL: http://localhost:8001
 echo.
-start cmd /k "cd /d %~dp0 && python -m uvicorn app.main:app --reload --port 8001"
+start cmd /k "cd /d %~dp0 && py -m uvicorn app.main:app --reload --port 8001"
 
 echo.
 echo =======================================================

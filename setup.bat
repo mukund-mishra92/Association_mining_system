@@ -5,7 +5,7 @@ echo ================================
 
 echo.
 echo 1. Installing Python dependencies...
-pip install -r requirements.txt
+py -m pip install -r requirements.txt
 
 echo.
 echo 2. Current configuration:
