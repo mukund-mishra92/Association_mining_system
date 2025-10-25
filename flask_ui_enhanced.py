@@ -31,6 +31,7 @@ API_BASE = f"{BASE_URL}/api/v1"
 # Global variable to store user-defined database configuration
 USER_DB_CONFIG = {
     'host': 'localhost',
+    'port': 3306,
     'user': 'root',
     'password': '',
     'database': 'neo',
@@ -67,6 +68,7 @@ def save_rules_to_database(user_config, rules_df):
         # Connect to database
         connection = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -138,6 +140,7 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
         # Connect to database using user configuration
         conn = mysql.connector.connect(
             host=user_config['host'],
+            port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
             database=user_config['database']
@@ -290,6 +293,7 @@ def handle_db_config():
             # Update global configuration
             USER_DB_CONFIG.update({
                 'host': data.get('host', 'localhost'),
+                'port': int(data.get('port', 3306)),
                 'user': data.get('user', 'root'),
                 'password': data.get('password', ''),
                 'database': data.get('database', 'neo'),
@@ -325,6 +329,7 @@ def test_db_connection():
         # Test database connection
         conn = mysql.connector.connect(
             host=data.get('host', 'localhost'),
+            port=int(data.get('port', 3306)),
             user=data.get('user', 'root'),
             password=data.get('password', ''),
             database=data.get('database', 'neo'),
