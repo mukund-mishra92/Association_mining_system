@@ -6,6 +6,7 @@ load_dotenv()
 class Config:
     # Database Configuration
     DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = int(os.getenv("DB_PORT", "3306"))
     DB_USER = os.getenv("DB_USER", "root")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
     DB_NAME = os.getenv("DB_NAME", "neo")
@@ -22,6 +23,10 @@ class Config:
     MIN_CONFIDENCE = float(os.getenv("MIN_CONFIDENCE", "0.4"))
     MIN_LIFT = float(os.getenv("MIN_LIFT", "1.0"))
     MAX_RECOMMENDATIONS = int(os.getenv("MAX_RECOMMENDATIONS", "3"))
+    
+    # Item filtering to improve performance and quality
+    MAX_ITEMS = int(os.getenv("MAX_ITEMS", "500"))  # Maximum items to process (top N most frequent)
+    MIN_ITEM_FREQUENCY = int(os.getenv("MIN_ITEM_FREQUENCY", "3"))  # Minimum orders an item must appear in
     
     # Time-based weighting
     DECAY_RATE = float(os.getenv("DECAY_RATE", "0.05"))

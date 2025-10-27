@@ -26,26 +26,24 @@ class CleanAssociationMiningService:
         logger.info(f"Progress: {progress}% - {message}")
     
     def _calculate_adaptive_support(self, num_items, num_transactions, original_support):
-        """Calculate adaptive support to prevent performance issues"""
-        if num_items > 400:
-            # For very large item sets, force high support
-            adaptive_support = max(0.20, 30 / num_transactions)
-            logger.warning(f"PERFORMANCE PROTECTION: {num_items} items - forcing support {adaptive_support:.3f}")
-        elif num_items > 200:
-            # For medium item sets, use moderate support  
-            adaptive_support = max(0.10, 15 / num_transactions)
-            logger.warning(f"Performance optimization: {num_items} items - using support {adaptive_support:.3f}")
-        elif original_support < 0.02:
-            # Never go below 2% for any dataset
-            adaptive_support = max(0.02, 5 / num_transactions)
-            logger.warning(f"Minimum support protection: using {adaptive_support:.3f} (was {original_support})")
+        """Calculate adaptive support based on dataset size"""
+        if num_items > 800:
+            # For large item sets (shouldn't happen with filtering), use higher support
+            adaptive_support = max(0.02, 15 / num_transactions)
+            logger.warning(f"LARGE DATASET: {num_items} items - using support {adaptive_support:.3f}")
+        elif num_items > 500:
+            # Medium item sets - moderate support
+            adaptive_support = max(0.01, 8 / num_transactions)
+            logger.info(f"Medium dataset: {num_items} items - using support {adaptive_support:.3f}")
         else:
+            # Optimal range (<=500 items) - use original support
             adaptive_support = original_support
+            logger.info(f"Optimal dataset size: {num_items} items - using support {adaptive_support:.3f}")
         
         return adaptive_support
     
-    def run_mining_pipeline(self, df_basket, timeout_minutes=5):
-        """Run the complete mining pipeline with timeout protection"""
+    def run_mining_pipeline(self, df_basket, timeout_minutes=20):
+        """Run the complete mining pipeline with timeout protection (default 20 minutes for batch processing)"""
         try:
             start_time = time.time()
             timeout_seconds = timeout_minutes * 60
@@ -76,7 +74,7 @@ class CleanAssociationMiningService:
                 logger.error("No transactions created")
                 return pd.DataFrame()
             
-            # Step 3: Mine association rules with timeout
+            # Step 3: Mine association rules (NO TIMEOUT - runs until completion or error)
             self._update_progress(60, "Mining association rules")
             rules = self._mine_rules_with_timeout(transactions, timeout_seconds - (time.time() - start_time))
             
@@ -132,7 +130,7 @@ class CleanAssociationMiningService:
         return transactions
     
     def _mine_rules_with_timeout(self, transactions, timeout_seconds):
-        """Mine association rules with timeout protection"""
+        """Mine association rules - runs until completion or error (no timeout)"""
         try:
             # Create transaction matrix
             logger.info("Creating transaction matrix")
@@ -149,48 +147,67 @@ class CleanAssociationMiningService:
             # Calculate adaptive support
             adaptive_support = self._calculate_adaptive_support(num_items, num_transactions, config.MIN_SUPPORT)
             
-            # Mine frequent itemsets with timeout
-            logger.info(f"Starting FP-Growth with support={adaptive_support:.3f}, timeout={timeout_seconds:.0f}s")
+            # Mine frequent itemsets WITHOUT timeout - let it run until completion or error
+            logger.info(f"Starting FP-Growth with support={adaptive_support:.3f} (NO TIMEOUT - will run until complete)")
             
-            result_container = {'itemsets': None, 'error': None, 'completed': False}
+            result_container = {'itemsets': None, 'error': None, 'completed': False, 'progress_time': time.time()}
             
             def run_fpgrowth():
                 try:
+                    logger.info("FP-Growth algorithm started - this may take several minutes for large datasets...")
                     result_container['itemsets'] = fpgrowth(
                         basket_matrix, 
                         min_support=adaptive_support, 
                         use_colnames=True
                     )
                     result_container['completed'] = True
-                    logger.info("FP-Growth completed successfully")
+                    logger.info("SUCCESS: FP-Growth completed successfully!")
+                except MemoryError as e:
+                    result_container['error'] = f"MEMORY ERROR: Not enough memory to process {num_items} items. Try reducing MAX_ITEMS or increasing MIN_ITEM_FREQUENCY."
+                    logger.error(f"MEMORY ERROR: {e}")
+                    logger.error(f"Dataset too large: {num_items} items x {num_transactions} transactions")
+                    logger.error("Solution: Reduce MAX_ITEMS in .env file or increase MIN_ITEM_FREQUENCY")
                 except Exception as e:
-                    result_container['error'] = e
-                    logger.error(f"FP-Growth error: {e}")
+                    result_container['error'] = str(e)
+                    logger.error(f"ERROR: FP-Growth error: {e}")
             
-            # Run with timeout
+            # Run without timeout - just monitor progress
             fpgrowth_thread = threading.Thread(target=run_fpgrowth)
-            fpgrowth_thread.daemon = True
+            fpgrowth_thread.daemon = False  # Non-daemon so it completes
             fpgrowth_thread.start()
             
-            # Monitor progress
+            # Monitor progress (report every 30 seconds)
             start_monitor = time.time()
-            while fpgrowth_thread.is_alive() and (time.time() - start_monitor) < timeout_seconds:
-                time.sleep(5)
-                elapsed = time.time() - start_monitor
-                logger.info(f"FP-Growth running... {elapsed:.0f}s elapsed")
+            last_log_time = start_monitor
             
-            if fpgrowth_thread.is_alive():
-                logger.error(f"FP-Growth timed out after {timeout_seconds:.0f}s")
-                logger.error("Consider using fewer items or higher min_support")
-                return pd.DataFrame()
+            while fpgrowth_thread.is_alive():
+                time.sleep(5)
+                current_time = time.time()
+                elapsed = current_time - start_monitor
+                
+                # Log progress every 30 seconds
+                if current_time - last_log_time >= 30:
+                    minutes = int(elapsed // 60)
+                    seconds = int(elapsed % 60)
+                    logger.info(f"FP-Growth still running... {minutes}m {seconds}s elapsed")
+                    last_log_time = current_time
+            
+            # Thread completed - check results
+            total_elapsed = time.time() - start_monitor
+            minutes = int(total_elapsed // 60)
+            seconds = int(total_elapsed % 60)
             
             if result_container['error']:
-                raise result_container['error']
+                logger.error(f"FP-Growth failed after {minutes}m {seconds}s: {result_container['error']}")
+                raise Exception(result_container['error'])
+            
+            logger.info(f"SUCCESS: FP-Growth completed in {minutes}m {seconds}s")
             
             freq_itemsets = result_container['itemsets']
             
-            if freq_itemsets.empty:
+            if freq_itemsets is None or freq_itemsets.empty:
                 logger.warning(f"No frequent itemsets found with support={adaptive_support:.3f}")
+                logger.warning(f"Try lowering MIN_SUPPORT in .env (current: {config.MIN_SUPPORT})")
                 return pd.DataFrame()
             
             logger.info(f"Found {len(freq_itemsets)} frequent itemsets")

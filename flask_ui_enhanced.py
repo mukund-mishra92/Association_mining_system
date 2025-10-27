@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import requests
 import pandas as pd
 import numpy as np
-import mysql.connector
+import pymysql
 from datetime import datetime
 import json
 import os
@@ -24,16 +24,16 @@ logging.basicConfig(
     ]
 )
 
-# Configuration - Updated for port 8001
-BASE_URL = "http://127.0.0.1:8001"
+# Configuration - Updated for port 8080
+BASE_URL = "http://127.0.0.1:8080"
 API_BASE = f"{BASE_URL}/api/v1"
 
 # Global variable to store user-defined database configuration
 USER_DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
+    'host': '10.102.246.10',
+    'port': 6033,
     'user': 'root',
-    'password': '',
+    'password': 'Falcon@123@WCS',
     'database': 'neo',
     'order_table': 'wms_to_wcs_order_line_request_data',
     'sku_master_table': 'sku_master',
@@ -66,12 +66,13 @@ def save_rules_to_database(user_config, rules_df):
         logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
         
         # Connect to database
-        connection = mysql.connector.connect(
+        connection = pymysql.connect(
             host=user_config['host'],
             port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
-            database=user_config['database']
+            database=user_config['database'],
+            charset='utf8mb4'
         )
         cursor = connection.cursor()
         
@@ -138,12 +139,13 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
             user_config = USER_DB_CONFIG
             
         # Connect to database using user configuration
-        conn = mysql.connector.connect(
+        conn = pymysql.connect(
             host=user_config['host'],
             port=user_config.get('port', 3306),
             user=user_config['user'],
             password=user_config['password'],
-            database=user_config['database']
+            database=user_config['database'],
+            charset='utf8mb4'
         )
         
         # Get top N most popular SKUs
@@ -327,13 +329,14 @@ def test_db_connection():
         logger.info("Testing database connection")
         
         # Test database connection
-        conn = mysql.connector.connect(
-            host=data.get('host', 'localhost'),
-            port=int(data.get('port', 3306)),
+        conn = pymysql.connect(
+            host=data.get('host', '10.102.246.10'),
+            port=int(data.get('port', 6033)),
             user=data.get('user', 'root'),
-            password=data.get('password', ''),
+            password=data.get('password', 'Falcon@123@WCS'),
             database=data.get('database', 'neo'),
-            connection_timeout=5
+            connect_timeout=5,
+            charset='utf8mb4'
         )
         
         cursor = conn.cursor()
@@ -357,7 +360,7 @@ def test_db_connection():
                     count = cursor.fetchone()[0]
                     tables_status[table_key] = {"exists": True, "count": count}
                     logger.info(f"Table {table_name}: {count} records")
-                except mysql.connector.Error as e:
+                except pymysql.MySQLError as e:
                     tables_status[table_key] = {"exists": False, "count": 0}
                     logger.warning(f"Table {table_name} does not exist: {e}")
             else:
@@ -373,7 +376,7 @@ def test_db_connection():
             "tables": tables_status
         })
         
-    except mysql.connector.Error as e:
+    except pymysql.MySQLError as e:
         return jsonify({
             "success": False,
             "error": f"Database connection failed: {str(e)}"
@@ -398,11 +401,12 @@ def test_connection():
     db_ok = False
     db_error = None
     try:
-        conn = mysql.connector.connect(
+        conn = pymysql.connect(
             host=config.DB_HOST,
             user=config.DB_USER,
             password=config.DB_PASSWORD,
-            database=config.DB_NAME
+            database=config.DB_NAME,
+            charset='utf8mb4'
         )
         conn.close()
         db_ok = True
@@ -646,7 +650,48 @@ def mine_enhanced():
             "message": f"Failed to start: {str(e)}",
             "error": str(e)
         })
-        return jsonify({"success": False, "error": str(e)})
+        return jsonify({
+            "success": False,
+            "message": f"Failed to start enhanced mining: {str(e)}"
+        }), 500
+
+@app.route('/api/mine/fast', methods=['POST'])
+def start_fast_mining():
+    """Start FAST mining (top 100 SKUs, 15% support, 2-5 min completion)"""
+    data = request.get_json()
+    
+    payload = {
+        "days_back": data.get('days_back', 30),
+        "db_config": USER_DB_CONFIG
+    }
+    
+    logger.info(f"Starting FAST mining for top 100 SKUs with 15% support")
+    
+    try:
+        # Call FastAPI fast mining endpoint
+        response = requests.post(f"{API_BASE}/mine-rules-fast", json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            result_data = response.json()
+            task_id = result_data.get('task_id')
+            
+            return jsonify({
+                "success": True,
+                "task_id": task_id,
+                "message": "FAST mining started - targeting top 100 SKUs (estimated 2-5 minutes)"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": f"Failed to start FAST mining: {response.text}"
+            }), 500
+        
+    except Exception as e:
+        logger.error(f"Error starting FAST mining: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Failed to start FAST mining: {str(e)}"
+        }), 500
 
 @app.route('/api/mining-progress/<task_id>')
 def get_task_progress(task_id):

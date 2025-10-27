@@ -189,6 +189,162 @@ def run_mining_task(task_id: str, days_back=None, use_enhanced_mining=True, time
         if 'db' in locals():
             db.disconnect()
 
+def run_fast_mining_task(task_id: str, days_back=None, db_config=None):
+    """
+    FAST mining background task - optimized for speed and top 100 SKUs.
+    - Uses 15% support (configured in .env)
+    - Fetches top 100 most frequent SKUs only
+    - Skips complex temporal analysis
+    - Writes directly to database
+    - Estimated completion: 2-5 minutes
+    """
+    try:
+        import pandas as pd
+        from mlxtend.frequent_patterns import fpgrowth, association_rules
+        from mlxtend.preprocessing import TransactionEncoder
+        
+        # Mark task as started
+        task_manager.start_task(task_id, "Initializing FAST mining...")
+        logger.info(f"Starting FAST mining for top 100 SKUs - task {task_id}")
+        
+        # Initialize database connection
+        if db_config:
+            db = DatabaseConnection(custom_config=db_config)
+        else:
+            db = DatabaseConnection()
+        
+        # Connect to database
+        task_manager.update_progress(task_id, 0.1, "Connecting to database...")
+        if not db.connect():
+            task_manager.fail_task(task_id, "Failed to connect to database")
+            return
+        
+        # Fetch data with filtering for top 100 SKUs
+        task_manager.update_progress(task_id, 0.2, "Fetching top 100 most frequent SKUs...")
+        df_basket = db.fetch_order_data(days_back=days_back, max_items=100, min_item_frequency=10)
+        
+        if df_basket is None or df_basket.empty:
+            task_manager.fail_task(task_id, "No data found for mining")
+            return
+        
+        unique_skus = len(df_basket['SKU_NAME'].unique())
+        unique_orders = len(df_basket['ORDER_ID'].unique())
+        logger.info(f"FAST mode: Processing {unique_skus} SKUs from {unique_orders} orders")
+        
+        # Create simple transactions (no time weighting for speed)
+        task_manager.update_progress(task_id, 0.3, f"Creating transactions from {unique_orders} orders...")
+        transactions = df_basket.groupby('ORDER_ID')['SKU_NAME'].apply(list).tolist()
+        logger.info(f"Created {len(transactions)} transactions")
+        
+        # Create transaction matrix
+        task_manager.update_progress(task_id, 0.4, "Building transaction matrix...")
+        te = TransactionEncoder()
+        onehot = te.fit(transactions).transform(transactions)
+        basket_matrix = pd.DataFrame(onehot, columns=te.columns_)
+        
+        num_items = basket_matrix.shape[0]
+        num_transactions = basket_matrix.shape[1]
+        density = (basket_matrix.sum().sum() / (num_items * num_transactions) * 100)
+        logger.info(f"Transaction matrix: ({num_items}, {num_transactions}), Density: {density:.2f}%")
+        
+        # Run FP-Growth with 15% support
+        from app.utils.config import config
+        support = config.MIN_SUPPORT  # Should be 0.15 from .env
+        
+        task_manager.update_progress(task_id, 0.5, f"Mining patterns (support={support*100:.0f}%)...")
+        logger.info(f"Starting FP-Growth with {support*100:.0f}% support...")
+        
+        freq_itemsets = fpgrowth(basket_matrix, min_support=support, use_colnames=True)
+        logger.info(f"Found {len(freq_itemsets)} frequent itemsets")
+        
+        if freq_itemsets.empty:
+            task_manager.fail_task(task_id, f"No frequent itemsets found with {support*100:.0f}% support")
+            return
+        
+        # Generate association rules
+        task_manager.update_progress(task_id, 0.6, "Generating association rules...")
+        rules = association_rules(
+            freq_itemsets, 
+            metric="lift", 
+            min_threshold=config.MIN_LIFT
+        )
+        
+        rules = rules[rules['confidence'] >= config.MIN_CONFIDENCE]
+        logger.info(f"Generated {len(rules)} rules (confidence >= {config.MIN_CONFIDENCE*100:.0f}%)")
+        
+        if rules.empty:
+            task_manager.fail_task(task_id, "No rules met confidence threshold")
+            return
+        
+        # Create recommendations from rules
+        task_manager.update_progress(task_id, 0.7, "Creating recommendations...")
+        recommendations_list = []
+        
+        for _, rule in rules.iterrows():
+            antecedents = list(rule['antecedents'])
+            consequents = list(rule['consequents'])
+            
+            # Create recommendation for each antecedent-consequent pair
+            for ant in antecedents:
+                for cons in consequents:
+                    recommendations_list.append({
+                        'main_item_id': ant,
+                        'recommended_item_id': cons,
+                        'support': rule['support'],
+                        'confidence': rule['confidence'],
+                        'lift': rule['lift'],
+                        'composite_score': rule['confidence'] * rule['lift']
+                    })
+        
+        recommendations = pd.DataFrame(recommendations_list)
+        
+        # Filter to top 100 SKUs recommendations only
+        top_skus = df_basket['SKU_NAME'].value_counts().head(100).index.tolist()
+        recommendations = recommendations[recommendations['main_item_id'].isin(top_skus)]
+        
+        # Keep top 10 recommendations per SKU
+        recommendations = recommendations.sort_values(['main_item_id', 'composite_score'], ascending=[True, False])
+        recommendations = recommendations.groupby('main_item_id').head(config.MAX_RECOMMENDATIONS)
+        
+        logger.info(f"Created {len(recommendations)} recommendations for top {len(top_skus)} SKUs")
+        
+        # Save directly to database
+        task_manager.update_progress(task_id, 0.8, "Writing to database...")
+        success = db.save_recommendations(recommendations)
+        
+        # Complete task
+        result = {
+            "recommendations_count": len(recommendations),
+            "target_skus": len(top_skus),
+            "rules_generated": len(rules),
+            "database_saved": success,
+            "stats": {
+                "total_skus_processed": unique_skus,
+                "total_orders": unique_orders,
+                "support_used": f"{support*100:.0f}%",
+                "mode": "FAST"
+            }
+        }
+        
+        if success:
+            task_manager.complete_task(
+                task_id,
+                result=result,
+                message=f"FAST mining completed: {len(recommendations)} recommendations for top {len(top_skus)} SKUs saved to database"
+            )
+            logger.info(f"FAST mining SUCCESS: {len(recommendations)} recommendations saved")
+        else:
+            task_manager.fail_task(task_id, "Database save failed")
+            
+    except Exception as e:
+        error_msg = f"Error in FAST mining: {str(e)}"
+        task_manager.fail_task(task_id, error_msg)
+        logger.error(error_msg, exc_info=True)
+    
+    finally:
+        if 'db' in locals():
+            db.disconnect()
+
 @router.post("/mine-rules", response_model=MiningStatusResponse)
 async def mine_association_rules(
     request: MiningRequest,
@@ -232,6 +388,49 @@ async def mine_association_rules(
     except Exception as e:
         logger.error(f"Error starting mining: {e}")
         raise HTTPException(status_code=500, detail="Failed to start mining process")
+
+@router.post("/mine-rules-fast", response_model=MiningStatusResponse)
+async def mine_rules_fast(
+    request: MiningRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    FAST mining mode - optimized for top 100 SKUs with direct database write.
+    Uses higher support (15%), fewer items, and skips complex temporal analysis.
+    Completes in 2-5 minutes instead of 90+ minutes.
+    """
+    try:
+        # Create a new task
+        task_id = task_manager.create_task(
+            task_type="fast_mining",
+            metadata={
+                "days_back": request.days_back,
+                "mode": "fast",
+                "target_skus": 100,
+                "db_config": request.db_config.dict() if request.db_config else None
+            }
+        )
+        
+        # Convert db_config to dict if provided
+        db_config_dict = request.db_config.dict() if request.db_config else None
+        
+        # Add FAST mining task to background
+        background_tasks.add_task(
+            run_fast_mining_task,
+            task_id=task_id,
+            days_back=request.days_back,
+            db_config=db_config_dict
+        )
+        
+        return MiningStatusResponse(
+            status="started",
+            task_id=task_id,
+            message="FAST mining started - targeting top 100 SKUs with direct database write (estimated 2-5 minutes)"
+        )
+    
+    except Exception as e:
+        logger.error(f"Error starting fast mining: {e}")
+        raise HTTPException(status_code=500, detail="Failed to start fast mining process")
 
 @router.get("/recommendations/{item_name}", response_model=ItemRecommendationsResponse)
 async def get_item_recommendations(item_name: str, limit: int = 10):
