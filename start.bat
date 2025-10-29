@@ -1,23 +1,45 @@
 @echo off
 REM Association Mining System - Windows Startup Script with PyMySQL
-REM Updated for remote MySQL (10.102.246.10:6033)
+REM Updated for generalized Python detection
 
 echo ========================================
 echo  Association Mining System - Startup
 echo ========================================
 echo.
 
-REM Set Python executable path
-set PYTHON_EXE=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe
-
-REM Check if Python exists
-if not exist "%PYTHON_EXE%" (
-    echo Error: Python not found at %PYTHON_EXE%
-    echo Please update the PYTHON_EXE path in this script
-    pause
-    exit /b 1
+REM Function to detect Python executable
+set PYTHON_EXE=
+REM Try py command first (Windows Python Launcher)
+py --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_EXE=py
+    echo Found Python using 'py' command
+    goto :python_found
 )
 
+REM Try python command
+python --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_EXE=python
+    echo Found Python using 'python' command
+    goto :python_found
+)
+
+REM Try python3 command
+python3 --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON_EXE=python3
+    echo Found Python using 'python3' command
+    goto :python_found
+)
+
+REM If no Python found
+echo Error: Python not found. Please install Python or ensure it's in your PATH
+echo Tried: py, python, python3
+pause
+exit /b 1
+
+:python_found
 echo Using Python: %PYTHON_EXE%
 %PYTHON_EXE% --version
 echo.

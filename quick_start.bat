@@ -4,8 +4,42 @@ REM Quick Start Script - Association Mining System
 echo Starting servers...
 echo.
 
-REM Set Python path
-set PYTHON=C:\Users\Administrator\AppData\Local\Programs\Python\Python314\python.exe
+REM Function to detect Python executable
+set PYTHON=
+REM Try py command first (Windows Python Launcher)
+py --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON=py
+    echo Found Python using 'py' command
+    goto :python_found
+)
+
+REM Try python command
+python --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON=python
+    echo Found Python using 'python' command
+    goto :python_found
+)
+
+REM Try python3 command
+python3 --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON=python3
+    echo Found Python using 'python3' command
+    goto :python_found
+)
+
+REM If no Python found
+echo Error: Python not found. Please install Python or ensure it's in your PATH
+echo Tried: py, python, python3
+pause
+exit /b 1
+
+:python_found
+echo Using Python: %PYTHON%
+%PYTHON% --version
+echo.
 
 REM Start FastAPI on port 8080
 echo [1/2] Starting FastAPI on port 8080...
