@@ -1,9 +1,9 @@
 @echo off
-REM Association Mining System - Windows Startup Script with PyMySQL
-REM Updated for generalized Python detection
+REM Quick Start - Association Mining System (Skip dependency check)
+REM Use this if dependencies are already installed
 
 echo ========================================
-echo  Association Mining System - Startup
+echo  Association Mining System - Quick Start
 echo ========================================
 echo.
 
@@ -68,16 +68,7 @@ if not exist ".env" (
     )
 )
 
-REM Install/update dependencies
-echo Installing/updating dependencies...
-echo (This includes PyMySQL and cryptography)
-%PYTHON_EXE% -m pip install -r requirements.txt
-if errorlevel 1 (
-    echo Error installing dependencies
-    pause
-    exit /b 1
-)
-echo Dependencies installed successfully
+echo Skipping dependency installation (use start.bat for full setup)
 echo.
 
 REM Start FastAPI server on port 8080
@@ -101,11 +92,8 @@ echo  Servers Started Successfully!
 echo ========================================
 echo.
 echo  Flask UI:  http://localhost:5000
-echo  FastAPI:   http://localhost:8080
+echo  FastAPI:   http://localhost:8080  
 echo  API Docs:  http://localhost:8080/docs
-echo.
-echo MySQL Server: 10.102.246.10:6033
-echo Database: neo
 echo.
 echo Close the terminal windows to stop servers
 echo Or press Ctrl+C in each window

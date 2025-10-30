@@ -28,24 +28,45 @@ logging.basicConfig(
 BASE_URL = "http://127.0.0.1:8080"
 API_BASE = f"{BASE_URL}/api/v1"
 
-# Global variable to store user-defined database configuration
-USER_DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': 'root',
-    'database': 'neo',
-    'order_table': 'wms_to_wcs_order_line_request_data',
-    'sku_master_table': 'sku_master',
-    'recommendations_table': 'sku_recommendations'
-}
+# Load configuration from shared config
+try:
+    from app.shared.config.config import config
+    
+    # Global variable to store user-defined database configuration - loaded from .env
+    USER_DB_CONFIG = {
+        'host': config.DB_HOST,
+        'port': config.DB_PORT,
+        'user': config.DB_USER,
+        'password': config.DB_PASSWORD,
+        'database': config.DB_NAME,
+        'order_table': config.ORDER_TABLE,
+        'sku_master_table': config.SKU_MASTER_TABLE,
+        'recommendations_table': config.RECOMMENDATIONS_TABLE
+    }
+    print(f"✅ Loaded database configuration from .env file")
+    print(f"   Database: {config.DB_NAME} on {config.DB_HOST}:{config.DB_PORT}")
+    print(f"   Order Table: {config.ORDER_TABLE}")
+    print(f"   SKU Table: {config.SKU_MASTER_TABLE}")
+except Exception as e:
+    print(f"⚠️ Could not load configuration from .env, using defaults: {e}")
+    # Fallback to hardcoded configuration
+    USER_DB_CONFIG = {
+        'host': 'localhost',
+        'port': 3306,
+        'user': 'root',
+        'password': 'root',
+        'database': 'neo',
+        'order_table': 'wms_to_wcs_order_line_request_data',
+        'sku_master_table': 'sku_master',
+        'recommendations_table': 'sku_recommendations'
+    }
 
 def load_config():
     """Load database configuration"""
     try:
         import sys
         sys.path.append('.')
-        from app.utils.config import config
+        from app.shared.config.config import config
         return config
     except Exception as e:
         print(f"Could not load configuration: {e}")
@@ -126,7 +147,9 @@ def save_rules_to_database(user_config, rules_df):
         logger.error(f"Database save error: {e}")
         return False
 
-def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
+def generate_rules_top_skus(user_config=None, top_n=20, days_back=60, 
+                           min_support=0.30, min_confidence=0.30, min_lift=1.0, 
+                           max_recommendations=10, decay_rate=0.05):
     """
     Ultra-conservative: Top N SKUs only with high support threshold
     Uses user-defined database configuration
@@ -189,8 +212,8 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
         if df.empty:
             return {"error": "No order data found"}, None
         
-        # Apply simple time weighting
-        df['weight'] = np.exp(-df['days_ago'] / 30)
+        # Apply time weighting with configurable decay rate
+        df['weight'] = np.exp(-df['days_ago'] / (30 / decay_rate))
         
         # Create market basket (simple binary)
         basket = df.groupby(['ORDER_ID', 'SKU_NAME'])['weight'].sum().reset_index()
@@ -202,16 +225,21 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
         )
         basket_binary = (basket_matrix > 0).astype(int)
         
-        # Mine with very high support
-        frequent_itemsets = apriori(basket_binary, min_support=0.03, use_colnames=True, max_len=2)
+        # Mine with user-defined support threshold
+        frequent_itemsets = apriori(basket_binary, min_support=min_support, use_colnames=True, max_len=2)
         
         if len(frequent_itemsets) == 0:
-            # Try lower threshold
-            frequent_itemsets = apriori(basket_binary, min_support=0.02, use_colnames=True, max_len=2)
+            # Try with lower threshold (half of user's setting)
+            fallback_support = max(min_support / 2, 0.01)
+            frequent_itemsets = apriori(basket_binary, min_support=fallback_support, use_colnames=True, max_len=2)
         
         if len(frequent_itemsets) > 0:
-            # Generate rules
-            rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.2)
+            # Generate rules with user-defined confidence
+            rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=min_confidence)
+            
+            # Apply lift filter
+            if len(rules) > 0:
+                rules = rules[rules['lift'] >= min_lift]
             
             if len(rules) > 0:
                 # Create final output
@@ -224,6 +252,16 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60):
                 
                 final_rules = rules[['sku1', 'sku2', 'association_composite_score', 'confidence', 'lift', 'support']].copy()
                 final_rules = final_rules.sort_values('association_composite_score', ascending=False)
+                
+                # Limit to max_recommendations per SKU (antecedent)
+                limited_rules = []
+                for sku in final_rules['sku1'].unique():
+                    sku_rules = final_rules[final_rules['sku1'] == sku].head(max_recommendations)
+                    limited_rules.append(sku_rules)
+                
+                if limited_rules:
+                    final_rules = pd.concat(limited_rules, ignore_index=True)
+                    final_rules = final_rules.sort_values('association_composite_score', ascending=False)
                 
                 # Save to database
                 database_saved = False
@@ -281,6 +319,37 @@ def get_db_config():
         "success": True,
         "config": USER_DB_CONFIG
     })
+
+@app.route('/api/algorithm-params', methods=['GET'])
+def get_algorithm_params():
+    """Get current algorithm parameters from configuration"""
+    try:
+        from app.shared.config.config import config
+        
+        algorithm_params = {
+            "min_support": float(config.MIN_SUPPORT),
+            "min_confidence": float(config.MIN_CONFIDENCE),
+            "min_lift": float(config.MIN_LIFT),
+            "max_recommendations": int(config.MAX_RECOMMENDATIONS),
+            "decay_rate": float(config.DECAY_RATE)
+        }
+        
+        return jsonify({
+            "success": True,
+            "params": algorithm_params
+        })
+    except Exception as e:
+        # Fallback to defaults if config loading fails
+        return jsonify({
+            "success": True,
+            "params": {
+                "min_support": 0.30,
+                "min_confidence": 0.30,
+                "min_lift": 1.0,
+                "max_recommendations": 10,
+                "decay_rate": 0.05
+            }
+        })
 
 @app.route('/api/db-config', methods=['GET', 'POST'])
 def handle_db_config():
@@ -428,9 +497,23 @@ def mine_direct():
     days_back = data.get('days_back', 60)
     top_skus = data.get('top_skus', 20)
     
+    # Extract algorithm parameters
+    algorithm_params = {
+        'min_support': data.get('min_support', 0.30),
+        'min_confidence': data.get('min_confidence', 0.30),
+        'min_lift': data.get('min_lift', 1.0),
+        'max_recommendations': data.get('max_recommendations', 10),
+        'decay_rate': data.get('decay_rate', 0.05)
+    }
+    
     try:
-        # Use user-defined database configuration
-        stats, rules = generate_rules_top_skus(USER_DB_CONFIG, top_n=top_skus, days_back=days_back)
+        # Use user-defined database configuration with algorithm parameters
+        stats, rules = generate_rules_top_skus(
+            USER_DB_CONFIG, 
+            top_n=top_skus, 
+            days_back=days_back,
+            **algorithm_params
+        )
         
         if 'error' in stats:
             return jsonify({"success": False, "error": stats['error']})
@@ -438,7 +521,8 @@ def mine_direct():
         return jsonify({
             "success": True,
             "stats": stats,
-            "rules": rules[:100]  # Limit to first 100 rules for display
+            "rules": rules[:100],  # Limit to first 100 rules for display
+            "algorithm_params": algorithm_params  # Include params in response for reference
         })
     
     except Exception as e:
@@ -460,11 +544,21 @@ def mine_api():
     
     data = request.get_json()
     
+    # Extract algorithm parameters
+    algorithm_params = {
+        'min_support': data.get('min_support', 0.30),
+        'min_confidence': data.get('min_confidence', 0.30),
+        'min_lift': data.get('min_lift', 1.0),
+        'max_recommendations': data.get('max_recommendations', 10),
+        'decay_rate': data.get('decay_rate', 0.05)
+    }
+    
     payload = {
         "days_back": data.get('days_back', 30),
         "use_enhanced_mining": data.get('use_enhanced_mining', False),
         "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
-        "db_config": USER_DB_CONFIG  # Include database configuration
+        "db_config": USER_DB_CONFIG,  # Include database configuration
+        **algorithm_params  # Include algorithm parameters
     }
     
     try:
@@ -601,11 +695,21 @@ def mine_enhanced():
     
     data = request.get_json()
     
+    # Extract algorithm parameters
+    algorithm_params = {
+        'min_support': data.get('min_support', 0.30),
+        'min_confidence': data.get('min_confidence', 0.30),
+        'min_lift': data.get('min_lift', 1.0),
+        'max_recommendations': data.get('max_recommendations', 10),
+        'decay_rate': data.get('decay_rate', 0.05)
+    }
+    
     payload = {
         "days_back": data.get('days_back', 30),
         "use_enhanced_mining": True,  # Always use enhanced for this endpoint
         "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
-        "db_config": USER_DB_CONFIG  # Include database configuration
+        "db_config": USER_DB_CONFIG,  # Include database configuration
+        **algorithm_params  # Include algorithm parameters
     }
     
     logger.info(f"Starting enhanced mining with recommendations table: {USER_DB_CONFIG['recommendations_table']}")
@@ -856,6 +960,185 @@ def get_live_logs():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ========== SCHEDULER ROUTES ==========
+
+@app.route('/api/scheduler-status')
+def get_scheduler_status():
+    """Get scheduler service status"""
+    try:
+        response = requests.get(f"{API_BASE}/scheduler/scheduler/status")
+        return jsonify({
+            'success': True,
+            'data': response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/start-scheduler', methods=['POST'])
+def start_scheduler():
+    """Start the scheduler service"""
+    try:
+        response = requests.post(f"{API_BASE}/scheduler/scheduler/start")
+        return jsonify({
+            'success': True,
+            'data': response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/stop-scheduler', methods=['POST'])
+def stop_scheduler():
+    """Stop the scheduler service"""
+    try:
+        response = requests.post(f"{API_BASE}/scheduler/scheduler/stop")
+        return jsonify({
+            'success': True,
+            'data': response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/schedules')
+def get_schedules():
+    """Get all schedules"""
+    try:
+        response = requests.get(f"{API_BASE}/scheduler/schedules")
+        return jsonify({
+            'success': True,
+            'data': response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/create-schedule', methods=['POST'])
+def create_schedule():
+    """Create a new schedule"""
+    try:
+        schedule_data = request.json
+        print(f"DEBUG: Received schedule data: {schedule_data}")
+        
+        response = requests.post(
+            f"{API_BASE}/scheduler/schedules",
+            json=schedule_data,
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        print(f"DEBUG: FastAPI response status: {response.status_code}")
+        print(f"DEBUG: FastAPI response: {response.text}")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            error_detail = response.json().get('detail', 'Unknown error') if response.text else 'No response'
+            print(f"DEBUG: Error detail: {error_detail}")
+            return jsonify({
+                'success': False,
+                'error': error_detail
+            })
+    except Exception as e:
+        print(f"DEBUG: Exception: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/toggle-schedule/<int:schedule_id>', methods=['POST'])
+def toggle_schedule(schedule_id):
+    """Toggle a schedule's active status"""
+    try:
+        response = requests.post(f"{API_BASE}/scheduler/schedules/{schedule_id}/toggle")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': response.json().get('detail', 'Unknown error')
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/delete-schedule/<int:schedule_id>', methods=['DELETE'])
+def delete_schedule(schedule_id):
+    """Delete a schedule"""
+    try:
+        response = requests.delete(f"{API_BASE}/scheduler/schedules/{schedule_id}")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': response.json().get('detail', 'Unknown error')
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/run-schedule/<int:schedule_id>', methods=['POST'])
+def run_schedule_now(schedule_id):
+    """Manually run a schedule now"""
+    try:
+        response = requests.post(f"{API_BASE}/scheduler/schedules/{schedule_id}/run")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': response.json().get('detail', 'Unknown error')
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/schedule-logs/<int:schedule_id>')
+def get_schedule_logs(schedule_id):
+    """Get execution logs for a specific schedule"""
+    try:
+        limit = request.args.get('limit', 20)
+        response = requests.get(f"{API_BASE}/scheduler/schedules/{schedule_id}/logs?limit={limit}")
+        return jsonify({
+            'success': True,
+            'data': response.json()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
@@ -1608,6 +1891,6 @@ if __name__ == '__main__':
     
     print("🚀 Starting Enhanced Association Rule Mining Dashboard...")
     print("📍 Open your browser to: http://localhost:5000")
-    print("⚠️  FastAPI server should be running on http://127.0.0.1:8001 for API-based mining")
+    print("⚠️  FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
     
     app.run(debug=True, host='0.0.0.0', port=5000)

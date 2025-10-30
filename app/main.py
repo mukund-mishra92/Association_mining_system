@@ -1,11 +1,7 @@
 from fastapi import FastAPI
-from app.api.endpoints import router
-from app.utils.config import config
-from app.utils.logger_config import setup_detailed_logging
+from app.modules.association_mining.api.endpoints import router
+from app.shared.config.config import config
 import logging
-
-# Setup detailed logging
-log_files = setup_detailed_logging()
 
 # Create FastAPI app
 app = FastAPI(
@@ -23,4 +19,4 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8080)
