@@ -367,17 +367,17 @@ class SchedulerService:
             
             logger.info(f"🚀 Starting mining job for schedule '{schedule['job_name']}' (ID: {schedule_id})")
             
-            # Execute mining with optimized schedule parameters for performance
+            # Use the exact algorithm parameters provided by the user
             algorithm_params = {
-                'min_support': max(0.05, schedule['min_support']),  # Use at least 5% support for performance
-                'min_confidence': max(0.1, schedule['min_confidence']),  # Use at least 10% confidence  
+                'min_support': schedule['min_support'],  # Use user's exact value
+                'min_confidence': schedule['min_confidence'],  # Use user's exact value
                 'min_lift': schedule['min_lift'],
                 'max_recommendations': schedule['max_recommendations'],
                 'decay_rate': schedule['decay_rate']
             }
             
-            # Log the optimized parameters
-            logger.info(f"🎯 Optimized algorithm parameters: {algorithm_params}")
+            # Log the user-provided parameters
+            logger.info(f"🎯 Using user-provided algorithm parameters: {algorithm_params}")
             
             # Connect to database for data fetching
             from app.shared.database.connection import DatabaseConnection
