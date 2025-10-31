@@ -43,7 +43,7 @@ echo.
 echo [1/3] Starting Database Configuration UI...
 echo     URL: http://localhost:5000
 echo.
-start cmd /k "cd /d %~dp0 && %PYTHON_CMD% flask_ui_enhanced.py"
+start cmd /k "cd /d %~dp0 && %PYTHON_CMD% app/web/main.py"
 
 echo [2/3] Waiting 3 seconds...
 timeout /t 3 /nobreak >nul

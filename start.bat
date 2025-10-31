@@ -90,7 +90,7 @@ timeout /t 5 /nobreak >nul
 
 REM Start Flask UI server on port 5000
 echo Starting Flask UI server on port 5000...
-start "Flask UI - Port 5000" %PYTHON_EXE% flask_ui_enhanced.py
+start "Flask UI - Port 5000" %PYTHON_EXE% app/web/main.py
 
 REM Wait a bit for Flask to start
 timeout /t 3 /nobreak >nul

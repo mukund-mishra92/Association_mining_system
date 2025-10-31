@@ -1572,8 +1572,16 @@ if __name__ == '__main__':
                             // Check if we have results (using the extracted stats and rules from Flask endpoint)
                             if (data.result && data.stats && data.rules && data.rules.length > 0) {
                                 displayResults(data.stats, data.rules);
-                                document.getElementById('mining-status').innerHTML = 
-                                    '<div class="alert alert-success"><i class="fas fa-check me-2"></i>API mining completed successfully! Found ' + data.stats.total_rules + ' rules.</div>';
+                                
+                                // Show comprehensive mining results
+                                let message = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>API mining completed successfully!<br>';
+                                message += '<strong>Generated:</strong> ' + data.stats.total_rules + ' total rules<br>';
+                                if (data.stats.displayed_rules && data.stats.displayed_rules < data.stats.total_rules) {
+                                    message += '<strong>Displayed:</strong> Top ' + data.stats.displayed_rules + ' rules (UI limit)<br>';
+                                }
+                                message += '<strong>Saved to database:</strong> All ' + data.stats.total_rules + ' rules</div>';
+                                
+                                document.getElementById('mining-status').innerHTML = message;
                             } else if (data.result && data.stats && (!data.rules || data.rules.length === 0)) {
                                 document.getElementById('mining-status').innerHTML = 
                                     '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Mining completed but no association rules found. Try lowering the confidence threshold.</div>';

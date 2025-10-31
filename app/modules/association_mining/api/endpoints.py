@@ -175,7 +175,8 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
                 "mining_method": "enhanced" if use_enhanced_mining else "standard",
                 "time_weighting_method": time_weighting_method if use_enhanced_mining else None,
                 "stats": {
-                    "total_rules": len(rules_for_ui),
+                    "total_rules": len(recommendations),  # Show actual total generated
+                    "displayed_rules": len(rules_for_ui),  # Show how many are displayed in UI
                     "top_n_skus": len(df_basket['SKU_NAME'].unique()) if not df_basket.empty else 0,
                     "total_orders": len(df_basket['ORDER_ID'].unique()) if not df_basket.empty else 0,
                     "score_range": score_range,
@@ -392,12 +393,12 @@ async def mine_association_rules(
                 "use_enhanced_mining": request.use_enhanced_mining,
                 "time_weighting_method": request.time_weighting_method,
                 "time_segmentation": request.time_segmentation,
-                "db_config": request.db_config.dict() if request.db_config else None
+                "db_config": request.db_config.model_dump() if request.db_config else None
             }
         )
         
         # Convert db_config to dict if provided
-        db_config_dict = request.db_config.dict() if request.db_config else None
+        db_config_dict = request.db_config.model_dump() if request.db_config else None
         
         # Add mining task to background
         background_tasks.add_task(
