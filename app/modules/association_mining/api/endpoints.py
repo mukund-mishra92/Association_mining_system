@@ -6,6 +6,7 @@ from app.shared.database.connection import DatabaseConnection
 from app.modules.association_mining.services.clean_mining_service import CleanAssociationMiningService
 from app.shared.utils.task_manager import task_manager, TaskStatus
 from app.modules.association_mining.api.scheduler_endpoints import router as scheduler_router
+from app.shared.config.config import config
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -201,9 +202,24 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
                 )
                 logger.warning(f"Mining completed: {len(recommendations)} recommendations generated but database save failed")
         else:
+            # No recommendations generated - return empty but valid structure
             task_manager.complete_task(
                 task_id,
-                result={"recommendations_count": 0},
+                result={
+                    "recommendations_count": 0,
+                    "mining_method": "enhanced" if use_enhanced_mining else "standard",
+                    "time_weighting_method": time_weighting_method if use_enhanced_mining else None,
+                    "stats": {
+                        "total_rules": 0,
+                        "displayed_rules": 0,
+                        "top_n_skus": len(df_basket['SKU_NAME'].unique()) if not df_basket.empty else 0,
+                        "total_orders": len(df_basket['ORDER_ID'].unique()) if not df_basket.empty else 0,
+                        "score_range": {"min": 0.001, "max": 0.999},
+                        "mining_duration": "completed",
+                        "database_saved": False
+                    },
+                    "rules": []  # Empty array instead of missing key
+                },
                 message="Mining completed but no recommendations generated"
             )
             logger.warning("No recommendations generated")
@@ -247,9 +263,13 @@ def run_fast_mining_task(task_id: str, days_back=None, db_config=None):
             task_manager.fail_task(task_id, "Failed to connect to database")
             return
         
-        # Fetch data with filtering for top 100 SKUs
-        task_manager.update_progress(task_id, 0.2, "Fetching top 100 most frequent SKUs...")
-        df_basket = db.fetch_order_data(days_back=days_back, max_items=100, min_item_frequency=10)
+        # Fetch data with filtering - use config values
+        task_manager.update_progress(task_id, 0.2, f"Fetching top {config.MAX_ITEMS} most frequent SKUs...")
+        df_basket = db.fetch_order_data(
+            days_back=days_back, 
+            max_items=config.MAX_ITEMS,  # Use config instead of hardcoded 100
+            min_item_frequency=config.MIN_ITEM_FREQUENCY  # Use config instead of hardcoded 10
+        )
         
         if df_basket is None or df_basket.empty:
             task_manager.fail_task(task_id, "No data found for mining")
@@ -270,17 +290,16 @@ def run_fast_mining_task(task_id: str, days_back=None, db_config=None):
         onehot = te.fit(transactions).transform(transactions)
         basket_matrix = pd.DataFrame(onehot, columns=te.columns_)
         
-        num_items = basket_matrix.shape[0]
-        num_transactions = basket_matrix.shape[1]
-        density = (basket_matrix.sum().sum() / (num_items * num_transactions) * 100)
-        logger.info(f"Transaction matrix: ({num_items}, {num_transactions}), Density: {density:.2f}%")
+        num_transactions = basket_matrix.shape[0]  # FIXED: rows are transactions
+        num_items = basket_matrix.shape[1]         # FIXED: columns are items
+        density = (basket_matrix.sum().sum() / (num_transactions * num_items) * 100)
+        logger.info(f"Transaction matrix: ({num_transactions}, {num_items}), Density: {density:.2f}%")
         
-        # Run FP-Growth with 15% support
-        from app.shared.config.config import config
-        support = config.MIN_SUPPORT  # Should be 0.15 from .env
+        # Run FP-Growth with configured support
+        support = config.MIN_SUPPORT
         
-        task_manager.update_progress(task_id, 0.5, f"Mining patterns (support={support*100:.0f}%)...")
-        logger.info(f"Starting FP-Growth with {support*100:.0f}% support...")
+        task_manager.update_progress(task_id, 0.5, f"Mining patterns (support={support*100:.1f}%)...")
+        logger.info(f"Starting FP-Growth with {support*100:.1f}% support (MIN_SUPPORT from .env)...")
         
         freq_itemsets = fpgrowth(basket_matrix, min_support=support, use_colnames=True)
         logger.info(f"Found {len(freq_itemsets)} frequent itemsets")

@@ -1,64 +1,66 @@
 @echo off
-REM Quick Start Script - Association Mining System
+REM ========================================
+REM Association Mining System - Quick Start
+REM For systems already set up
+REM ========================================
+
+echo.
+echo ========================================
+echo  Association Mining System
+echo  Quick Start
+echo ========================================
+echo.
+
+REM Check if virtual environment exists
+if not exist venv\Scripts\activate.bat (
+    echo ERROR: Virtual environment not found!
+    echo.
+    echo This appears to be a new installation.
+    echo Please run setup_and_start.bat instead for first-time setup.
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Check if .env file exists
+if not exist .env (
+    echo ERROR: Configuration file ^(.env^) not found!
+    echo.
+    echo Please create .env file with your database configuration.
+    echo See setup_and_start.bat for required settings.
+    echo.
+    pause
+    exit /b 1
+)
 
 echo Starting servers...
 echo.
 
-REM Function to detect Python executable
-set PYTHON=
-REM Try py command first (Windows Python Launcher)
-py --version >nul 2>&1
-if %errorlevel%==0 (
-    set PYTHON=py
-    echo Found Python using 'py' command
-    goto :python_found
-)
-
-REM Try python command
-python --version >nul 2>&1
-if %errorlevel%==0 (
-    set PYTHON=python
-    echo Found Python using 'python' command
-    goto :python_found
-)
-
-REM Try python3 command
-python3 --version >nul 2>&1
-if %errorlevel%==0 (
-    set PYTHON=python3
-    echo Found Python using 'python3' command
-    goto :python_found
-)
-
-REM If no Python found
-echo Error: Python not found. Please install Python or ensure it's in your PATH
-echo Tried: py, python, python3
-pause
-exit /b 1
-
-:python_found
-echo Using Python: %PYTHON%
-%PYTHON% --version
-echo.
-
-REM Start FastAPI on port 8080
+REM Start FastAPI
 echo [1/2] Starting FastAPI on port 8080...
-start "FastAPI-8080" cmd /k "%PYTHON% -m uvicorn app.main:app --host 0.0.0.0 --port 8080"
+start "Association Mining - FastAPI" cmd /k "cd /d %~dp0 && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
 
-REM Wait 3 seconds
 timeout /t 3 /nobreak >nul
 
-REM Start Flask on port 5000
+REM Start Flask UI
 echo [2/2] Starting Flask UI on port 5000...
-start "Flask-5000" cmd /k "%PYTHON% app/web/main.py"
+start "Association Mining - Flask UI" cmd /k "cd /d %~dp0 && call venv\Scripts\activate.bat && python app\web\main.py"
+
+timeout /t 2 /nobreak >nul
 
 echo.
 echo ========================================
-echo Both servers starting in new windows!
+echo  Servers Started Successfully!
 echo ========================================
 echo.
 echo Flask UI:  http://localhost:5000
 echo FastAPI:   http://localhost:8080
+echo API Docs:  http://localhost:8080/docs
 echo.
-echo Close those windows to stop the servers
+echo Two new command windows have opened.
+echo Close those windows to stop the servers.
 echo ========================================
+echo.
+echo You can close this window now.
+echo.
+pause
