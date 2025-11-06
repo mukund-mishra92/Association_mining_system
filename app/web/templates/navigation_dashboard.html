@@ -416,8 +416,16 @@
         }
 
         function viewSystemLogs() {
-            // Open logs in new window or modal
-            showStatus('logsStatus', 'logsMessage', '📄 System logs functionality - to be implemented', 'warning');
+            // Open logs viewer in new tab
+            showStatus('logsStatus', 'logsMessage', '📄 Opening system logs viewer...', 'info');
+            
+            // Open logs page in new tab
+            window.open('/logs', '_blank');
+            
+            // Update status after a short delay
+            setTimeout(() => {
+                showStatus('logsStatus', 'logsMessage', '✅ System logs viewer opened in new tab', 'success');
+            }, 1000);
         }
 
         function checkSchedulerStatus() {

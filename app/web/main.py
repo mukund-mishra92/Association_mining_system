@@ -12,6 +12,25 @@ from mlxtend.frequent_patterns import apriori, association_rules
 import warnings
 warnings.filterwarnings('ignore')
 
+# Add the parent directory to Python path for imports
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Import enhanced logging system
+try:
+    from app.utils.mining_logger import mining_logger
+    LOGGING_AVAILABLE = True
+    print("✅ Enhanced logging system loaded")
+except ImportError as e:
+    LOGGING_AVAILABLE = False
+    print(f"⚠️ Enhanced logging system not available: {e}")
+    # Fallback to basic logging
+    mining_logger = None
+
 # Import velocity analysis module
 try:
     from app.modules.velocity_analysis.api.velocity_endpoints import register_velocity_api
@@ -20,6 +39,9 @@ try:
 except ImportError as e:
     VELOCITY_ANALYSIS_AVAILABLE = False
     print(f"⚠️ Velocity Analysis module not available: {e}")
+except Exception as e:
+    VELOCITY_ANALYSIS_AVAILABLE = False
+    print(f"⚠️ Velocity Analysis module error: {e}")
 
 app = Flask(__name__)
 
@@ -335,9 +357,45 @@ def association_mining():
 
 @app.route('/velocity-analysis')
 def velocity_analysis():
-    """Bin Velocity Analysis page"""
+    """Bin Velocity Analysis page - Enhanced Version"""
     print("🔍 [ROUTE LOG] Velocity analysis route called")
     logger.info("Velocity analysis page accessed")
+    
+    try:
+        # Log velocity analysis page access (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="velocity_analysis_page_access",
+                details={"page": "velocity_analysis_enhanced", "status": "success"},
+                user_id="system"
+            )
+        
+        print("✅ [VELOCITY LOG] Rendering enhanced velocity analysis template")
+        logger.info("Rendering enhanced velocity analysis template")
+        
+        # Render the enhanced velocity analysis template
+        return render_template('velocity_analysis_enhanced.html')
+        
+    except Exception as e:
+        print(f"❌ [VELOCITY LOG] Error loading velocity analysis: {e}")
+        logger.error(f"Error loading velocity analysis: {e}")
+        
+        # Log the error (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="velocity_analysis_page_error",
+                details={"page": "velocity_analysis_enhanced", "status": "error", "error": str(e)},
+                user_id="system"
+            )
+        
+        return render_template('error.html', 
+                             error_message=f"Could not load velocity analysis: {str(e)}")
+
+@app.route('/velocity-analysis-legacy')
+def velocity_analysis_legacy():
+    """Bin Velocity Analysis page - Legacy Version"""
+    print("🔍 [ROUTE LOG] Legacy velocity analysis route called")
+    logger.info("Legacy velocity analysis page accessed")
     
     # Import velocity analysis UI if available
     velocity_content = ""
@@ -359,7 +417,7 @@ def velocity_analysis():
         print("❌ [VELOCITY LOG] Velocity Analysis not available")
         logger.warning("Velocity Analysis module not available")
     
-    print(f"🔍 [VELOCITY LOG] Rendering velocity analysis template with content length: {len(velocity_content)}")
+    print(f"🔍 [VELOCITY LOG] Rendering legacy velocity analysis template with content length: {len(velocity_content)}")
     return render_template('velocity_analysis.html', velocity_analysis_content=velocity_content)
 
 @app.route('/legacy-dashboard')
@@ -508,7 +566,9 @@ def test_db_connection():
         test_tables = {
             'order': config_to_use.get('order_table', 'wms_to_wcs_order_line_request_data'),
             'sku_master': config_to_use.get('sku_master_table', 'sku_master'), 
-            'recommendations': config_to_use.get('recommendations_table', 'sku_recommendations')
+            'rules': config_to_use.get('rules_table', 'sku_recommendations'),
+            'history': config_to_use.get('history_table', 'mining_history'),
+            'stats': config_to_use.get('stats_table', 'mining_statistics')
         }
         
         logger.info(f"Testing tables: {list(test_tables.keys())}")
@@ -529,6 +589,10 @@ def test_db_connection():
         cursor.close()
         conn.close()
         
+        # Log successful connection
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=True)
+        
         return jsonify({
             "success": True,
             "message": "Database connection successful",
@@ -537,11 +601,19 @@ def test_db_connection():
         })
         
     except pymysql.MySQLError as e:
+        # Log failed connection
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=False, error=str(e))
+        
         return jsonify({
             "success": False,
             "error": f"Database connection failed: {str(e)}"
         })
     except Exception as e:
+        # Log general error
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=False, error=str(e))
+        
         return jsonify({
             "success": False,
             "error": str(e)
@@ -567,6 +639,8 @@ def save_db_config():
         
         # Update global USER_DB_CONFIG
         global USER_DB_CONFIG
+        old_config = USER_DB_CONFIG.copy()  # Save old config for logging
+        
         USER_DB_CONFIG.update({
             'host': data.get('host'),
             'port': int(data.get('port', 3306)),
@@ -574,6 +648,13 @@ def save_db_config():
             'password': data.get('password', ''),
             'database': data.get('database')
         })
+        
+        # Log configuration change
+        if mining_logger:
+            # Remove passwords from logged configs for security
+            safe_old_config = {k: v for k, v in old_config.items() if k != 'password'}
+            safe_new_config = {k: v for k, v in USER_DB_CONFIG.items() if k != 'password'}
+            mining_logger.log_config_change("database", safe_old_config, safe_new_config)
         
         logger.info(f"Updated database configuration: {USER_DB_CONFIG['host']}:{USER_DB_CONFIG['port']}/{USER_DB_CONFIG['database']}")
         
@@ -590,6 +671,15 @@ def save_db_config():
             )
             conn.close()
             
+            # Log successful save and test
+            if mining_logger:
+                mining_logger.log_operation("Save Database Config", {
+                    "type": "config_save",
+                    "status": "success",
+                    "tested": True,
+                    "config": safe_new_config
+                })
+            
             return jsonify({
                 "success": True,
                 "message": "Database configuration saved and tested successfully",
@@ -603,6 +693,15 @@ def save_db_config():
             
         except pymysql.MySQLError as test_error:
             # Configuration saved but connection failed
+            if mining_logger:
+                mining_logger.log_operation("Save Database Config", {
+                    "type": "config_save",
+                    "status": "partial_success",
+                    "tested": False,
+                    "error": str(test_error),
+                    "config": safe_new_config
+                })
+            
             return jsonify({
                 "success": True,
                 "message": f"Configuration saved but connection test failed: {str(test_error)}",
@@ -666,6 +765,17 @@ def mine_direct():
     }
     
     try:
+        # Log mining operation start
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                }
+            )
+        
         # Use user-defined database configuration with algorithm parameters
         stats, rules = generate_rules_top_skus(
             USER_DB_CONFIG, 
@@ -675,7 +785,35 @@ def mine_direct():
         )
         
         if 'error' in stats:
+            # Log mining failure
+            if mining_logger:
+                mining_logger.log_mining_operation(
+                    mining_type="direct",
+                    parameters={
+                        "days_back": days_back,
+                        "top_skus": top_skus,
+                        "algorithm_params": algorithm_params
+                    },
+                    success=False,
+                    error=stats['error']
+                )
             return jsonify({"success": False, "error": stats['error']})
+        
+        # Log successful mining
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                },
+                results={
+                    "rules_count": len(rules),
+                    "stats": stats
+                },
+                success=True
+            )
         
         return jsonify({
             "success": True,
@@ -685,6 +823,18 @@ def mine_direct():
         })
     
     except Exception as e:
+        # Log mining exception
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                },
+                success=False,
+                error=str(e)
+            )
         return jsonify({"success": False, "error": str(e)})
 
 # Global variable to track API mining status
@@ -698,153 +848,189 @@ api_mining_status = {
 
 @app.route('/api/mine-api', methods=['POST'])
 def mine_api():
-    """Mine using the API server with progress tracking"""
+    """Enhanced API-based mining with progress tracking and temporal algorithms"""
     global api_mining_status
     
     data = request.get_json()
     
-    # Extract algorithm parameters
+    # Extract parameters
+    days_back = data.get('days_back', 60)
+    top_skus = data.get('top_skus', 20)
+    enhanced = data.get('enhanced', False)
+    time_method = data.get('time_method', 'exponential_decay')
+    
+    # Extract algorithm parameters with enhanced defaults for API mining
     algorithm_params = {
-        'min_support': data.get('min_support', 0.30),
+        'min_support': data.get('min_support', 0.01),  # Lower default for more rules
         'min_confidence': data.get('min_confidence', 0.30),
         'min_lift': data.get('min_lift', 1.0),
         'max_recommendations': data.get('max_recommendations', 10),
         'decay_rate': data.get('decay_rate', 0.05)
     }
     
-    payload = {
-        "days_back": data.get('days_back', 30),
-        "use_enhanced_mining": data.get('use_enhanced_mining', False),
-        "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
-        "db_config": USER_DB_CONFIG,  # Include database configuration
-        **algorithm_params  # Include algorithm parameters
-    }
+    # Enhanced decay rates based on time method
+    if enhanced:
+        decay_mapping = {
+            'linear': 0.03,
+            'exponential_decay': 0.05,
+            'logarithmic': 0.08
+        }
+        algorithm_params['decay_rate'] = decay_mapping.get(time_method, 0.05)
+    
+    # Get database configuration
+    config_to_use = USER_DB_CONFIG.copy()
+    if data.get('custom_db_config'):
+        config_to_use.update(data['custom_db_config'])
     
     try:
-        # Start mining request
+        # Initialize progress tracking
         api_mining_status = {
             "status": "starting",
-            "task_id": None,
+            "task_id": f"api_mining_{int(time.time())}",
             "progress": 0,
-            "message": "Sending request to API server...",
+            "message": "Initializing enhanced mining...",
             "start_time": time.time()
         }
         
-        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=30)
+        # Update progress: Starting
+        api_mining_status.update({
+            "status": "running",
+            "progress": 10,
+            "message": "Analyzing database and top SKUs..."
+        })
         
-        if response.status_code == 200:
-            response_data = response.json()
-            api_mining_status.update({
-                "status": "running",
-                "task_id": response_data.get('task_id'),
-                "progress": 10,
-                "message": "Mining request accepted by API server"
-            })
-            
-            return jsonify({
-                "success": True, 
-                "data": response_data,
-                "task_id": response_data.get('task_id'),
-                "message": "Mining started successfully"
-            })
-        else:
+        # Log mining operation start
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                }
+            )
+        
+        # Update progress: Database processing
+        api_mining_status.update({
+            "progress": 30,
+            "message": "Processing order data with temporal weighting..."
+        })
+        
+        # Run enhanced mining using the same function as direct but with enhanced parameters
+        stats, rules = generate_rules_top_skus(
+            config_to_use, 
+            top_n=top_skus, 
+            days_back=days_back,
+            **algorithm_params
+        )
+        
+        # Update progress: Rules generation
+        api_mining_status.update({
+            "progress": 70,
+            "message": "Generating association rules..."
+        })
+        
+        if 'error' in stats:
             api_mining_status.update({
                 "status": "failed",
-                "message": f"API error: {response.text}"
+                "message": f"Mining failed: {stats['error']}"
             })
-            return jsonify({"success": False, "error": f"API server error: {response.text}"})
             
+            # Log mining failure
+            if mining_logger:
+                mining_logger.log_mining_operation(
+                    mining_type="api_enhanced",
+                    parameters={
+                        "days_back": days_back,
+                        "top_skus": top_skus,
+                        "enhanced": enhanced,
+                        "time_method": time_method,
+                        "algorithm_params": algorithm_params
+                    },
+                    success=False,
+                    error=stats['error']
+                )
+            
+            return jsonify({"success": False, "error": stats['error']})
+        
+        # Update progress: Completed
+        api_mining_status.update({
+            "status": "completed",
+            "progress": 100,
+            "message": f"Mining completed! Found {len(rules)} association rules."
+        })
+        
+        # Log successful mining
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                },
+                results={
+                    "rules_count": len(rules),
+                    "stats": stats
+                },
+                success=True
+            )
+        
+        return jsonify({
+            "success": True,
+            "stats": stats,
+            "rules": rules[:100],  # Limit to first 100 rules for display
+            "task_id": api_mining_status["task_id"],
+            "algorithm_params": algorithm_params,
+            "enhanced_features": {
+                "temporal_weighting": enhanced,
+                "time_method": time_method if enhanced else "none",
+                "decay_rate": algorithm_params['decay_rate']
+            },
+            "message": f"Enhanced mining completed successfully with {len(rules)} rules found"
+        })
+    
     except Exception as e:
         api_mining_status.update({
             "status": "failed",
-            "message": f"Connection error: {str(e)}"
+            "message": f"Mining error: {str(e)}"
         })
+        
+        # Log mining exception
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                },
+                success=False,
+                error=str(e)
+            )
+        
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/mining-progress')
 def get_mining_progress():
-    """Get current mining progress"""
+    """Get current mining progress for API-based mining"""
     global api_mining_status
     
-    # If we have a task_id and haven't gotten the final results yet, check the API server
-    if (api_mining_status.get("task_id") and 
-        (api_mining_status.get("status") in ["running", "starting"] or 
-         (api_mining_status.get("status") == "completed" and not api_mining_status.get("rules")))):
-        try:
-            # Check task status from API
-            task_response = requests.get(f"{API_BASE}/task/{api_mining_status['task_id']}", timeout=10)
-            
-            if task_response.status_code == 200:
-                task_data = task_response.json()
-                task_status = task_data.get('status', 'running')
-                
-                # Update local status
-                api_mining_status.update({
-                    "status": task_status,
-                    "progress": int(task_data.get('progress', 0) * 100),
-                    "message": task_data.get('message', 'Processing...'),
-                })
-                
-                # If completed, get the results from task data
-                if task_status == 'completed':
-                    try:
-                        # Results should be in the task data itself
-                        task_result = task_data.get('result', {})
-                        
-                        print(f"DEBUG: Task result keys: {list(task_result.keys()) if task_result else 'None'}")
-                        print(f"DEBUG: Task result type: {type(task_result)}")
-                        
-                        if task_result:
-                            stats = task_result.get('stats', {})
-                            rules = task_result.get('rules', [])
-                            
-                            print(f"DEBUG: Stats keys: {list(stats.keys()) if stats else 'None'}")
-                            print(f"DEBUG: Rules count: {len(rules) if rules else 0}")
-                            
-                            api_mining_status.update({
-                                "status": "completed",
-                                "progress": 100,
-                                "message": "Mining completed successfully!",
-                                "result": task_result,
-                                "stats": stats,
-                                "rules": rules[:100]  # First 100 rules
-                            })
-                        else:
-                            api_mining_status.update({
-                                "status": "completed",
-                                "progress": 100,
-                                "message": "Mining completed but no results found",
-                                "error": "No result data in task"
-                            })
-                    except Exception as e:
-                        api_mining_status.update({
-                            "status": "completed",
-                            "progress": 100,
-                            "message": f"Mining completed but result processing error: {str(e)}",
-                            "error": str(e)
-                        })
-                
-                # If failed, get error details
-                elif task_status == 'failed':
-                    error_msg = task_data.get('error', 'Unknown error occurred')
-                    api_mining_status.update({
-                        "status": "failed",
-                        "progress": 0,
-                        "message": f"Mining failed: {error_msg}",
-                        "error": error_msg
-                    })
-                    
-        except Exception as e:
-            # If we can't get progress, estimate based on time elapsed
-            elapsed = time.time() - api_mining_status.get('start_time', time.time())
-            estimated_progress = min(90, int(elapsed / 6))  # Roughly 1% per 6 seconds, max 90%
-            
-            api_mining_status.update({
-                "progress": estimated_progress,
-                "message": f"Processing... ({elapsed:.0f}s elapsed, connection issue: {str(e)})"
-            })
-    
-    return jsonify(api_mining_status)
+    # Return the current status of local API mining
+    return jsonify({
+        "status": api_mining_status.get("status", "idle"),
+        "progress": api_mining_status.get("progress", 0),
+        "message": api_mining_status.get("message", "No mining in progress"),
+        "task_id": api_mining_status.get("task_id"),
+        "start_time": api_mining_status.get("start_time"),
+        "elapsed_time": time.time() - api_mining_status.get("start_time", time.time()) if api_mining_status.get("start_time") else 0
+    })
 
 @app.route('/api/mine-enhanced', methods=['POST'])
 def mine_enhanced():
@@ -1298,6 +1484,204 @@ def get_schedule_logs(schedule_id):
             'success': False,
             'error': str(e)
         })
+
+# ==================== LOGGING API ENDPOINTS ====================
+
+@app.route('/api/logs/recent')
+def get_recent_logs():
+    """Get recent system logs"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        limit = int(request.args.get('limit', 100))
+        operation_type = request.args.get('type', None)
+        
+        logs = mining_logger.get_recent_logs(limit=limit, operation_type=operation_type)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/logs/statistics')
+def get_log_statistics():
+    """Get logging statistics"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        stats = mining_logger.get_log_statistics()
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/logs/by-date')
+def get_logs_by_date():
+    """Get logs for a specific date"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        date_str = request.args.get('date')
+        if not date_str:
+            return jsonify({
+                'success': False,
+                'error': 'Date parameter required (YYYY-MM-DD format)'
+            })
+        
+        logs = mining_logger.get_logs_by_date(date_str)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs),
+            'date': date_str
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/logs')
+def logs_viewer():
+    """Logs viewer page"""
+    return render_template('logs_viewer.html')
+
+# Fallback velocity API endpoints (if module import failed)
+if not VELOCITY_ANALYSIS_AVAILABLE:
+    print("🔧 Adding fallback velocity API endpoints...")
+    
+    @app.route('/api/velocity/test-connection', methods=['POST'])
+    def fallback_velocity_test_connection():
+        """Fallback velocity database connection test"""
+        try:
+            import pymysql
+            from datetime import datetime
+            
+            # Use main app's database configuration
+            db_config = {
+                'host': USER_DB_CONFIG.get('host', 'localhost'),
+                'user': USER_DB_CONFIG.get('user', 'root'),
+                'password': USER_DB_CONFIG.get('password', ''),
+                'database': USER_DB_CONFIG.get('database', 'neo'),
+                'port': USER_DB_CONFIG.get('port', 3306)
+            }
+            
+            # Test connection
+            conn = pymysql.connect(
+                host=db_config['host'],
+                port=db_config['port'],
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['database'],
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            
+            # Check velocity tables
+            cursor = conn.cursor()
+            velocity_tables = [
+                'sku_master',
+                'sku_velocity_history', 
+                'bin_velocity_scores',
+                'velocity_calculation_config',
+                'velocity_calculation_jobs',
+                'bin_configuration',
+                'wms_to_wcs_order_line_request_data'
+            ]
+            
+            tables_status = {}
+            for table in velocity_tables:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    count = cursor.fetchone()[0]
+                    tables_status[table] = True
+                except:
+                    tables_status[table] = False
+            
+            cursor.close()
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Database connection successful using shared configuration",
+                "tables_status": tables_status,
+                "timestamp": datetime.now().isoformat(),
+                "database_config": {
+                    'host': db_config['host'],
+                    'port': db_config['port'],
+                    'database': db_config['database'],
+                    'user': db_config['user']
+                }
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Connection test error: {str(e)}"
+            }), 500
+    
+    @app.route('/api/velocity/test-connection-custom', methods=['POST'])
+    def fallback_velocity_test_connection_custom():
+        """Fallback custom velocity database connection test"""
+        try:
+            import pymysql
+            from datetime import datetime
+            
+            db_config = request.get_json()
+            if not db_config:
+                return jsonify({
+                    "success": False,
+                    "message": "Database configuration required"
+                }), 400
+            
+            # Test connection
+            conn = pymysql.connect(
+                host=db_config.get('host', 'localhost'),
+                port=db_config.get('port', 3306),
+                user=db_config.get('user', 'root'),
+                password=db_config.get('password', ''),
+                database=db_config.get('database', 'neo'),
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Custom database connection successful",
+                "timestamp": datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Custom connection test error: {str(e)}"
+            }), 500
 
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist

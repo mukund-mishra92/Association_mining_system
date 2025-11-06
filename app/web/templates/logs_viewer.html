@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Logs - Association Mining System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .log-entry {
+            border-left: 4px solid #007bff;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
+        }
+        .log-entry:hover {
+            background: #e9ecef;
+            transform: translateX(2px);
+        }
+        .log-entry.success { border-left-color: #28a745; }
+        .log-entry.failed { border-left-color: #dc3545; }
+        .log-entry.error { border-left-color: #fd7e14; }
+        .log-entry.warning { border-left-color: #ffc107; }
+        
+        .log-timestamp {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+        .log-operation {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .log-details {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #dee2e6;
+        }
+        .log-container {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .status-badge {
+            font-size: 0.75em;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .refresh-btn {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="/">
+                <i class="fas fa-warehouse me-2"></i>
+                Association Mining System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="/">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link text-white" href="/association-mining">
+                    <i class="fas fa-project-diagram me-1"></i>Association Mining
+                </a>
+                <a class="nav-link text-white" href="/velocity-analysis">
+                    <i class="fas fa-tachometer-alt me-1"></i>Velocity Analysis
+                </a>
+                <a class="nav-link text-white active" href="/logs">
+                    <i class="fas fa-file-alt me-1"></i>System Logs
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Page Header -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-file-alt me-3"></i>
+                    System Logs & Activity Monitor
+                </h1>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row" id="statisticsSection">
+            <div class="col-md-12">
+                <div class="stats-card">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3 id="totalLogs">0</h3>
+                            <p class="mb-0">Total Logs</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 id="successCount">0</h3>
+                            <p class="mb-0">Successful Operations</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 id="failedCount">0</h3>
+                            <p class="mb-0">Failed Operations</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3 id="lastLogTime">-</h3>
+                            <p class="mb-0">Last Activity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Controls -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-section">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label for="logLimit" class="form-label">Number of Logs</label>
+                            <select class="form-select" id="logLimit">
+                                <option value="50">Last 50</option>
+                                <option value="100" selected>Last 100</option>
+                                <option value="200">Last 200</option>
+                                <option value="500">Last 500</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="logType" class="form-label">Operation Type</label>
+                            <select class="form-select" id="logType">
+                                <option value="">All Types</option>
+                                <option value="database_connection">Database Connection</option>
+                                <option value="config_change">Configuration Change</option>
+                                <option value="config_save">Config Save</option>
+                                <option value="mining_operation">Mining Operation</option>
+                                <option value="velocity_analysis">Velocity Analysis</option>
+                                <option value="error">Errors</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateFilter" class="form-label">Date Filter</label>
+                            <input type="date" class="form-control" id="dateFilter">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="loadLogs()">
+                                <i class="fas fa-sync-alt me-2" id="refreshIcon"></i>
+                                Refresh Logs
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <button class="btn btn-success me-2" onclick="loadStatistics()">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Load Statistics
+                            </button>
+                            <button class="btn btn-warning me-2" onclick="clearLogs()">
+                                <i class="fas fa-broom me-2"></i>
+                                Clear Display
+                            </button>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" id="autoRefresh">
+                                <label class="form-check-label" for="autoRefresh">
+                                    Auto-refresh (30s)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Message -->
+        <div id="statusMessage" class="alert alert-info" style="display: none;">
+            <i class="fas fa-info-circle me-2"></i>
+            <span id="statusText">Loading logs...</span>
+        </div>
+
+        <!-- Logs Display -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            System Activity Logs
+                            <span class="badge bg-primary ms-2" id="logCount">0</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="log-container" id="logsContainer">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                                <p>Click "Refresh Logs" to load system activity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let autoRefreshInterval;
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            statusDiv.className = `alert alert-${type}`;
+            statusDiv.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatTimestamp(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        function getStatusClass(status) {
+            switch(status.toLowerCase()) {
+                case 'success': return 'success';
+                case 'failed': return 'failed';
+                case 'error': return 'error';
+                case 'partial_success': return 'warning';
+                default: return '';
+            }
+        }
+
+        function getStatusBadge(status) {
+            const badgeClass = getStatusClass(status);
+            const badgeColor = {
+                'success': 'bg-success',
+                'failed': 'bg-danger',
+                'error': 'bg-warning',
+                'warning': 'bg-warning',
+                '': 'bg-secondary'
+            }[badgeClass] || 'bg-secondary';
+            
+            return `<span class="badge ${badgeColor} status-badge">${status.toUpperCase()}</span>`;
+        }
+
+        function renderLogEntry(log) {
+            const statusClass = getStatusClass(log.status);
+            const details = log.details || {};
+            
+            return `
+                <div class="log-entry ${statusClass}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="log-operation">
+                            <i class="fas fa-cog me-2"></i>
+                            ${log.operation}
+                            ${getStatusBadge(log.status)}
+                        </div>
+                        <div class="log-timestamp">
+                            ${formatTimestamp(log.timestamp)}
+                        </div>
+                    </div>
+                    
+                    ${details.type ? `<div class="text-muted mb-2">Type: ${details.type}</div>` : ''}
+                    ${details.error ? `<div class="text-danger mb-2"><i class="fas fa-exclamation-triangle me-1"></i> ${details.error}</div>` : ''}
+                    
+                    <div class="log-details">
+                        <pre>${JSON.stringify(details, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        function loadLogs() {
+            const refreshIcon = document.getElementById('refreshIcon');
+            refreshIcon.classList.add('refresh-btn');
+            
+            showStatus('Loading logs...', 'info');
+            
+            const limit = document.getElementById('logLimit').value;
+            const type = document.getElementById('logType').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            
+            let url = `/api/logs/recent?limit=${limit}`;
+            if (type) url += `&type=${type}`;
+            
+            // If date filter is set, use date-specific endpoint
+            if (dateFilter) {
+                url = `/api/logs/by-date?date=${dateFilter}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    refreshIcon.classList.remove('refresh-btn');
+                    
+                    if (data.success) {
+                        displayLogs(data.logs);
+                        showStatus(`Loaded ${data.count} logs successfully`, 'success');
+                    } else {
+                        showStatus(`Error loading logs: ${data.error}`, 'danger');
+                    }
+                })
+                .catch(error => {
+                    refreshIcon.classList.remove('refresh-btn');
+                    showStatus(`Error loading logs: ${error.message}`, 'danger');
+                });
+        }
+
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+            const countBadge = document.getElementById('logCount');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No logs found for the selected criteria</p>
+                    </div>
+                `;
+                countBadge.textContent = '0';
+                return;
+            }
+            
+            const logsHtml = logs.map(log => renderLogEntry(log)).join('');
+            container.innerHTML = logsHtml;
+            countBadge.textContent = logs.length;
+        }
+
+        function loadStatistics() {
+            showStatus('Loading statistics...', 'info');
+            
+            fetch('/api/logs/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStatistics(data.statistics);
+                        showStatus('Statistics updated successfully', 'success');
+                    } else {
+                        showStatus(`Error loading statistics: ${data.error}`, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showStatus(`Error loading statistics: ${error.message}`, 'danger');
+                });
+        }
+
+        function updateStatistics(stats) {
+            document.getElementById('totalLogs').textContent = stats.total_logs || 0;
+            document.getElementById('successCount').textContent = stats.status_distribution?.success || 0;
+            document.getElementById('failedCount').textContent = (stats.status_distribution?.failed || 0) + (stats.status_distribution?.error || 0);
+            
+            if (stats.last_log_time) {
+                const lastTime = new Date(stats.last_log_time);
+                document.getElementById('lastLogTime').textContent = lastTime.toLocaleTimeString();
+            }
+        }
+
+        function clearLogs() {
+            const container = document.getElementById('logsContainer');
+            container.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-file-alt fa-3x mb-3"></i>
+                    <p>Logs cleared. Click "Refresh Logs" to reload.</p>
+                </div>
+            `;
+            document.getElementById('logCount').textContent = '0';
+            showStatus('Log display cleared', 'info');
+        }
+
+        function toggleAutoRefresh() {
+            const autoRefresh = document.getElementById('autoRefresh');
+            
+            if (autoRefresh.checked) {
+                autoRefreshInterval = setInterval(() => {
+                    loadLogs();
+                }, 30000); // 30 seconds
+                showStatus('Auto-refresh enabled (30 seconds)', 'info');
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                showStatus('Auto-refresh disabled', 'info');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('autoRefresh').addEventListener('change', toggleAutoRefresh);
+
+        // Initialize page
+        window.onload = function() {
+            console.log('🚀 Logs viewer initialized');
+            loadStatistics();
+            loadLogs();
+        };
+    </script>
+</body>
+</html>

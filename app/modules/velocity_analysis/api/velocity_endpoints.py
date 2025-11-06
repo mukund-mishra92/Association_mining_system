@@ -39,8 +39,16 @@ def test_velocity_database_connection():
     No payload needed - uses main app's database configuration
     """
     try:
-        # Import main app's database configuration
+        # Import main app's database configuration and logging
         from app.web.main import USER_DB_CONFIG
+        
+        # Import logging system if available
+        try:
+            from app.utils.mining_logger import mining_logger
+            LOGGING_AVAILABLE = True
+        except ImportError:
+            mining_logger = None
+            LOGGING_AVAILABLE = False
         
         # Log the available configuration keys for debugging
         logger.info(f"Available USER_DB_CONFIG keys: {list(USER_DB_CONFIG.keys())}")
@@ -66,6 +74,15 @@ def test_velocity_database_connection():
             tables_status = test_service._check_velocity_tables()
             test_service.disconnect_database()
             
+            # Log successful velocity connection
+            if mining_logger:
+                mining_logger.log_velocity_analysis(
+                    operation="database_connection_test",
+                    parameters={"connection_type": "shared_config"},
+                    results={"tables_status": tables_status},
+                    success=True
+                )
+            
             logger.info("✅ Velocity analysis database connection successful using shared config")
             return jsonify({
                 "success": True,
@@ -80,6 +97,15 @@ def test_velocity_database_connection():
                 }
             })
         else:
+            # Log failed velocity connection
+            if mining_logger:
+                mining_logger.log_velocity_analysis(
+                    operation="database_connection_test",
+                    parameters={"connection_type": "shared_config"},
+                    success=False,
+                    error="Database connection failed"
+                )
+            
             logger.error("❌ Velocity analysis database connection failed")
             return jsonify({
                 "success": False,
@@ -87,6 +113,15 @@ def test_velocity_database_connection():
             }), 500
             
     except Exception as e:
+        # Log velocity connection exception
+        if mining_logger:
+            mining_logger.log_velocity_analysis(
+                operation="database_connection_test",
+                parameters={"connection_type": "shared_config"},
+                success=False,
+                error=str(e)
+            )
+        
         logger.error(f"Database connection test failed: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({
@@ -328,6 +363,126 @@ def calculate_sku_velocities():
             "message": f"Calculation error: {str(e)}"
         }), 500
 
+@velocity_bp.route('/calculate-sku-velocities-shared', methods=['POST'])
+def calculate_sku_velocities_shared():
+    """
+    Calculate SKU velocity scores using shared database configuration
+    
+    Expected payload:
+    {
+        "analysis_date": "2025-11-04", // optional
+        "parameters": {  // optional parameter overrides
+            "analysis_period_days": 90,
+            "time_decay_rate": 0.05,
+            "min_orders_for_calculation": 5
+        }
+    }
+    """
+    try:
+        # Import main app's database configuration and logging
+        from app.web.main import USER_DB_CONFIG
+        
+        # Import logging system if available
+        try:
+            from app.utils.mining_logger import mining_logger
+            LOGGING_AVAILABLE = True
+        except ImportError:
+            mining_logger = None
+            LOGGING_AVAILABLE = False
+        
+        data = request.get_json() or {}
+        
+        # Use the main app's database configuration
+        db_config = {
+            'host': USER_DB_CONFIG.get('host', 'localhost'),
+            'user': USER_DB_CONFIG.get('user', 'root'),
+            'password': USER_DB_CONFIG.get('password', ''),
+            'database': USER_DB_CONFIG.get('database', 'neo'),
+            'port': USER_DB_CONFIG.get('port', 3306)
+        }
+        
+        logger.info(f"Starting velocity calculation with shared config: {db_config['host']}:{db_config['port']} database={db_config['database']} user={db_config['user']}")
+        
+        # Initialize service
+        service = VelocityAnalysisService(db_config)
+        
+        if not service.connect_database():
+            # Log failed velocity calculation
+            if mining_logger:
+                mining_logger.log_velocity_analysis(
+                    operation="sku_velocity_calculation",
+                    parameters={"connection_type": "shared_config"},
+                    success=False,
+                    error="Database connection failed"
+                )
+            
+            return jsonify({
+                "success": False,
+                "message": "Database connection failed with shared configuration"
+            }), 500
+        
+        # Parse analysis date
+        analysis_date = None
+        if 'analysis_date' in data:
+            try:
+                analysis_date = datetime.strptime(data['analysis_date'], '%Y-%m-%d').date()
+            except ValueError:
+                service.disconnect_database()
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid date format. Use YYYY-MM-DD"
+                }), 400
+        
+        # Override parameters if provided
+        if 'parameters' in data:
+            service._update_calculation_parameters(data['parameters'])
+        
+        # Run calculation
+        result = service.calculate_sku_velocities(analysis_date)
+        service.disconnect_database()
+        
+        # Log successful velocity calculation
+        if mining_logger and result.get('success'):
+            mining_logger.log_velocity_analysis(
+                operation="sku_velocity_calculation",
+                parameters={
+                    "connection_type": "shared_config",
+                    "analysis_date": str(analysis_date) if analysis_date else "today",
+                    "parameters": data.get('parameters', {})
+                },
+                results=result.get('statistics', {}),
+                success=True
+            )
+        elif mining_logger:
+            mining_logger.log_velocity_analysis(
+                operation="sku_velocity_calculation", 
+                parameters={"connection_type": "shared_config"},
+                success=False,
+                error=result.get('message', 'Unknown error')
+            )
+        
+        return jsonify({
+            **result,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        # Log velocity calculation exception
+        if mining_logger:
+            mining_logger.log_velocity_analysis(
+                operation="sku_velocity_calculation",
+                parameters={"connection_type": "shared_config"},
+                success=False,
+                error=str(e)
+            )
+        
+        logger.error(f"SKU velocity calculation failed: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "success": False,
+            "message": f"Calculation error: {str(e)}"
+        }), 500
+
 @velocity_bp.route('/calculate-bin-velocities', methods=['POST'])
 def calculate_bin_velocities():
     """
@@ -379,6 +534,116 @@ def calculate_bin_velocities():
         })
         
     except Exception as e:
+        logger.error(f"Bin velocity calculation failed: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "success": False,
+            "message": f"Calculation error: {str(e)}"
+        }), 500
+
+@velocity_bp.route('/calculate-bin-velocities-shared', methods=['POST'])
+def calculate_bin_velocities_shared():
+    """
+    Calculate bin composite velocity scores using shared database configuration
+    
+    Expected payload:
+    {
+        "calculation_date": "2025-11-04" // optional
+    }
+    """
+    try:
+        # Import main app's database configuration
+        from app.web.main import USER_DB_CONFIG
+        
+        # Import logging system if available
+        try:
+            from app.utils.mining_logger import mining_logger
+            LOGGING_AVAILABLE = True
+        except ImportError:
+            mining_logger = None
+            LOGGING_AVAILABLE = False
+        
+        data = request.get_json() or {}
+        
+        # Use the main app's database configuration
+        db_config = {
+            'host': USER_DB_CONFIG.get('host', 'localhost'),
+            'user': USER_DB_CONFIG.get('user', 'root'),
+            'password': USER_DB_CONFIG.get('password', ''),
+            'database': USER_DB_CONFIG.get('database', 'neo'),
+            'port': USER_DB_CONFIG.get('port', 3306)
+        }
+        
+        logger.info(f"Starting bin velocity calculation with shared config: {db_config['host']}:{db_config['port']} database={db_config['database']} user={db_config['user']}")
+        
+        # Initialize service
+        service = VelocityAnalysisService(db_config)
+        
+        if not service.connect_database():
+            # Log failed bin velocity calculation
+            if mining_logger:
+                mining_logger.log_velocity_analysis(
+                    operation="bin_velocity_calculation",
+                    parameters={"connection_type": "shared_config"},
+                    success=False,
+                    error="Database connection failed"
+                )
+            
+            return jsonify({
+                "success": False,
+                "message": "Database connection failed with shared configuration"
+            }), 500
+        
+        # Parse calculation date
+        calculation_date = None
+        if 'calculation_date' in data:
+            try:
+                calculation_date = datetime.strptime(data['calculation_date'], '%Y-%m-%d').date()
+            except ValueError:
+                service.disconnect_database()
+                return jsonify({
+                    "success": False,
+                    "message": "Invalid date format. Use YYYY-MM-DD"
+                }), 400
+        
+        # Run calculation
+        result = service.calculate_bin_velocities(calculation_date)
+        service.disconnect_database()
+        
+        # Log bin velocity calculation result
+        if mining_logger and result.get('success'):
+            mining_logger.log_velocity_analysis(
+                operation="bin_velocity_calculation",
+                parameters={
+                    "connection_type": "shared_config",
+                    "calculation_date": str(calculation_date) if calculation_date else "today"
+                },
+                results=result.get('statistics', {}),
+                success=True
+            )
+        elif mining_logger:
+            mining_logger.log_velocity_analysis(
+                operation="bin_velocity_calculation",
+                parameters={"connection_type": "shared_config"},
+                success=False,
+                error=result.get('message', 'Unknown error')
+            )
+        
+        return jsonify({
+            **result,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        # Log bin velocity calculation exception
+        if mining_logger:
+            mining_logger.log_velocity_analysis(
+                operation="bin_velocity_calculation",
+                parameters={"connection_type": "shared_config"},
+                success=False,
+                error=str(e)
+            )
+        
         logger.error(f"Bin velocity calculation failed: {str(e)}")
         logger.error(traceback.format_exc())
         return jsonify({
