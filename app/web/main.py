@@ -12,7 +12,21 @@ from mlxtend.frequent_patterns import apriori, association_rules
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import velocity analysis module
+try:
+    from app.modules.velocity_analysis.api.velocity_endpoints import register_velocity_api
+    VELOCITY_ANALYSIS_AVAILABLE = True
+    print("✅ Velocity Analysis module loaded successfully")
+except ImportError as e:
+    VELOCITY_ANALYSIS_AVAILABLE = False
+    print(f"⚠️ Velocity Analysis module not available: {e}")
+
 app = Flask(__name__)
+
+# Register velocity analysis API if available
+if VELOCITY_ANALYSIS_AVAILABLE:
+    register_velocity_api(app)
+    print("✅ Velocity Analysis API endpoints registered")
 
 # Configure logging
 logging.basicConfig(
@@ -23,6 +37,9 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
+# Create logger instance
+logger = logging.getLogger(__name__)
 
 # Configuration - Updated for port 8080
 BASE_URL = "http://127.0.0.1:8080"
@@ -304,8 +321,68 @@ def direct_mining(user_config=None, days_back=30):
 
 @app.route('/')
 def index():
-    """Main dashboard page - Complete integrated system"""
-    return render_template('complete_dashboard_enhanced.html')
+    """Main navigation dashboard"""
+    print("🔍 [ROUTE LOG] Main navigation dashboard route called")
+    logger.info("Main navigation dashboard route accessed")
+    return render_template('navigation_dashboard.html')
+
+@app.route('/association-mining')
+def association_mining():
+    """SKU Association Mining page"""
+    print("🔍 [ROUTE LOG] Association mining route called")
+    logger.info("Association mining page accessed")
+    return render_template('association_mining.html')
+
+@app.route('/velocity-analysis')
+def velocity_analysis():
+    """Bin Velocity Analysis page"""
+    print("🔍 [ROUTE LOG] Velocity analysis route called")
+    logger.info("Velocity analysis page accessed")
+    
+    # Import velocity analysis UI if available
+    velocity_content = ""
+    if VELOCITY_ANALYSIS_AVAILABLE:
+        try:
+            from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
+            velocity_content = get_velocity_analysis_section()
+            print(f"✅ [VELOCITY LOG] Velocity HTML loaded: {len(velocity_content)} characters")
+            logger.info(f"Velocity HTML content loaded successfully: {len(velocity_content)} characters")
+        except ImportError as e:
+            print(f"❌ [VELOCITY LOG] Failed to import velocity UI: {e}")
+            logger.error(f"Failed to import velocity UI: {e}")
+            velocity_content = ""
+        except Exception as e:
+            print(f"❌ [VELOCITY LOG] Error loading velocity UI: {e}")
+            logger.error(f"Error loading velocity UI: {e}")
+            velocity_content = ""
+    else:
+        print("❌ [VELOCITY LOG] Velocity Analysis not available")
+        logger.warning("Velocity Analysis module not available")
+    
+    print(f"🔍 [VELOCITY LOG] Rendering velocity analysis template with content length: {len(velocity_content)}")
+    return render_template('velocity_analysis.html', velocity_analysis_content=velocity_content)
+
+@app.route('/legacy-dashboard')
+def legacy_dashboard():
+    """Legacy combined dashboard - kept for compatibility"""
+    # Import velocity analysis UI if available
+    velocity_html = ""
+    if VELOCITY_ANALYSIS_AVAILABLE:
+        try:
+            from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
+            velocity_html = get_velocity_analysis_section()
+            print(f"✅ Velocity HTML loaded: {len(velocity_html)} characters")
+        except ImportError as e:
+            print(f"❌ Failed to import velocity UI: {e}")
+            velocity_html = ""
+        except Exception as e:
+            print(f"❌ Error loading velocity UI: {e}")
+            velocity_html = ""
+    else:
+        print("❌ Velocity Analysis not available")
+    
+    print(f"🔍 Rendering template with velocity_html length: {len(velocity_html)}")
+    return render_template('complete_dashboard_enhanced.html', velocity_analysis_section=velocity_html)
 
 @app.route('/db-config')
 def db_config_page():
@@ -398,17 +475,26 @@ def test_db_connection():
     logger = logging.getLogger(__name__)
     
     try:
-        data = request.get_json() if request.get_json() else USER_DB_CONFIG
+        # Safely get JSON data with fallback
+        try:
+            data = request.get_json(silent=True) or {}
+        except Exception as json_error:
+            logger.warning(f"JSON parsing error: {json_error}, using default config")
+            data = {}
         
-        logger.info("Testing database connection")
+        # Use USER_DB_CONFIG as base, update with any provided data
+        config_to_use = USER_DB_CONFIG.copy()
+        config_to_use.update(data)
         
-        # Test database connection - use USER_DB_CONFIG as fallback
+        logger.info(f"Testing database connection with config: {config_to_use['host']}:{config_to_use['port']}/{config_to_use['database']}")
+        
+        # Test database connection
         conn = pymysql.connect(
-            host=data.get('host', USER_DB_CONFIG['host']),
-            port=int(data.get('port', USER_DB_CONFIG['port'])),
-            user=data.get('user', USER_DB_CONFIG['user']),
-            password=data.get('password', USER_DB_CONFIG['password']),
-            database=data.get('database', USER_DB_CONFIG['database']),
+            host=config_to_use['host'],
+            port=int(config_to_use['port']),
+            user=config_to_use['user'],
+            password=config_to_use['password'],
+            database=config_to_use['database'],
             connect_timeout=5,
             charset='utf8mb4'
         )
@@ -420,9 +506,9 @@ def test_db_connection():
         # Test if tables exist - use CURRENT USER CONFIGURATION
         tables_status = {}
         test_tables = {
-            'order': data.get('order_table', 'wms_to_wcs_order_line_request_data'),
-            'sku_master': data.get('sku_master_table', 'sku_master'), 
-            'recommendations': data.get('recommendations_table', 'sku_recommendations')
+            'order': config_to_use.get('order_table', 'wms_to_wcs_order_line_request_data'),
+            'sku_master': config_to_use.get('sku_master_table', 'sku_master'), 
+            'recommendations': config_to_use.get('recommendations_table', 'sku_recommendations')
         }
         
         logger.info(f"Testing tables: {list(test_tables.keys())}")
@@ -459,6 +545,79 @@ def test_db_connection():
         return jsonify({
             "success": False,
             "error": str(e)
+        })
+
+@app.route('/api/save-db-config', methods=['POST'])
+def save_db_config():
+    """Save user-provided database configuration"""
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get configuration from request
+        data = request.get_json(silent=True) or {}
+        
+        # Validate required fields
+        required_fields = ['host', 'user', 'database']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    "success": False,
+                    "error": f"Missing required field: {field}"
+                })
+        
+        # Update global USER_DB_CONFIG
+        global USER_DB_CONFIG
+        USER_DB_CONFIG.update({
+            'host': data.get('host'),
+            'port': int(data.get('port', 3306)),
+            'user': data.get('user'),
+            'password': data.get('password', ''),
+            'database': data.get('database')
+        })
+        
+        logger.info(f"Updated database configuration: {USER_DB_CONFIG['host']}:{USER_DB_CONFIG['port']}/{USER_DB_CONFIG['database']}")
+        
+        # Test the new configuration immediately
+        try:
+            conn = pymysql.connect(
+                host=USER_DB_CONFIG['host'],
+                port=USER_DB_CONFIG['port'],
+                user=USER_DB_CONFIG['user'],
+                password=USER_DB_CONFIG['password'],
+                database=USER_DB_CONFIG['database'],
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Database configuration saved and tested successfully",
+                "config": {
+                    "host": USER_DB_CONFIG['host'],
+                    "port": USER_DB_CONFIG['port'],
+                    "user": USER_DB_CONFIG['user'],
+                    "database": USER_DB_CONFIG['database']
+                }
+            })
+            
+        except pymysql.MySQLError as test_error:
+            # Configuration saved but connection failed
+            return jsonify({
+                "success": True,
+                "message": f"Configuration saved but connection test failed: {str(test_error)}",
+                "config": {
+                    "host": USER_DB_CONFIG['host'],
+                    "port": USER_DB_CONFIG['port'],
+                    "user": USER_DB_CONFIG['user'],
+                    "database": USER_DB_CONFIG['database']
+                }
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to save configuration: {str(e)}"
         })
 
 @app.route('/api/test-connection')

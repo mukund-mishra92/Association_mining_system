@@ -661,6 +661,41 @@
         </div>
     </div>
     
+    <!-- Navigation for additional features -->
+    <div class="container mt-4">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Additional Features
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button class="btn btn-outline-primary" onclick="showVelocityAnalysis()">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Bin Velocity Analysis
+                        <span class="badge bg-primary ms-2">NEW</span>
+                    </button>
+                    <button class="btn btn-outline-secondary" disabled>
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Advanced Analytics
+                        <span class="badge bg-secondary ms-2">Coming Soon</span>
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Explore advanced warehouse optimization and analytics features
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Velocity Analysis Section (Initially Hidden) -->
+    {% if velocity_analysis_section %}
+        {{ velocity_analysis_section|safe }}
+    {% endif %}
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentResults = [];
@@ -1610,6 +1645,34 @@
         function getDayName(dayIndex) {
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
             return days[dayIndex] || 'Unknown';
+        }
+        
+        // Velocity Analysis Functions
+        function showVelocityAnalysis() {
+            alert('🔍 showVelocityAnalysis() function called!');
+            console.log('🔍 showVelocityAnalysis() called');
+            const section = document.getElementById('velocityAnalysisSection');
+            console.log('🔍 Found section:', section);
+            
+            if (section) {
+                // Toggle visibility
+                if (section.style.display === 'none' || section.style.display === '') {
+                    section.style.display = 'block';
+                    console.log('✅ Showing velocity analysis section');
+                    // Scroll to the section
+                    section.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    section.style.display = 'none';
+                    console.log('✅ Hiding velocity analysis section');
+                }
+            } else {
+                console.error('❌ Velocity Analysis Section not found');
+                // Let's also check if velocity_analysis_section was passed to template
+                console.log('🔍 Looking for velocity analysis in page...');
+                const allElements = document.querySelectorAll('*[id*="velocity"], *[class*="velocity"]');
+                console.log('🔍 Found velocity-related elements:', allElements);
+                alert('❌ velocityAnalysisSection element not found in DOM!');
+            }
         }
     </script>
 </body>
