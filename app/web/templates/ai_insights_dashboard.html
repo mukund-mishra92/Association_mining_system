@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insights Dashboard - Warehouse Analytics</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), #1e40af);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .dashboard-header {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trend-up { color: var(--success-color); }
+        .trend-down { color: var(--danger-color); }
+        .trend-neutral { color: var(--secondary-color); }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .alert-card {
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 1rem;
+        }
+
+        .recommendations-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .recommendation-item {
+            padding: 1rem;
+            border-left: 4px solid var(--info-color);
+            background: #f0f9ff;
+            margin-bottom: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .priority-high { border-left-color: var(--danger-color); background: #fef2f2; }
+        .priority-medium { border-left-color: var(--warning-color); background: #fffbeb; }
+        .priority-low { border-left-color: var(--success-color); background: #f0fdf4; }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .chatbot-preview-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chatbot-preview-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,.05) 10px,
+                rgba(255,255,255,.05) 20px
+            );
+            animation: movePattern 20s linear infinite;
+        }
+
+        @keyframes movePattern {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .example-query {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 20px;
+            border-left: 3px solid #ffc107;
+            position: relative;
+            z-index: 2;
+        }
+
+        .example-query:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #1e40af;
+            color: white;
+        }
+
+        .navbar .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            transition: all 0.3s ease;
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: 6px;
+        }
+
+        .navbar .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar .nav-link.active {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .breadcrumb {
+            background: none;
+            padding: 0.75rem 1rem;
+            margin: 0;
+        }
+
+        .breadcrumb-item a {
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: var(--secondary-color);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .status-healthy { background-color: var(--success-color); }
+        .status-warning { background-color: var(--warning-color); }
+        .status-error { background-color: var(--danger-color); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>NEO Analytics Platform
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home me-1"></i>Main Dashboard
+                </a>
+                <a class="nav-link" href="/velocity-analysis">
+                    <i class="fas fa-tachometer-alt me-1"></i>Velocity Analysis
+                </a>
+                <a class="nav-link active" href="/ai-insights">
+                    <i class="fas fa-brain me-1"></i>AI Insights
+                </a>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <button class="btn refresh-btn" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb Navigation -->
+    <div class="container-fluid">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="/" class="text-decoration-none">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-brain me-1"></i>AI Insights Dashboard
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">Warehouse Intelligence Dashboard</h1>
+                    <p class="text-muted mb-0">Real-time AI-powered insights for order patterns, inventory optimization, and demand forecasting</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span class="status-indicator status-healthy" id="systemStatus"></span>
+                        <span class="text-muted">System Status: </span>
+                        <span class="fw-bold ms-1" id="statusText">Healthy</span>
+                    </div>
+                    <small class="text-muted" id="lastUpdated">Last updated: Loading...</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0 text-muted">
+                                    <i class="fas fa-calendar-alt me-2"></i>Analysis Period
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center justify-content-end">
+                                    <!-- Date Range Type Selector -->
+                                    <div class="me-3">
+                                        <div class="btn-group" role="group" aria-label="Date Range Type">
+                                            <input type="radio" class="btn-check" name="dateRangeType" id="recentData" value="recent" checked>
+                                            <label class="btn btn-outline-primary" for="recentData">Recent Data</label>
+                                            
+                                            <input type="radio" class="btn-check" name="dateRangeType" id="customRange" value="custom">
+                                            <label class="btn btn-outline-primary" for="customRange">Custom Range</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Recent Data Controls -->
+                                    <div id="recentDataControls" class="me-3">
+                                        <select class="form-select" id="recentDays" style="width: 120px;">
+                                            <option value="7">Last 7 Days</option>
+                                            <option value="30" selected>Last 30 Days</option>
+                                            <option value="90">Last 90 Days</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Custom Range Controls -->
+                                    <div id="customRangeControls" class="d-flex align-items-center" style="display: none;">
+                                        <input type="date" class="form-control me-2" id="startDate" style="width: 150px;">
+                                        <span class="text-muted me-2">to</span>
+                                        <input type="date" class="form-control me-3" id="endDate" style="width: 150px;">
+                                    </div>
+                                    
+                                    <!-- Apply Button -->
+                                    <button class="btn btn-primary" id="applyDateRange">
+                                        <i class="fas fa-sync-alt me-1"></i>Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value text-primary" id="totalOrders">
+                        <div class="loading-spinner mx-auto"></div>
+                    </div>
+                    <div class="metric-label">Total Orders</div>
+                    <div class="mt-2">
+                        <span class="trend-up" id="ordersTrend">
+                            <i class="fas fa-arrow-up me-1"></i>Loading...
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value text-success" id="totalSKUs">
+                        <div class="loading-spinner mx-auto"></div>
+                    </div>
+                    <div class="metric-label">Active SKUs</div>
+                    <div class="mt-2">
+                        <span class="trend-neutral" id="skusTrend">
+                            <i class="fas fa-minus me-1"></i>Loading...
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value text-warning" id="avgDailyOrders">
+                        <div class="loading-spinner mx-auto"></div>
+                    </div>
+                    <div class="metric-label">Avg Daily Orders</div>
+                    <div class="mt-2">
+                        <span class="trend-up" id="dailyTrend">
+                            <i class="fas fa-arrow-up me-1"></i>Loading...
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center">
+                    <div class="metric-value text-info" id="forecastAccuracy">
+                        <div class="loading-spinner mx-auto"></div>
+                    </div>
+                    <div class="metric-label">Forecast Accuracy</div>
+                    <div class="mt-2">
+                        <span class="trend-neutral" id="accuracyTrend">
+                            <i class="fas fa-target me-1"></i>Loading...
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Row -->
+        <div class="row" id="alertsSection" style="display: none;">
+            <div class="col-12">
+                <div class="alert alert-warning alert-card">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Active Alerts
+                    </h6>
+                    <div id="alertsList">
+                        <!-- Alerts will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-line me-2 text-primary"></i>Order Patterns & Demand Forecast
+                    </h5>
+                    <canvas id="orderPatternsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-trophy me-2 text-warning"></i>Top 20 SKUs This Period
+                    </h5>
+                    <canvas id="topSKUsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-calendar-alt me-2 text-warning"></i>Weekly Patterns
+                    </h5>
+                    <canvas id="weeklyPatternsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-robot me-2 text-primary"></i>NEO Chatbot Analytics
+                        <span class="badge bg-warning text-dark ms-2">Coming Soon!</span>
+                    </h5>
+                    <div class="chatbot-preview-container">
+                        <div class="text-center py-4">
+                            <i class="fas fa-comments fa-3x text-primary mb-3"></i>
+                            <h6 class="text-primary">🤖 NEO Chatbot Integration</h6>
+                            <p class="text-muted small mb-3">Ask questions about your data and get instant visualizations!</p>
+                            <div class="chatbot-examples">
+                                <div class="example-query">
+                                    <small class="text-muted">"Show me demand trends for top 5 SKUs"</small>
+                                </div>
+                                <div class="example-query">
+                                    <small class="text-muted">"Which products have highest seasonality?"</small>
+                                </div>
+                                <div class="example-query">
+                                    <small class="text-muted">"Predict next week's inventory needs"</small>
+                                </div>
+                            </div>
+                            <canvas id="userQueryChart" width="400" height="150" style="display: none;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations and Top SKUs Row -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="recommendations-panel">
+                    <h5 class="mb-3">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>AI Recommendations
+                    </h5>
+                    <div id="recommendationsList">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p class="text-muted">Loading recommendations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="recommendations-panel">
+                    <h5 class="mb-3">
+                        <i class="fas fa-star me-2 text-success"></i>Top Performers
+                    </h5>
+                    <div id="topSKUsList">
+                        <div class="text-center py-4">
+                            <div class="loading-spinner mx-auto mb-2"></div>
+                            <p class="text-muted">Loading top SKUs...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-compass me-2"></i>Quick Navigation
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <a href="/" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="fas fa-chart-network me-2"></i>
+                                    Association Rule Mining
+                                    <small class="d-block">Generate product associations</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <a href="/velocity-analysis" class="btn btn-outline-info w-100 mb-2">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Velocity Analysis
+                                    <small class="d-block">Track inventory velocity</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="btn btn-primary w-100 mb-2 position-relative">
+                                    <i class="fas fa-brain me-2"></i>
+                                    AI Insights Dashboard
+                                    <small class="d-block">Current Page</small>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
+                                        Active
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="row mt-3">
+            <div class="col-12 text-center">
+                <p class="text-muted mb-4">
+                    <small>Dashboard automatically refreshes every 5 minutes | Last API call: <span id="lastApiCall">Loading...</span></small>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let charts = {};
+        let dashboardData = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            // Initialize date controls first, then load data with date awareness
+            initializeDateRangeControls();
+            loadDashboardDataWithDateRange();
+            
+            // Set up auto-refresh every 5 minutes
+            setInterval(loadDashboardDataWithDateRange, 300000);
+        });
+
+        function initializeDashboard() {
+            console.log('Initializing AI Insights Dashboard...');
+            
+            // Initialize empty charts
+            initializeCharts();
+            
+            // Update last updated time
+            updateLastUpdatedTime();
+        }
+
+        function initializeCharts() {
+            // Order Patterns Chart
+            const orderPatternsCtx = document.getElementById('orderPatternsChart').getContext('2d');
+            charts.orderPatterns = new Chart(orderPatternsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Daily Orders',
+                        data: [],
+                        borderColor: 'rgb(37, 99, 235)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Forecast',
+                        data: [],
+                        borderColor: 'rgb(168, 85, 247)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Top 20 SKUs Chart
+            const topSKUsCtx = document.getElementById('topSKUsChart').getContext('2d');
+            charts.topSKUs = new Chart(topSKUsCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Total Quantity Ordered',
+                        data: [],
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgb(54, 162, 235)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Quantity Ordered'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'SKU ID'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Weekly Patterns Chart
+            const weeklyCtx = document.getElementById('weeklyPatternsChart').getContext('2d');
+            charts.weekly = new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                    datasets: [{
+                        label: 'Average Orders',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
+                        borderColor: 'rgb(245, 158, 11)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // User Query Chart (NEO Chatbot Integration - Coming Soon)
+            // This will be dynamically created when user asks questions via chatbot
+            charts.userQuery = null; // Will be initialized when chatbot is ready
+        }
+
+        async function loadDashboardData() {
+            try {
+                console.log('Loading dashboard data...');
+                updateSystemStatus('loading');
+
+                // Load dashboard summary
+                const response = await fetch('/api/ai-insights/dashboard-summary');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                if (result.status === 'success') {
+                    dashboardData = result.data;
+                    console.log('Dashboard Data:', dashboardData);
+                    updateDashboard(dashboardData);
+                    updateSystemStatus('healthy');
+                } else {
+                    console.error('API returned error status:', result);
+                    throw new Error(result.error || 'Unknown error');
+                }
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                updateSystemStatus('error');
+                showErrorState(error.message);
+            }
+
+            updateLastApiCallTime();
+        }
+
+        function updateDashboard(data) {
+            console.log('Updating dashboard with data:', data);
+            
+            try {
+                // Update key metrics
+                console.log('Updating key metrics:', data.key_metrics);
+                updateKeyMetrics(data.key_metrics);
+                
+                // Update alerts
+                updateAlerts(data.alerts);
+                
+                // Update charts with trends data
+                updateCharts(data.trends);
+                
+                // Update recommendations
+                updateRecommendations(data);
+                
+                // Update top performers
+                updateTopPerformers(data.top_performers);
+                
+                console.log('Dashboard updated successfully');
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+                throw error;
+            }
+        }
+
+        function updateKeyMetrics(metrics) {
+            console.log('updateKeyMetrics called with:', metrics);
+            if (!metrics) {
+                console.error('No metrics provided to updateKeyMetrics');
+                return;
+            }
+
+            try {
+                const totalOrdersEl = document.getElementById('totalOrders');
+                const totalSKUsEl = document.getElementById('totalSKUs');
+                const avgDailyOrdersEl = document.getElementById('avgDailyOrders');
+                const forecastAccuracyEl = document.getElementById('forecastAccuracy');
+
+                console.log('DOM elements found:', {
+                    totalOrders: !!totalOrdersEl,
+                    totalSKUs: !!totalSKUsEl,
+                    avgDailyOrders: !!avgDailyOrdersEl,
+                    forecastAccuracy: !!forecastAccuracyEl
+                });
+
+                if (totalOrdersEl) totalOrdersEl.textContent = formatNumber(metrics.total_orders || 0);
+                if (totalSKUsEl) totalSKUsEl.textContent = formatNumber(metrics.total_skus || 0);
+                if (avgDailyOrdersEl) avgDailyOrdersEl.textContent = formatNumber(metrics.avg_daily_orders || 0);
+                if (forecastAccuracyEl) forecastAccuracyEl.textContent = metrics.forecast_accuracy || 'N/A';
+
+                console.log('Key metrics updated successfully');
+            } catch (error) {
+                console.error('Error updating key metrics:', error);
+            }
+        }
+
+        function updateAlerts(alerts) {
+            const alertsSection = document.getElementById('alertsSection');
+            const alertsList = document.getElementById('alertsList');
+
+            if (alerts && alerts.length > 0) {
+                alertsSection.style.display = 'block';
+                alertsList.innerHTML = alerts.map(alert => `
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-${getAlertIcon(alert.type)} me-2"></i>
+                        <strong>${alert.title}:</strong>
+                        <span class="ms-2">${alert.message}</span>
+                        ${alert.action ? `<span class="badge bg-primary ms-auto">${alert.action}</span>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                alertsSection.style.display = 'none';
+            }
+        }
+
+        function updateCharts(trends) {
+            if (!trends) return;
+
+            // Load detailed chart data (async, don't wait for them)
+            setTimeout(() => {
+                loadOrderPatternsChart().catch(e => console.warn('Order patterns chart failed:', e));
+                loadTopSKUsChart().catch(e => console.warn('Top SKUs chart failed:', e));
+                loadSeasonalData().catch(e => console.warn('Seasonal data failed:', e));
+            }, 100);
+
+            // Update order patterns chart if we have forecast data
+            if (trends.demand_forecast) {
+                const forecast = trends.demand_forecast;
+                if (forecast.forecast_dates && forecast.forecast_values) {
+                    const dates = forecast.forecast_dates.map(date => new Date(date).toLocaleDateString());
+                    charts.orderPatterns.data.labels = dates;
+                    charts.orderPatterns.data.datasets[1].data = forecast.forecast_values;
+                    charts.orderPatterns.update();
+                }
+            }
+        }
+
+        async function loadOrderPatternsChart() {
+            try {
+                const response = await fetch('/api/ai-insights/order-patterns?days_back=30');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success' && result.data) {
+                        updateOrderPatternsChart(result.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading order patterns chart:', error);
+            }
+        }
+
+        function updateOrderPatternsChart(data) {
+            // Update daily orders chart
+            if (data.daily_patterns && data.daily_patterns.daily_statistics) {
+                const dailyStats = data.daily_patterns.daily_statistics;
+                const dates = dailyStats.map(d => new Date(d.order_day).toLocaleDateString());
+                const orderCounts = dailyStats.map(d => d.order_count);
+
+                charts.orderPatterns.data.labels = dates;
+                charts.orderPatterns.data.datasets[0].data = orderCounts;
+                charts.orderPatterns.update();
+            }
+
+            // Update weekly patterns
+            if (data.daily_patterns && data.daily_patterns.day_of_week_analysis) {
+                const dowData = data.daily_patterns.day_of_week_analysis;
+                const weeklyLabels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const weeklyData = weeklyLabels.map(day => dowData[day] ? dowData[day].sku_id : 0);
+
+                charts.weekly.data.datasets[0].data = weeklyData;
+                charts.weekly.update();
+            }
+
+            // Hourly patterns chart removed - replaced with NEO Chatbot preview
+        }
+
+        async function loadTopSKUsChart() {
+            try {
+                const response = await fetch('/api/ai-insights/order-patterns?days_back=30');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success' && result.data && result.data.sku_analysis) {
+                        updateTopSKUsChart(result.data.sku_analysis);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading top SKUs chart:', error);
+            }
+        }
+
+        function updateTopSKUsChart(skuAnalysis) {
+            if (skuAnalysis.top_performing_skus) {
+                const topSKUs = skuAnalysis.top_performing_skus.slice(0, 20);
+                
+                // Sort by total quantity and take top 20
+                topSKUs.sort((a, b) => (b.total_quantity || 0) - (a.total_quantity || 0));
+                
+                const labels = topSKUs.map(sku => {
+                    const skuId = sku.sku_id || 'Unknown';
+                    // Truncate long SKU IDs for better display
+                    return skuId.length > 12 ? skuId.substring(0, 12) + '...' : skuId;
+                });
+                const quantities = topSKUs.map(sku => sku.total_quantity || 0);
+
+                charts.topSKUs.data.labels = labels;
+                charts.topSKUs.data.datasets[0].data = quantities;
+                
+                // Add hover tooltips with full SKU IDs
+                charts.topSKUs.options.plugins.tooltip = {
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            return `SKU: ${topSKUs[index].sku_id}`;
+                        },
+                        label: function(context) {
+                            return `Quantity: ${context.parsed.x.toLocaleString()}`;
+                        }
+                    }
+                };
+                
+                charts.topSKUs.update();
+            }
+        }
+
+        async function loadSeasonalData() {
+            try {
+                const response = await fetch('/api/ai-insights/seasonal-analysis?analysis_days=30');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.status === 'success' && result.data && result.data.seasonal_analysis) {
+                        updateSeasonalCharts(result.data.seasonal_analysis);
+                    } else {
+                        console.warn('Seasonal analysis API returned no data or error:', result);
+                    }
+                } else {
+                    console.warn('Seasonal analysis API failed with status:', response.status);
+                }
+            } catch (error) {
+                console.warn('Error loading seasonal data (non-critical):', error);
+                // Don't throw error - this is not critical for dashboard functionality
+            }
+        }
+
+        function updateSeasonalCharts(seasonalData) {
+            // Update weekly patterns
+            if (seasonalData.day_of_week_patterns) {
+                const weeklyData = Object.values(seasonalData.day_of_week_patterns);
+                charts.weekly.data.datasets[0].data = weeklyData;
+                charts.weekly.update();
+            }
+        }
+
+        function updateRecommendations(data) {
+            const recommendationsList = document.getElementById('recommendationsList');
+            
+            // Combine all recommendations
+            const allRecommendations = [];
+            
+            if (data.recommendations) {
+                // Add priority actions
+                if (data.recommendations.priority_actions) {
+                    allRecommendations.push(...data.recommendations.priority_actions);
+                }
+            }
+
+            if (allRecommendations.length > 0) {
+                recommendationsList.innerHTML = allRecommendations.map(rec => `
+                    <div class="recommendation-item priority-${rec.priority?.toLowerCase() || 'low'}">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${rec.category || 'General'}</h6>
+                                <p class="mb-2">${rec.action || rec.title || 'No action specified'}</p>
+                                <small class="text-muted">${rec.impact || rec.description || ''}</small>
+                            </div>
+                            <span class="badge bg-${getPriorityColor(rec.priority)} ms-2">${rec.priority || 'Low'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                recommendationsList.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle text-success fa-2x mb-3"></i>
+                        <p class="text-muted">No recommendations at this time. System is performing optimally!</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateTopPerformers(topPerformers) {
+            const topSKUsList = document.getElementById('topSKUsList');
+            
+            if (topPerformers && topPerformers.top_skus && topPerformers.top_skus.length > 0) {
+                topSKUsList.innerHTML = topPerformers.top_skus.slice(0, 5).map((sku, index) => `
+                    <div class="d-flex align-items-center mb-3 p-2 border rounded">
+                        <span class="badge bg-primary me-3">#${index + 1}</span>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${sku.sku_id}</div>
+                            <small class="text-muted">${formatNumber(sku.total_quantity || 0)} units</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-success">${sku.abc_class || 'N/A'}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Update ABC chart if we have category summary
+                if (topPerformers.abc_summary) {
+                    const abcData = [
+                        topPerformers.abc_summary.A || 0,
+                        topPerformers.abc_summary.B || 0,
+                        topPerformers.abc_summary.C || 0
+                    ];
+                    charts.abc.data.datasets[0].data = abcData;
+                    charts.abc.update();
+                }
+            } else {
+                topSKUsList.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-bar text-muted fa-2x mb-3"></i>
+                        <p class="text-muted">No SKU data available</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateSystemStatus(status) {
+            const statusIndicator = document.getElementById('systemStatus');
+            const statusText = document.getElementById('statusText');
+            
+            statusIndicator.className = 'status-indicator';
+            
+            switch(status) {
+                case 'healthy':
+                    statusIndicator.classList.add('status-healthy');
+                    statusText.textContent = 'Healthy';
+                    statusText.className = 'fw-bold ms-1 text-success';
+                    break;
+                case 'loading':
+                    statusIndicator.classList.add('status-warning');
+                    statusText.textContent = 'Loading...';
+                    statusText.className = 'fw-bold ms-1 text-warning';
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('status-error');
+                    statusText.textContent = 'Error';
+                    statusText.className = 'fw-bold ms-1 text-danger';
+                    break;
+            }
+        }
+
+        function showErrorState(errorMessage) {
+            // Show error in key metrics
+            ['totalOrders', 'totalSKUs', 'avgDailyOrders', 'forecastAccuracy'].forEach(id => {
+                document.getElementById(id).innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i>';
+            });
+
+            // Show error message in recommendations
+            document.getElementById('recommendationsList').innerHTML = `
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error Loading Data
+                    </h6>
+                    <p class="mb-0">${errorMessage}</p>
+                    <hr>
+                    <button class="btn btn-outline-danger btn-sm" onclick="loadDashboardDataWithDateRange()">
+                        <i class="fas fa-refresh me-1"></i>Retry
+                    </button>
+                </div>
+            `;
+        }
+
+        function refreshDashboard() {
+            console.log('Manually refreshing dashboard...');
+            loadDashboardDataWithDateRange();
+        }
+
+        function updateLastUpdatedTime() {
+            document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleString()}`;
+        }
+
+        function updateLastApiCallTime() {
+            document.getElementById('lastApiCall').textContent = new Date().toLocaleString();
+        }
+
+        // Helper functions
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toLocaleString();
+        }
+
+        function getAlertIcon(type) {
+            switch(type) {
+                case 'warning': return 'exclamation-triangle';
+                case 'error': return 'exclamation-circle';
+                case 'info': return 'info-circle';
+                default: return 'bell';
+            }
+        }
+
+        function getPriorityColor(priority) {
+            switch(priority?.toLowerCase()) {
+                case 'high': return 'danger';
+                case 'medium': return 'warning';
+                case 'low': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        // Date Range Control Functions
+        function initializeDateRangeControls() {
+            const recentDataRadio = document.getElementById('recentData');
+            const customRangeRadio = document.getElementById('customRange');
+            const recentDataControls = document.getElementById('recentDataControls');
+            const customRangeControls = document.getElementById('customRangeControls');
+            const applyButton = document.getElementById('applyDateRange');
+
+            // Set default dates for custom range (last 30 days)
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+            
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+
+            // Toggle controls based on selection
+            function toggleControls() {
+                if (recentDataRadio.checked) {
+                    recentDataControls.style.display = 'block';
+                    customRangeControls.style.display = 'none';
+                } else {
+                    recentDataControls.style.display = 'none';
+                    customRangeControls.style.display = 'flex';
+                }
+            }
+
+            recentDataRadio.addEventListener('change', toggleControls);
+            customRangeRadio.addEventListener('change', toggleControls);
+
+            // Apply date range
+            applyButton.addEventListener('click', function() {
+                console.log('Applying new date range...');
+                loadDashboardDataWithDateRange();
+            });
+
+            // Initial setup
+            toggleControls();
+        }
+
+        function getDateRangeParams() {
+            const recentDataRadio = document.getElementById('recentData');
+            
+            if (recentDataRadio.checked) {
+                const days = document.getElementById('recentDays').value;
+                return {
+                    type: 'recent',
+                    days: parseInt(days)
+                };
+            } else {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                return {
+                    type: 'custom',
+                    start_date: startDate,
+                    end_date: endDate
+                };
+            }
+        }
+
+        async function loadDashboardDataWithDateRange() {
+            try {
+                updateSystemStatus('loading');
+                const dateParams = getDateRangeParams();
+                
+                // Build query parameters
+                let queryParams = '';
+                if (dateParams.type === 'recent') {
+                    queryParams = `?analysis_days=${dateParams.days}`;
+                } else {
+                    queryParams = `?start_date=${dateParams.start_date}&end_date=${dateParams.end_date}`;
+                }
+
+                console.log('Loading dashboard data with params:', queryParams);
+
+                // Create fetch functions with timeout
+                const fetchWithTimeout = (url, timeout = 15000) => {
+                    return Promise.race([
+                        fetch(url),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Timeout')), timeout)
+                        )
+                    ]);
+                };
+
+                // Load critical data first (dashboard summary)
+                let systemHealthy = false;
+                try {
+                    console.log('Loading dashboard summary...');
+                    const summaryResponse = await fetchWithTimeout(`/api/ai-insights/dashboard-summary${queryParams}`);
+                    if (summaryResponse.ok) {
+                        const summaryData = await summaryResponse.json();
+                        if (summaryData.status === 'success') {
+                            updateKeyMetrics(summaryData.data);
+                            updateRecommendations(summaryData.data);
+                            updateTopPerformers(summaryData.data);
+                            systemHealthy = true;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Dashboard summary failed:', error);
+                }
+
+                // Load order patterns (important for charts)
+                try {
+                    console.log('Loading order patterns...');
+                    const orderPatternsResponse = await fetchWithTimeout(`/api/ai-insights/order-patterns${queryParams}`);
+                    if (orderPatternsResponse.ok) {
+                        const orderData = await orderPatternsResponse.json();
+                        if (orderData.status === 'success') {
+                            updateOrderPatternsChart(orderData.data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Order patterns failed:', error);
+                }
+
+                // Load inventory optimization (non-critical, often fails)
+                try {
+                    console.log('Loading inventory optimization...');
+                    const inventoryResponse = await fetchWithTimeout(`/api/ai-insights/inventory-optimization${queryParams}`, 10000);
+                    if (inventoryResponse.ok) {
+                        const inventoryData = await inventoryResponse.json();
+                        if (inventoryData.status === 'success') {
+                            updateInventoryChart(inventoryData.data);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Inventory optimization failed (non-critical):', error);
+                    // Continue without inventory data
+                }
+
+                // Load seasonal data (optional, non-critical)
+                try {
+                    console.log('Loading seasonal analysis...');
+                    const seasonalResponse = await fetchWithTimeout(`/api/ai-insights/seasonal-analysis${queryParams}`, 8000);
+                    if (seasonalResponse.ok) {
+                        const seasonalData = await seasonalResponse.json();
+                        if (seasonalData.status === 'success' && seasonalData.data) {
+                            updateSeasonalCharts(seasonalData.data.seasonal_analysis);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Seasonal analysis failed (non-critical):', error);
+                }
+
+                // Set system status based on critical data loading
+                if (systemHealthy) {
+                    updateSystemStatus('healthy');
+                } else {
+                    updateSystemStatus('error');
+                }
+
+                updateLastUpdatedTime();
+                console.log('Dashboard loading completed');
+                
+            } catch (error) {
+                console.error('Critical error loading dashboard data:', error);
+                updateSystemStatus('error');
+                showErrorState('Failed to load dashboard data. Please try again.');
+            }
+        }
+
+        // Date controls are now initialized in the main DOMContentLoaded listener above
+    </script>
+</body>
+</html>
