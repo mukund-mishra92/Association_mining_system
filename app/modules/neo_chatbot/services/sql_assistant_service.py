@@ -1,51 +1,75 @@
 """
-SQL Assistant Service - Convert natural language to SQL queries
-Helps users query the database using plain English
+SQL Assistant Service - Convert natural language to SQL queries and execute them
+Helps users query the database using plain English with validation and retry logic
 """
 
 import logging
 import uuid
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import os
+import pymysql
+import pandas as pd
 
 from .llm_service import LLMService
 from ..models.schemas import ChatRequest, ChatResponse, ChatbotType, SQLQueryRequest, SQLQueryResponse
+from app.shared.config.config import config
 
 logger = logging.getLogger(__name__)
 
 
 class SQLAssistantService:
     """
-    Service for SQL query generation from natural language
-    Converts user questions into SQL queries
+    Service for SQL query generation, execution, and validation
+    Features:
+    - Converts natural language to SQL
+    - Executes queries on actual database
+    - Validates results with confidence scoring
+    - Retries with different strategies if needed
+    - Returns formatted results only when confident
     """
     
     def __init__(self):
-        """Initialize SQL assistant service"""
+        """Initialize SQL assistant service with database connection"""
         self.llm_service = LLMService()
         self.db_schema = self._load_database_schema()
+        self.db_config = {
+            'host': config.DB_HOST,
+            'port': config.DB_PORT,
+            'user': config.DB_USER,
+            'password': config.DB_PASSWORD,
+            'database': config.DB_NAME
+        }
         
-        self.system_prompt = f"""You are a SQL expert assistant for the NEO Warehouse Management System database.
+        # Test database connection
+        self.db_available = self._test_db_connection()
+        
+        self.system_prompt = f"""You are a SQL expert for the NEO Warehouse Management System.
 
 Database Schema:
 {self.db_schema}
 
-When generating SQL queries:
-1. Generate valid MySQL syntax
-2. Use appropriate JOINs when needed
-3. Add LIMIT clauses for large result sets (default LIMIT 100)
-4. Use proper date/time filtering
-5. Include helpful comments in the SQL
-6. Explain what the query does
+Generate ONLY valid MySQL queries. Rules:
+1. Use MySQL syntax (CURDATE(), DATE_SUB(), etc.)
+2. Always add LIMIT clause (default 100)
+3. Use proper JOINs and WHERE clauses
+4. Return ONLY the SQL query, no explanations
+5. No markdown code blocks
 
-Always respond with:
-1. The SQL query
-2. A brief explanation of what it does
-3. Any warnings or notes
+Example good response:
+SELECT sku, SUM(quantity) AS total_qty FROM order_history WHERE order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY sku ORDER BY total_qty DESC LIMIT 5;"""
 
-Remember: Be accurate and follow SQL best practices."""
-
-        logger.info("✅ SQL Assistant Service initialized")
+        logger.info(f"✅ SQL Assistant Service initialized | DB Available: {self.db_available}")
+    
+    def _test_db_connection(self) -> bool:
+        """Test if database connection is available"""
+        try:
+            conn = pymysql.connect(**self.db_config, connect_timeout=3)
+            conn.close()
+            logger.info("✅ Database connection successful")
+            return True
+        except Exception as e:
+            logger.warning(f"⚠️ Database connection failed: {e}")
+            return False
     
     def _load_database_schema(self) -> str:
         """Load database schema from file or connection"""
@@ -120,69 +144,93 @@ CREATE TABLE mining_job_logs (
     
     def process_query(self, chat_request: ChatRequest) -> ChatResponse:
         """
-        Process natural language query and convert to SQL
+        Process natural language query with intelligent SQL generation, execution, and validation
+        
+        Workflow:
+        1. Generate SQL from natural language
+        2. Execute query on database
+        3. Validate results with confidence scoring
+        4. Retry with different strategy if low confidence
+        5. Return formatted results only when confident
         
         Args:
             chat_request: User's chat request
             
         Returns:
-            Chat response with SQL query and optionally results
+            Chat response with validated query results
         """
         try:
             logger.info(f"🔍 Processing SQL query: {chat_request.message[:50]}...")
             
-            # Build messages for LLM
-            messages = [{
-                "role": "user",
-                "content": f"""Convert this question to a SQL query:
-
-Question: {chat_request.message}
-
-Provide:
-1. The SQL query
-2. An explanation of what it does
-3. Any warnings or notes
-
-Format your response clearly with the SQL query first."""
-            }]
+            if not self.db_available:
+                return self._create_error_response(
+                    "Database connection is not available. Please check your database configuration.",
+                    chat_request.session_id
+                )
             
-            # Generate SQL using LLM
-            response_text = self.llm_service.generate_response(
-                messages=messages,
-                system_prompt=self.system_prompt,
-                max_tokens=800,
-                temperature=0.3  # Lower temperature for more deterministic SQL
-            )
+            # Try up to 3 strategies to get confident results
+            max_attempts = 3
+            strategies = ['direct', 'with_context', 'simplified']
             
-            # Extract SQL query from response
-            sql_query = self._extract_sql_query(response_text)
+            for attempt in range(max_attempts):
+                strategy = strategies[min(attempt, len(strategies) - 1)]
+                logger.info(f"🔄 Attempt {attempt + 1}/{max_attempts} using strategy: {strategy}")
+                
+                # Step 1: Generate SQL query
+                sql_query = self._generate_sql_with_strategy(chat_request.message, strategy)
+                
+                if not sql_query:
+                    continue
+                
+                # Step 2: Execute query
+                results, error = self._execute_query_safe(sql_query)
+                
+                if error:
+                    logger.warning(f"⚠️ Query execution error (attempt {attempt + 1}): {error}")
+                    continue
+                
+                # Step 3: Validate results
+                confidence, validation_msg = self._validate_results(
+                    results, 
+                    chat_request.message, 
+                    sql_query
+                )
+                
+                logger.info(f"📊 Validation: confidence={confidence:.2f}, msg={validation_msg}")
+                
+                # Step 4: Check if confident enough to return
+                if confidence >= 0.75:  # High confidence threshold
+                    response_text = self._format_results_with_confidence(
+                        results, 
+                        sql_query, 
+                        chat_request.message,
+                        confidence,
+                        validation_msg
+                    )
+                    
+                    return ChatResponse(
+                        response=response_text,
+                        chatbot_type=ChatbotType.SQL_ASSISTANT,
+                        session_id=chat_request.session_id or str(uuid.uuid4()),
+                        sql_query=sql_query,
+                        query_results=results[:100] if results else [],  # Limit to 100 for response
+                        confidence_score=confidence,
+                        sources=[]
+                    )
             
-            # Try to execute if database connection available
-            query_results = None
-            execution_note = ""
-            
-            # Note: Actual execution would require database connection
-            # For now, just return the generated query
-            execution_note = "\n\n💡 To execute this query, run it in your database client or use the NEO system's query interface."
-            
-            return ChatResponse(
-                response=response_text + execution_note,
-                chatbot_type=ChatbotType.SQL_ASSISTANT,
-                session_id=chat_request.session_id or str(uuid.uuid4()),
-                sql_query=sql_query,
-                query_results=query_results,
-                confidence_score=0.8 if sql_query else 0.5,
-                suggested_actions=self._generate_sql_suggestions(chat_request.message)
+            # If all attempts failed, return query-only response
+            logger.warning("⚠️ All attempts failed to produce confident results")
+            return self._create_low_confidence_response(
+                sql_query if sql_query else "Could not generate SQL",
+                chat_request.session_id,
+                chat_request.message
             )
             
         except Exception as e:
             logger.error(f"❌ Error processing SQL query: {e}", exc_info=True)
-            return ChatResponse(
-                response="I apologize, but I encountered an error while generating the SQL query. Please try rephrasing your question or provide more details.",
-                chatbot_type=ChatbotType.SQL_ASSISTANT,
-                session_id=chat_request.session_id or str(uuid.uuid4()),
-                sql_query=None,
-                confidence_score=0.0
+            return self._create_error_response(
+                f"I encountered an error: {str(e)}",
+                chat_request.session_id
             )
     
     def _extract_sql_query(self, response: str) -> Optional[str]:
@@ -271,3 +319,232 @@ Format your response clearly with the SQL query first."""
         except Exception as e:
             logger.error(f"❌ Error extracting table names: {e}")
             return []
+    
+    # ========================================
+    # NEW INTELLIGENT METHODS
+    # ========================================
+    
+    def _generate_sql_with_strategy(self, question: str, strategy: str) -> Optional[str]:
+        """Generate SQL with different strategies"""
+        try:
+            if strategy == 'direct':
+                prompt = f"Convert to SQL: {question}"
+            elif strategy == 'with_context':
+                prompt = f"""User question: {question}
+
+Available tables: order_history (order_id, sku, order_date, quantity, customer_id)
+
+Generate MySQL query to answer this question. Return ONLY the SQL."""
+            else:  # simplified
+                prompt = f"Generate simple SQL for: {question}. Use table: order_history. Keep it basic."
+            
+            messages = [{"role": "user", "content": prompt}]
+            
+            response = self.llm_service.generate_response(
+                messages=messages,
+                system_prompt=self.system_prompt,
+                max_tokens=300,
+                temperature=0.1
+            )
+            
+            sql_query = self._extract_sql_query(response)
+            return sql_query
+            
+        except Exception as e:
+            logger.error(f"❌ SQL generation error with strategy {strategy}: {e}")
+            return None
+    
+    def _execute_query_safe(self, sql_query: str) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        """Execute SQL query safely with timeout and error handling"""
+        try:
+            # Security: Prevent dangerous operations
+            dangerous_keywords = ['DROP', 'DELETE', 'TRUNCATE', 'ALTER', 'CREATE', 'INSERT', 'UPDATE']
+            query_upper = sql_query.upper()
+            
+            for keyword in dangerous_keywords:
+                if keyword in query_upper:
+                    return [], f"Query contains dangerous operation: {keyword}"
+            
+            # Execute with timeout
+            conn = pymysql.connect(**self.db_config, connect_timeout=5)
+            
+            try:
+                df = pd.read_sql(sql_query, conn)
+                results = df.to_dict('records')
+                
+                logger.info(f"✅ Query executed: {len(results)} rows returned")
+                return results, None
+                
+            finally:
+                conn.close()
+                
+        except pymysql.Error as e:
+            error_msg = str(e)
+            logger.error(f"❌ Database error: {error_msg}")
+            return [], error_msg
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"❌ Execution error: {error_msg}")
+            return [], error_msg
+    
+    def _validate_results(
+        self, 
+        results: List[Dict[str, Any]], 
+        question: str, 
+        sql_query: str
+    ) -> Tuple[float, str]:
+        """
+        Validate query results and calculate confidence score
+        
+        Returns:
+            Tuple of (confidence_score, validation_message)
+        """
+        confidence = 0.5  # Base confidence
+        messages = []
+        
+        # Check 1: Results exist
+        if not results:
+            return 0.3, "No results returned - query might be too restrictive or data doesn't exist"
+        
+        confidence += 0.1
+        messages.append(f"✅ {len(results)} results found")
+        
+        # Check 2: Reasonable result count
+        if 1 <= len(results) <= 1000:
+            confidence += 0.15
+            messages.append("✅ Result count looks reasonable")
+        elif len(results) > 10000:
+            confidence -= 0.1
+            messages.append("⚠️ Very large result set - might need filtering")
+        
+        # Check 3: Results have data (not all nulls)
+        if results:
+            first_row = results[0]
+            non_null_values = sum(1 for v in first_row.values() if v is not None)
+            
+            if non_null_values >= len(first_row) * 0.7:  # 70% non-null
+                confidence += 0.15
+                messages.append("✅ Results contain meaningful data")
+            else:
+                confidence -= 0.05
+                messages.append("⚠️ Many null values in results")
+        
+        # Check 4: Column names make sense
+        if results:
+            columns = list(results[0].keys())
+            relevant_keywords = question.lower().split()
+            
+            column_relevance = sum(
+                1 for col in columns 
+                for keyword in relevant_keywords 
+                if keyword in col.lower()
+            )
+            
+            if column_relevance > 0:
+                confidence += 0.10
+                messages.append("✅ Column names match question context")
+        
+        # Cap confidence at 0.95 (never 100% sure)
+        confidence = min(confidence, 0.95)
+        
+        validation_msg = " | ".join(messages)
+        return confidence, validation_msg
+    
+    def _format_results_with_confidence(
+        self,
+        results: List[Dict[str, Any]],
+        sql_query: str,
+        question: str,
+        confidence: float,
+        validation_msg: str
+    ) -> str:
+        """Format results with confidence indicators"""
+        
+        # Confidence badge
+        if confidence >= 0.9:
+            confidence_badge = f"🟢 **High Confidence** ({confidence * 100:.0f}%)"
+        elif confidence >= 0.75:
+            confidence_badge = f"🟡 **Good Confidence** ({confidence * 100:.0f}%)"
+        else:
+            confidence_badge = f"🟠 **Moderate Confidence** ({confidence * 100:.0f}%)"
+        
+        response_parts = [
+            f"**Query:** {question}\n",
+            f"{confidence_badge}\n",
+            f"**Found {len(results)} result(s):**\n"
+        ]
+        
+        # Format results as markdown table
+        if results:
+            columns = list(results[0].keys())
+            
+            # Table header
+            table = "| " + " | ".join(columns) + " |\n"
+            table += "| " + " | ".join(["---"] * len(columns)) + " |\n"
+            
+            # Table rows (show first 20)
+            display_results = results[:20]
+            for row in display_results:
+                values = [str(row.get(col, '')) for col in columns]
+                table += "| " + " | ".join(values) + " |\n"
+            
+            response_parts.append(table)
+            
+            if len(results) > 20:
+                response_parts.append(f"\n*Showing first 20 of {len(results)} results*")
+        
+        # Add SQL query used
+        response_parts.append(f"\n**SQL Query:**\n```sql\n{sql_query}\n```")
+        
+        # Add validation info
+        if validation_msg:
+            response_parts.append(f"\n*Validation: {validation_msg}*")
+        
+        return "\n".join(response_parts)
+    
+    def _create_error_response(self, message: str, session_id: Optional[str]) -> ChatResponse:
+        """Create error response"""
+        return ChatResponse(
+            response=f"❌ {message}",
+            chatbot_type=ChatbotType.SQL_ASSISTANT,
+            session_id=session_id or str(uuid.uuid4()),
+            confidence_score=0.0,
+            sources=[]
+        )
+    
+    def _create_low_confidence_response(
+        self, 
+        sql_query: str, 
+        session_id: Optional[str],
+        question: str
+    ) -> ChatResponse:
+        """Create response when confidence is too low"""
+        response_text = f"""I generated a SQL query for your question, but I'm not confident in the results.
+
+**Your Question:** {question}
+
+**Generated SQL:**
+```sql
+{sql_query}
+```
+
+**Issue:** The query execution didn't return results I'm confident about. This could mean:
+- The data doesn't exist in the specified time range
+- The query needs refinement
+- The table structure differs from expected
+
+💡 **Suggestions:**
+1. Try rephrasing your question with more specific details
+2. Check if the data exists for the time period mentioned
+3. Review the SQL query above and run it manually if needed
+
+Would you like to try a different question?"""
+        
+        return ChatResponse(
+            response=response_text,
+            chatbot_type=ChatbotType.SQL_ASSISTANT,
+            session_id=session_id or str(uuid.uuid4()),
+            sql_query=sql_query,
+            confidence_score=0.5,
+            sources=[]
+        )
