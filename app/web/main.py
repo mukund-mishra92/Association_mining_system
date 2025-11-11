@@ -1535,14 +1535,26 @@ def get_live_logs():
 def get_scheduler_status():
     """Get scheduler service status"""
     try:
-        response = requests.get(f"{API_BASE}/scheduler/scheduler/status")
-        return jsonify({
-            'success': True,
-            'data': response.json()
-        })
+        response = requests.get(f"{API_BASE}/scheduler/status")
+        if response.status_code == 200:
+            data = response.json()
+            # Convert the boolean scheduler_running to a string status
+            status = "running" if data.get("scheduler_running", False) else "stopped"
+            return jsonify({
+                'success': True,
+                'status': status,
+                'data': data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'status': 'error',
+                'error': f"FastAPI error: {response.status_code}"
+            })
     except Exception as e:
         return jsonify({
             'success': False,
+            'status': 'unknown',
             'error': str(e)
         })
 
@@ -1550,7 +1562,7 @@ def get_scheduler_status():
 def start_scheduler():
     """Start the scheduler service"""
     try:
-        response = requests.post(f"{API_BASE}/scheduler/scheduler/start")
+        response = requests.post(f"{API_BASE}/scheduler/start")
         return jsonify({
             'success': True,
             'data': response.json()
@@ -1565,7 +1577,7 @@ def start_scheduler():
 def stop_scheduler():
     """Stop the scheduler service"""
     try:
-        response = requests.post(f"{API_BASE}/scheduler/scheduler/stop")
+        response = requests.post(f"{API_BASE}/scheduler/stop")
         return jsonify({
             'success': True,
             'data': response.json()
@@ -1581,13 +1593,22 @@ def get_schedules():
     """Get all schedules"""
     try:
         response = requests.get(f"{API_BASE}/scheduler/schedules")
-        return jsonify({
-            'success': True,
-            'data': response.json()
-        })
+        if response.status_code == 200:
+            schedules_data = response.json()
+            return jsonify({
+                'success': True,
+                'schedules': schedules_data  # JavaScript expects 'schedules' key
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'schedules': [],
+                'error': f"FastAPI error: {response.status_code}"
+            })
     except Exception as e:
         return jsonify({
             'success': False,
+            'schedules': [],
             'error': str(e)
         })
 
@@ -1596,7 +1617,30 @@ def create_schedule():
     """Create a new schedule"""
     try:
         schedule_data = request.json
-        print(f"DEBUG: Received schedule data: {schedule_data}")
+        # Write debug info to file for inspection
+        with open('debug_schedule_params.txt', 'a', encoding='utf-8') as f:
+            from datetime import datetime
+            f.write(f"\n=== {datetime.now()} ===\n")
+            f.write(f"🔍 Received schedule data from UI: {schedule_data}\n")
+            
+            if schedule_data:
+                f.write(f"🎯 Mining parameters from UI:\n")
+                f.write(f"   min_support: {schedule_data.get('min_support', 'NOT PROVIDED')}\n")
+                f.write(f"   min_confidence: {schedule_data.get('min_confidence', 'NOT PROVIDED')}\n")
+                f.write(f"   min_lift: {schedule_data.get('min_lift', 'NOT PROVIDED')}\n")
+                f.write(f"   max_recommendations: {schedule_data.get('max_recommendations', 'NOT PROVIDED')}\n")
+                f.write(f"   decay_rate: {schedule_data.get('decay_rate', 'NOT PROVIDED')}\n")
+        
+        print(f"🔍 DEBUG: Received schedule data from UI: {schedule_data}")
+        
+        # Log specific mining parameters
+        if schedule_data:
+            print(f"🎯 Mining parameters from UI:")
+            print(f"   min_support: {schedule_data.get('min_support', 'NOT PROVIDED')}")
+            print(f"   min_confidence: {schedule_data.get('min_confidence', 'NOT PROVIDED')}")
+            print(f"   min_lift: {schedule_data.get('min_lift', 'NOT PROVIDED')}")
+            print(f"   max_recommendations: {schedule_data.get('max_recommendations', 'NOT PROVIDED')}")
+            print(f"   decay_rate: {schedule_data.get('decay_rate', 'NOT PROVIDED')}")
         
         response = requests.post(
             f"{API_BASE}/scheduler/schedules",
@@ -1705,6 +1749,30 @@ def get_schedule_logs(schedule_id):
     except Exception as e:
         return jsonify({
             'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/job-logs')
+def get_job_logs():
+    """Get all recent job execution logs"""
+    try:
+        limit = request.args.get('limit', 10)
+        response = requests.get(f"{API_BASE}/scheduler/logs?limit={limit}")
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'logs': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'logs': [],
+                'error': f"FastAPI error: {response.status_code}"
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'logs': [],
             'error': str(e)
         })
 

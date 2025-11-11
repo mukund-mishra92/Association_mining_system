@@ -278,7 +278,7 @@ async def get_all_logs(limit: int = 50, db_config: Optional[Dict] = None):
         logger.error(f"Failed to get logs: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get logs: {str(e)}")
 
-@router.get("/scheduler/status", response_model=Dict[str, Any])
+@router.get("/status", response_model=Dict[str, Any])
 async def get_scheduler_status(db_config: Optional[Dict] = None):
     """Get scheduler service status"""
     try:
@@ -310,7 +310,7 @@ async def get_scheduler_status(db_config: Optional[Dict] = None):
         logger.error(f"Failed to get scheduler status: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get scheduler status: {str(e)}")
 
-@router.post("/scheduler/start", response_model=Dict[str, Any])
+@router.post("/start", response_model=Dict[str, Any])
 async def start_scheduler(db_config: Optional[Dict] = None):
     """Start the scheduler service"""
     try:
@@ -335,7 +335,7 @@ async def start_scheduler(db_config: Optional[Dict] = None):
         logger.error(f"Failed to start scheduler: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to start scheduler: {str(e)}")
 
-@router.post("/scheduler/stop", response_model=Dict[str, Any])
+@router.post("/stop", response_model=Dict[str, Any])
 async def stop_scheduler(db_config: Optional[Dict] = None):
     """Stop the scheduler service"""
     try:

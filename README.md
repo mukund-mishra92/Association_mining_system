@@ -51,13 +51,6 @@ python main.py
 quick_start.bat
 ```
 
-### Start specific parts
-```
-python main.py web    # Dashboard only
-python main.py api    # API only
-python main.py all    # Everything
-```
-
 ## How to use
 
 1. Start the system using one of the methods above
