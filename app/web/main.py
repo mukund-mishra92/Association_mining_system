@@ -2222,10 +2222,17 @@ def chatbot_chat():
             "session_id": response.session_id,
             "confidence_score": response.confidence_score,
             "source_documents": [
-                {"filename": doc.filename, "content": doc.content, "page": doc.page}
-                for doc in (response.source_documents or [])
+                {
+                    "document_name": doc.document_name,
+                    "content_snippet": doc.content_snippet,
+                    "relevance_score": doc.relevance_score,
+                    "page_number": doc.page_number,
+                    "document_type": doc.document_type
+                }
+                for doc in (response.sources or [])
             ],
-            "suggested_actions": response.suggested_actions or []
+            "suggested_actions": response.suggested_actions or [],
+            "sql_query": response.sql_query if hasattr(response, 'sql_query') else None
         })
         
     except Exception as e:
