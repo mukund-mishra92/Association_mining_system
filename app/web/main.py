@@ -2171,6 +2171,150 @@ def initialize_history_tables():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+# ========================================
+# NEO CHATBOT API ENDPOINTS
+# ========================================
+
+@app.route('/api/chatbot/chat', methods=['POST'])
+def chatbot_chat():
+    """Main chatbot endpoint - handles all three assistant types"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '')
+        chatbot_type = data.get('chatbot_type', 'knowledge_base')
+        session_id = data.get('session_id')
+        
+        print(f"🤖 [CHATBOT] Received message: {message[:50]}... | Type: {chatbot_type}")
+        
+        # Import chatbot services
+        from app.modules.neo_chatbot.services.knowledge_base_service import KnowledgeBaseService
+        from app.modules.neo_chatbot.services.sql_assistant_service import SQLAssistantService
+        from app.modules.neo_chatbot.services.diagnostic_service import DiagnosticService
+        from app.modules.neo_chatbot.models.schemas import ChatRequest, ChatbotType
+        
+        # Create request object
+        chat_request = ChatRequest(
+            message=message,
+            chatbot_type=ChatbotType(chatbot_type),
+            session_id=session_id,
+            conversation_history=data.get('conversation_history', [])
+        )
+        
+        # Route to appropriate service
+        if chatbot_type == 'knowledge_base':
+            service = KnowledgeBaseService()
+            response = service.process_query(chat_request)
+        elif chatbot_type == 'sql_assistant':
+            service = SQLAssistantService()
+            response = service.process_query(chat_request)
+        elif chatbot_type == 'diagnostic':
+            service = DiagnosticService()
+            response = service.process_query(chat_request)
+        else:
+            return jsonify({"error": f"Invalid chatbot type: {chatbot_type}"}), 400
+        
+        print(f"✅ [CHATBOT] Response generated successfully")
+        
+        # Convert response to dict
+        return jsonify({
+            "response": response.response,
+            "chatbot_type": response.chatbot_type.value,
+            "session_id": response.session_id,
+            "confidence_score": response.confidence_score,
+            "source_documents": [
+                {"filename": doc.filename, "content": doc.content, "page": doc.page}
+                for doc in (response.source_documents or [])
+            ],
+            "suggested_actions": response.suggested_actions or []
+        })
+        
+    except Exception as e:
+        print(f"❌ [CHATBOT] Error: {e}")
+        logger.error(f"Chatbot error: {e}", exc_info=True)
+        return jsonify({
+            "response": f"Sorry, I encountered an error: {str(e)}",
+            "chatbot_type": chatbot_type,
+            "session_id": session_id,
+            "confidence_score": 0.0
+        }), 500
+
+@app.route('/api/chatbot/statistics', methods=['GET'])
+def chatbot_statistics():
+    """Get chatbot statistics"""
+    try:
+        from app.modules.neo_chatbot.services.knowledge_base_service import KnowledgeBaseService
+        from app.modules.neo_chatbot.services.sql_assistant_service import SQLAssistantService
+        from app.modules.neo_chatbot.services.diagnostic_service import DiagnosticService
+        
+        kb_service = KnowledgeBaseService()
+        sql_service = SQLAssistantService()
+        diag_service = DiagnosticService()
+        
+        return jsonify({
+            "knowledge_base": kb_service.get_statistics(),
+            "sql_assistant": sql_service.get_statistics(),
+            "diagnostic": diag_service.get_statistics(),
+            "total_sessions": 0
+        })
+    except Exception as e:
+        logger.error(f"Error getting chatbot statistics: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/system-health', methods=['GET'])
+def chatbot_system_health():
+    """Get system health status"""
+    try:
+        from app.modules.neo_chatbot.services.diagnostic_service import DiagnosticService
+        
+        service = DiagnosticService()
+        health = service.check_system_health()
+        
+        return jsonify({
+            "overall_status": health.overall_status,
+            "components": health.components,
+            "issues": health.issues or []
+        })
+    except Exception as e:
+        logger.error(f"Error getting system health: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/upload-document', methods=['POST'])
+def chatbot_upload_document():
+    """Upload a document to knowledge base"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        category = request.form.get('category', 'general')
+        
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Save file temporarily
+        from pathlib import Path
+        upload_dir = Path(__file__).parent.parent / "modules" / "neo_chatbot" / "data" / "documents"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_path = upload_dir / file.filename
+        file.save(str(file_path))
+        
+        # Ingest document
+        from app.modules.neo_chatbot.services.knowledge_base_service import KnowledgeBaseService
+        kb_service = KnowledgeBaseService()
+        result = kb_service.ingest_document(str(file_path), category)
+        
+        return jsonify({
+            "filename": file.filename,
+            "category": category,
+            "status": "success",
+            "message": f"Document uploaded successfully. {result.get('chunks', 0)} chunks created."
+        })
+        
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)

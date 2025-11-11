@@ -18,30 +18,30 @@ class LLMService:
     
     def __init__(self):
         """Initialize LLM service with API keys from environment"""
-        self.grok_api_key = os.getenv("GROK_API_KEY")  # Grok (xAI) - Priority 1
+        self.groq_api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")  # Groq (fast inference) - Priority 1
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
         
-        # Determine which provider to use (Grok has priority)
+        # Determine which provider to use (Groq has priority)
         self.provider = None
-        self.grok_client = None
+        self.groq_client = None
         self.openai_client = None
         self.anthropic_client = None
         
-        # Try Grok first (xAI's API is OpenAI-compatible)
-        if self.grok_api_key:
+        # Try Groq first (Fast inference API - OpenAI-compatible)
+        if self.groq_api_key:
             try:
                 from openai import OpenAI
-                self.grok_client = OpenAI(
-                    api_key=self.grok_api_key,
-                    base_url="https://api.x.ai/v1"
+                self.groq_client = OpenAI(
+                    api_key=self.groq_api_key,
+                    base_url="https://api.groq.com/openai/v1"
                 )
-                self.provider = "grok"
-                logger.info("✅ Grok (xAI) LLM initialized")
+                self.provider = "groq"
+                logger.info("✅ Groq (Fast Inference) LLM initialized")
             except ImportError:
                 logger.warning("⚠️ OpenAI package not installed. Run: pip install openai")
             except Exception as e:
-                logger.warning(f"⚠️ Grok initialization failed: {e}")
+                logger.warning(f"⚠️ Groq initialization failed: {e}")
         
         # Fallback to OpenAI
         if not self.provider and self.openai_api_key:
@@ -69,7 +69,7 @@ class LLMService:
         
         if not self.provider:
             logger.warning("⚠️ No LLM API keys found - using mock responses")
-            logger.warning("   Add GROK_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to .env file")
+            logger.warning("   Add GROQ_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to .env file")
             self.provider = "mock"
     
     def generate_response(
@@ -92,8 +92,8 @@ class LLMService:
             Generated response text
         """
         try:
-            if self.provider == "grok":
-                return self._generate_grok(messages, system_prompt, max_tokens, temperature)
+            if self.provider == "groq":
+                return self._generate_groq(messages, system_prompt, max_tokens, temperature)
             elif self.provider == "openai":
                 return self._generate_openai(messages, system_prompt, max_tokens, temperature)
             elif self.provider == "anthropic":
@@ -101,24 +101,24 @@ class LLMService:
             else:
                 return self._generate_mock(messages)
         except Exception as e:
-            logger.error(f"❌ Error generating LLM response: {e}")
+            logger.error(f"❌ Error generating LLM response: {e}", exc_info=True)
             return "I apologize, but I encountered an error processing your request. Please try again."
     
-    def _generate_grok(
+    def _generate_groq(
         self, 
         messages: List[Dict[str, str]], 
         system_prompt: Optional[str],
         max_tokens: int,
         temperature: float
     ) -> str:
-        """Generate response using Grok (xAI)"""
+        """Generate response using Groq (Fast Inference API)"""
         full_messages = []
         if system_prompt:
             full_messages.append({"role": "system", "content": system_prompt})
         full_messages.extend(messages)
         
-        response = self.grok_client.chat.completions.create(
-            model="grok-beta",  # Grok model
+        response = self.groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",  # Fast Llama model on Groq
             messages=full_messages,
             max_tokens=max_tokens,
             temperature=temperature
@@ -248,17 +248,11 @@ How can I help you today?"""
             text: Text to embed
             
         Returns:
-            Embedding vector (1536 dimensions for OpenAI/Grok)
+            Embedding vector (1536 dimensions for OpenAI)
         """
         try:
-            if self.provider == "grok" and self.grok_client:
-                # Grok uses OpenAI-compatible API for embeddings
-                response = self.grok_client.embeddings.create(
-                    model="text-embedding-3-small",  # Use compatible embedding model
-                    input=text
-                )
-                return response.data[0].embedding
-            elif self.provider == "openai" and self.openai_client:
+            # Note: Groq doesn't support embeddings, fall back to OpenAI or simple method
+            if self.provider == "openai" and self.openai_client:
                 response = self.openai_client.embeddings.create(
                     model="text-embedding-3-small",
                     input=text
