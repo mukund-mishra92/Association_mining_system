@@ -467,6 +467,42 @@ def ai_insights_dashboard():
         return render_template('error.html', 
                              error_message=f"Could not load AI insights dashboard: {str(e)}")
 
+@app.route('/chatbot')
+def chatbot_page():
+    """NEO Chatbot page"""
+    print("🔍 [ROUTE LOG] NEO Chatbot route called")
+    logger.info("NEO Chatbot page accessed")
+    
+    try:
+        # Log chatbot page access (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="chatbot_page_access",
+                details={"page": "neo_chatbot", "status": "success"},
+                user_id="system"
+            )
+        
+        print("✅ [CHATBOT LOG] Rendering NEO chatbot template")
+        logger.info("Rendering NEO chatbot template")
+        
+        # Render the chatbot template
+        return render_template('chatbot.html')
+        
+    except Exception as e:
+        print(f"❌ [CHATBOT LOG] Error loading chatbot: {e}")
+        logger.error(f"Error loading chatbot: {e}")
+        
+        # Log the error (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="chatbot_page_error",
+                details={"page": "neo_chatbot", "status": "error", "error": str(e)},
+                user_id="system"
+            )
+        
+        return render_template('error.html', 
+                             error_message=f"Could not load NEO chatbot: {str(e)}")
+
 @app.route('/velocity-analysis-legacy')
 def velocity_analysis_legacy():
     """Bin Velocity Analysis page - Legacy Version"""

@@ -18,15 +18,33 @@ class LLMService:
     
     def __init__(self):
         """Initialize LLM service with API keys from environment"""
+        self.grok_api_key = os.getenv("GROK_API_KEY")  # Grok (xAI) - Priority 1
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
         
-        # Determine which provider to use
+        # Determine which provider to use (Grok has priority)
         self.provider = None
+        self.grok_client = None
         self.openai_client = None
         self.anthropic_client = None
         
-        if self.openai_api_key:
+        # Try Grok first (xAI's API is OpenAI-compatible)
+        if self.grok_api_key:
+            try:
+                from openai import OpenAI
+                self.grok_client = OpenAI(
+                    api_key=self.grok_api_key,
+                    base_url="https://api.x.ai/v1"
+                )
+                self.provider = "grok"
+                logger.info("✅ Grok (xAI) LLM initialized")
+            except ImportError:
+                logger.warning("⚠️ OpenAI package not installed. Run: pip install openai")
+            except Exception as e:
+                logger.warning(f"⚠️ Grok initialization failed: {e}")
+        
+        # Fallback to OpenAI
+        if not self.provider and self.openai_api_key:
             try:
                 from openai import OpenAI
                 self.openai_client = OpenAI(api_key=self.openai_api_key)
@@ -37,6 +55,7 @@ class LLMService:
             except Exception as e:
                 logger.warning(f"⚠️ OpenAI initialization failed: {e}")
         
+        # Fallback to Anthropic
         if not self.provider and self.anthropic_api_key:
             try:
                 import anthropic
@@ -50,7 +69,7 @@ class LLMService:
         
         if not self.provider:
             logger.warning("⚠️ No LLM API keys found - using mock responses")
-            logger.warning("   Add OPENAI_API_KEY or ANTHROPIC_API_KEY to .env file")
+            logger.warning("   Add GROK_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to .env file")
             self.provider = "mock"
     
     def generate_response(
@@ -73,7 +92,9 @@ class LLMService:
             Generated response text
         """
         try:
-            if self.provider == "openai":
+            if self.provider == "grok":
+                return self._generate_grok(messages, system_prompt, max_tokens, temperature)
+            elif self.provider == "openai":
                 return self._generate_openai(messages, system_prompt, max_tokens, temperature)
             elif self.provider == "anthropic":
                 return self._generate_anthropic(messages, system_prompt, max_tokens, temperature)
@@ -82,6 +103,28 @@ class LLMService:
         except Exception as e:
             logger.error(f"❌ Error generating LLM response: {e}")
             return "I apologize, but I encountered an error processing your request. Please try again."
+    
+    def _generate_grok(
+        self, 
+        messages: List[Dict[str, str]], 
+        system_prompt: Optional[str],
+        max_tokens: int,
+        temperature: float
+    ) -> str:
+        """Generate response using Grok (xAI)"""
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+        full_messages.extend(messages)
+        
+        response = self.grok_client.chat.completions.create(
+            model="grok-beta",  # Grok model
+            messages=full_messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        return response.choices[0].message.content
     
     def _generate_openai(
         self, 
@@ -205,10 +248,17 @@ How can I help you today?"""
             text: Text to embed
             
         Returns:
-            Embedding vector (1536 dimensions for OpenAI)
+            Embedding vector (1536 dimensions for OpenAI/Grok)
         """
         try:
-            if self.provider == "openai" and self.openai_client:
+            if self.provider == "grok" and self.grok_client:
+                # Grok uses OpenAI-compatible API for embeddings
+                response = self.grok_client.embeddings.create(
+                    model="text-embedding-3-small",  # Use compatible embedding model
+                    input=text
+                )
+                return response.data[0].embedding
+            elif self.provider == "openai" and self.openai_client:
                 response = self.openai_client.embeddings.create(
                     model="text-embedding-3-small",
                     input=text
