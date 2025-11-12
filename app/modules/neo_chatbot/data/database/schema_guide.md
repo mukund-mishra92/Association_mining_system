@@ -280,6 +280,78 @@ PENDING → RUNNING → FAILED
 
 ---
 
+## 7. Bot Maintenance Tasks
+**Business Logic:** Track maintenance tasks assigned to bots and their completion status
+
+**Tables:**
+- `dashboard_log_maintenance_task_master` - Logs all maintenance task assignments
+
+**Key Columns:**
+- `MAINTENANCE_TASK_ID` (bigint) - Unique task identifier
+- `MAINTENANCE_POINT_BOT_ID` (varchar) - **PRIMARY bot assigned** ⚠️ NOT BOT_ID!
+- `MAINTENANCE_PICK_POINT_BOT_ID` (varchar) - Secondary bot (if needed)
+- `MAINTENANCE_ID` (int) - References maintenance configuration
+- `TASK_DONE` (tinyint) - 0 = incomplete, 1 = complete
+- `INSERTED_TIMESTAMP` (datetime) - When task was assigned
+- `UPDATED_TIMESTAMP` (datetime) - Last update
+- `BIN_BARCODE_SCANNED` (varchar) - Bin involved in maintenance
+- `IS_MP_BOT_HEALTHY` (tinyint) - Bot health status
+
+**Common Queries:**
+```sql
+-- Find incomplete maintenance tasks by bot
+SELECT 
+    MAINTENANCE_POINT_BOT_ID AS bot_id,
+    MAINTENANCE_TASK_ID AS task_id,
+    INSERTED_TIMESTAMP AS assigned_date,
+    MAINTENANCE_ID,
+    BIN_BARCODE_SCANNED,
+    IS_MP_BOT_HEALTHY
+FROM dashboard_log_maintenance_task_master
+WHERE TASK_DONE = 0
+ORDER BY INSERTED_TIMESTAMP DESC
+LIMIT 100;
+
+-- Count incomplete tasks per bot
+SELECT 
+    MAINTENANCE_POINT_BOT_ID AS bot_id,
+    COUNT(*) AS incomplete_tasks,
+    MIN(INSERTED_TIMESTAMP) AS oldest_task,
+    MAX(INSERTED_TIMESTAMP) AS newest_task
+FROM dashboard_log_maintenance_task_master
+WHERE TASK_DONE = 0
+GROUP BY MAINTENANCE_POINT_BOT_ID
+ORDER BY incomplete_tasks DESC;
+
+-- Maintenance task completion rate
+SELECT 
+    DATE(INSERTED_TIMESTAMP) AS task_date,
+    COUNT(*) AS total_tasks,
+    SUM(TASK_DONE) AS completed_tasks,
+    ROUND(SUM(TASK_DONE) * 100.0 / COUNT(*), 2) AS completion_rate
+FROM dashboard_log_maintenance_task_master
+WHERE INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+GROUP BY DATE(INSERTED_TIMESTAMP)
+ORDER BY task_date DESC;
+```
+
+**Important Notes:**
+- ⚠️ **Column name is `MAINTENANCE_POINT_BOT_ID`, NOT `BOT_ID`**
+- `TASK_DONE`: 0 = incomplete/pending, 1 = complete
+- Multiple bots can be involved: check both `MAINTENANCE_POINT_BOT_ID` and `MAINTENANCE_PICK_POINT_BOT_ID`
+
+**Related Bot Tables:**
+- `bot_master` - Bot configuration and master data
+- `bot_master_log` - Bot status change logs
+- `dashboard_bot_master` - Dashboard bot information
+- `bot_alarm_log` - Bot alarm/error logs
+- `bot_charging_bit_log` - Bot charging status logs
+- `dashboard_log_bot_charging` - Charging activity logs
+- `robot_charge_log` - Robot charging history
+- `pseudo_bot_alarm_log` - Simulated bot alarms (testing)
+
+---
+
 ## Performance Tips
 
 1. **Always use LIMIT** - Default to 100, max 1000

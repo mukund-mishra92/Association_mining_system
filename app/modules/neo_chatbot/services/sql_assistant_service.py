@@ -155,6 +155,13 @@ CRITICAL TABLE RELATIONSHIPS:
    - Table: sku_recommendations
    - Common columns: sku_id, recommended_sku_id, score, confidence
 
+5. BOT MAINTENANCE TASKS:
+   - Table: dashboard_log_maintenance_task_master
+   - Key columns: MAINTENANCE_TASK_ID (bigint), MAINTENANCE_POINT_BOT_ID (varchar) ⚠️ NOT BOT_ID!
+     MAINTENANCE_PICK_POINT_BOT_ID (varchar), TASK_DONE (0=incomplete, 1=complete),
+     INSERTED_TIMESTAMP, MAINTENANCE_ID, IS_MP_BOT_HEALTHY
+   - ⚠️ CRITICAL: Column is MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
+
 {schema}
 
 IMPORTANT RULES:
@@ -164,6 +171,7 @@ IMPORTANT RULES:
 4. For dates: use INSERTED_TIMESTAMP, UPDATED_TIMESTAMP, or specific date columns
 5. Return ONLY the SQL query, no explanations, no markdown code blocks
 6. When joining multiple tables, verify column names match exactly (case-sensitive)
+7. For maintenance tasks: Use MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
 
 EXAMPLE QUERIES:
 
@@ -182,7 +190,14 @@ JOIN bin_info_master bim ON obm.BIN_ID = bim.BIN_ID
 JOIN bin_configuration bc ON bim.BIN_BARCODE = bc.bin_id
 WHERE obm.INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 30 DAY)
 GROUP BY bc.bin_location, bc.zone
-ORDER BY order_count DESC LIMIT 10;"""
+ORDER BY order_count DESC LIMIT 10;
+
+-- Incomplete maintenance tasks by bot:
+SELECT MAINTENANCE_POINT_BOT_ID AS bot_id, MAINTENANCE_TASK_ID AS task_id, 
+       INSERTED_TIMESTAMP AS assigned_date
+FROM dashboard_log_maintenance_task_master
+WHERE TASK_DONE = 0
+ORDER BY INSERTED_TIMESTAMP DESC LIMIT 100;"""
     
     def _test_db_connection(self) -> bool:
         """Test if database connection is available"""

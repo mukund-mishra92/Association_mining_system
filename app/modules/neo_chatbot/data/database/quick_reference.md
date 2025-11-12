@@ -81,7 +81,8 @@ mining_job_logs.schedule_id = mining_schedules.id
 ❌ `products` → ✅ `sku_master`  
 ❌ `items` → ✅ `sku_master`  
 ❌ `bc.ARTICLE_ID` → ✅ `bc` doesn't have ARTICLE_ID  
-❌ `WHERE inserted_timestamp` → ✅ `WHERE INSERTED_TIMESTAMP` (case-sensitive)
+❌ `WHERE inserted_timestamp` → ✅ `WHERE INSERTED_TIMESTAMP` (case-sensitive)  
+❌ `dashboard_log_maintenance_task_master.BOT_ID` → ✅ `MAINTENANCE_POINT_BOT_ID`
 
 ---
 
@@ -146,6 +147,27 @@ WHERE bvs.composite_velocity_score > [THRESHOLD]
 ORDER BY bvs.composite_velocity_score DESC
 LIMIT 50;
 ```
+
+### Template 5: Maintenance Tasks (Bot assignments)
+```sql
+SELECT 
+    MAINTENANCE_POINT_BOT_ID AS bot_id,
+    MAINTENANCE_TASK_ID AS task_id,
+    INSERTED_TIMESTAMP AS task_assigned_date,
+    TASK_DONE,
+    MAINTENANCE_ID
+FROM dashboard_log_maintenance_task_master
+WHERE TASK_DONE = 0  -- 0 = incomplete, 1 = complete
+ORDER BY INSERTED_TIMESTAMP DESC
+LIMIT 100;
+```
+
+**Important Columns:**
+- `MAINTENANCE_POINT_BOT_ID` (NOT BOT_ID!)
+- `MAINTENANCE_PICK_POINT_BOT_ID` (secondary bot if needed)
+- `MAINTENANCE_TASK_ID` (unique task identifier)
+- `TASK_DONE` (0 = incomplete, 1 = complete)
+- `INSERTED_TIMESTAMP` (when task was assigned)
 
 ---
 

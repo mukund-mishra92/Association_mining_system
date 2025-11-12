@@ -1,0 +1,6 @@
+### after installing the required packages, run this to ingest the documents.
+$env:PYTHONPATH="C:\Users\Balmukund.Mishra\Desktop\NEO\association_mining_system"
+.\venv\Scripts\python.exe app\modules\neo_chatbot\scripts\ingest_documents.py
+
+## Then you can use this to run the services
+quick_start.bat

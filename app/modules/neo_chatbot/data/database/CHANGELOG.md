@@ -14,6 +14,62 @@ Track changes to schema documentation and new query patterns discovered.
 
 ---
 
+## 2025-11-12 - System (Update 2)
+
+### Change Type: Fix - Incorrect Column Name
+**Query Type:** Bot Maintenance Tasks
+**Why:** SQL Assistant generated query with wrong column name `BOT_ID` instead of `MAINTENANCE_POINT_BOT_ID`
+**SQL Added:** Yes
+**Tested:** Yes
+
+**User Question:** 
+"I need to find out the bots involved and task id for which the bots have assigned the task but not able to complete it. need to add the date as well"
+
+**Error:** 
+`Unknown column 'dlm.BOT_ID' in 'field list'`
+
+**Root Cause:**
+- Table `dashboard_log_maintenance_task_master` doesn't have `BOT_ID` column
+- Actual column name is `MAINTENANCE_POINT_BOT_ID` (varchar 100)
+- Secondary bot column is `MAINTENANCE_PICK_POINT_BOT_ID`
+
+**Corrected Query:**
+```sql
+SELECT 
+    MAINTENANCE_POINT_BOT_ID AS bot_id,
+    MAINTENANCE_TASK_ID AS task_id,
+    INSERTED_TIMESTAMP AS task_assigned_date
+FROM dashboard_log_maintenance_task_master
+WHERE TASK_DONE = 0
+ORDER BY INSERTED_TIMESTAMP DESC
+LIMIT 100;
+```
+
+**Documentation Updates:**
+1. Added Section 7 "Bot Maintenance Tasks" to `schema_guide.md`
+   - Table structure and key columns
+   - 3 example queries (incomplete tasks, counts per bot, completion rate)
+   - Warning about correct column names
+
+2. Added Template 5 "Maintenance Tasks" to `quick_reference.md`
+   - Column name clarification (MAINTENANCE_POINT_BOT_ID NOT BOT_ID)
+   - TASK_DONE status values (0=incomplete, 1=complete)
+
+3. Updated "Common Mistakes" section in `quick_reference.md`
+   - Added: ❌ `dashboard_log_maintenance_task_master.BOT_ID` → ✅ `MAINTENANCE_POINT_BOT_ID`
+
+**Table Columns:**
+- `MAINTENANCE_TASK_ID` (bigint, primary key)
+- `MAINTENANCE_ID` (int)
+- `MAINTENANCE_POINT_BOT_ID` (varchar 100) ⚠️
+- `MAINTENANCE_PICK_POINT_BOT_ID` (varchar 100)
+- `BIN_BARCODE_SCANNED` (varchar 50)
+- `TASK_DONE` (tinyint, 0=incomplete 1=complete)
+- `INSERTED_TIMESTAMP` (datetime)
+- `IS_MP_BOT_HEALTHY` (tinyint)
+
+---
+
 ## 2025-11-12 - System
 
 ### Change Type: Initial Documentation
