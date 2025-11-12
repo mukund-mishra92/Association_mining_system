@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional, Tuple
 import os
 import pymysql
 import pandas as pd
+import re
 
 from .llm_service import LLMService
 from ..models.schemas import ChatRequest, ChatResponse, ChatbotType, SQLQueryRequest, SQLQueryResponse
@@ -26,12 +27,13 @@ class SQLAssistantService:
     - Validates results with confidence scoring
     - Retries with different strategies if needed
     - Returns formatted results only when confident
+    - Dynamic schema loading to avoid token limits
     """
     
     def __init__(self):
         """Initialize SQL assistant service with database connection"""
         self.llm_service = LLMService()
-        self.db_schema = self._load_database_schema()
+        self.schema_parser = self._load_schema_parser()
         self.db_config = {
             'host': config.DB_HOST,
             'port': config.DB_PORT,
@@ -43,22 +45,144 @@ class SQLAssistantService:
         # Test database connection
         self.db_available = self._test_db_connection()
         
-        self.system_prompt = f"""You are a SQL expert for the NEO Warehouse Management System.
+        logger.info(f"✅ SQL Assistant Service initialized | DB Available: {self.db_available} | Tables: {len(self.schema_parser.get_table_names())}")
+    
+    def _load_schema_parser(self):
+        """Load schema parser"""
+        try:
+            from ..utils.schema_parser import get_schema_parser
+            parser = get_schema_parser()
+            logger.info(f"✅ Loaded schema parser with {len(parser.get_table_names())} tables")
+            return parser
+        except Exception as e:
+            logger.error(f"❌ Error loading schema parser: {e}")
+            return None
+    
+    def _get_relevant_schema(self, query: str, max_tables: int = 10) -> str:
+        """
+        Get relevant schema for the query to avoid token limits.
+        Extracts table names from query and returns compact schema.
+        
+        Args:
+            query: User's natural language query
+            max_tables: Maximum number of tables to include
+            
+        Returns:
+            Compact schema string with relevant tables
+        """
+        if not self.schema_parser:
+            return self._get_default_schema()
+        
+        # Extract potential table keywords from query
+        query_lower = query.lower()
+        keywords = re.findall(r'\b\w+\b', query_lower)
+        
+        # Find relevant tables
+        relevant_tables = set()
+        all_tables = self.schema_parser.get_table_names()
+        
+        # First, try direct keyword matching
+        for keyword in keywords:
+            matching_tables = self.schema_parser.search_tables(keyword)
+            relevant_tables.update(matching_tables[:3])  # Add up to 3 matches per keyword
+        
+        # If no tables found, include most common tables
+        if not relevant_tables:
+            common_tables = [
+                'wms_to_wcs_order_line_request_data',
+                'sku_recommendations',
+                'mining_job_logs',
+                'bin_velocity_scores',
+                'article_proximity_score',
+                'alarm_master',
+                'bin_configuration'
+            ]
+            for table in common_tables:
+                if table in all_tables:
+                    relevant_tables.add(table)
+        
+        # Limit to max_tables
+        relevant_tables = list(relevant_tables)[:max_tables]
+        
+        # Build compact schema
+        schema_lines = ["Database Schema (Relevant Tables):"]
+        for table in relevant_tables:
+            columns = self.schema_parser.tables.get(table, [])
+            pk_cols = [c['field'] for c in columns if c['key'] == 'PRI']
+            pk_info = f" [PK: {', '.join(pk_cols)}]" if pk_cols else ""
+            
+            col_list = [f"{c['field']} ({c['type']})" for c in columns[:15]]  # Limit columns
+            if len(columns) > 15:
+                col_list.append(f"... and {len(columns) - 15} more columns")
+            
+            schema_lines.append(f"\n{table}{pk_info}:")
+            schema_lines.append(f"  {', '.join(col_list)}")
+        
+        schema = "\n".join(schema_lines)
+        logger.info(f"📋 Using {len(relevant_tables)} relevant tables in schema")
+        return schema
+    
+    def _get_system_prompt(self, query: str) -> str:
+        """Generate system prompt with relevant schema"""
+        schema = self._get_relevant_schema(query)
+        
+        return f"""You are a SQL expert for the NEO Warehouse Management System.
 
-Database Schema:
-{self.db_schema}
+CRITICAL TABLE RELATIONSHIPS:
 
-Generate ONLY valid MySQL queries. Rules:
-1. Use MySQL syntax (CURDATE(), DATE_SUB(), etc.)
-2. Always add LIMIT clause (default 100)
-3. Use proper JOINs and WHERE clauses
-4. Return ONLY the SQL query, no explanations
-5. No markdown code blocks
+1. ORDERS & SKUs:
+   - Orders table: wms_to_wcs_order_line_request_data
+     Key columns: ORDER_ID, ORDER_LINE_ID, ARTICLE_ID (links to SKU), QUANTITY, INSERTED_TIMESTAMP
+   - SKU table: sku_master
+     Key columns: SKU_ID (primary key), SKU_NAME, VELOCITY, CATEGORY
+   - JOIN: ord.ARTICLE_ID = sm.SKU_ID
 
-Example good response:
-SELECT sku, SUM(quantity) AS total_qty FROM order_history WHERE order_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) GROUP BY sku ORDER BY total_qty DESC LIMIT 5;"""
+2. BINS & LOCATIONS:
+   - Bin config: bin_configuration
+     Key columns: bin_id (varchar), sku_code, bin_location, zone, current_sku_count
+   - Bin info: bin_info_master
+     Key columns: BIN_ID (int, primary key), BIN_BARCODE, BIN_TYPE
+   - Order-bin mapping: order_bin_mapping
+     Key columns: ORDER_BIN_ID, BIN_ID (int), STATION_ID, TYPE, STATUS, INSERTED_TIMESTAMP
+   
+3. BINS & ORDERS (Multi-table JOIN):
+   - To link orders to bin locations:
+     wms_to_wcs_order_line_request_data → (via intermediate tables) → bin_configuration
+   - Direct bin-order link: order_bin_mapping.BIN_ID = bin_info_master.BIN_ID
+   - Then: bin_info_master to bin_configuration via bin_id/BIN_BARCODE matching
 
-        logger.info(f"✅ SQL Assistant Service initialized | DB Available: {self.db_available}")
+4. SKU RECOMMENDATIONS:
+   - Table: sku_recommendations
+   - Common columns: sku_id, recommended_sku_id, score, confidence
+
+{schema}
+
+IMPORTANT RULES:
+1. Use MySQL syntax (CURDATE(), DATE_SUB(), NOW(), etc.)
+2. Always add LIMIT clause (default 100, max 1000)
+3. Check data types: bin_configuration.bin_id is VARCHAR, bin_info_master.BIN_ID is INT
+4. For dates: use INSERTED_TIMESTAMP, UPDATED_TIMESTAMP, or specific date columns
+5. Return ONLY the SQL query, no explanations, no markdown code blocks
+6. When joining multiple tables, verify column names match exactly (case-sensitive)
+
+EXAMPLE QUERIES:
+
+-- Orders with SKU names (2-table JOIN):
+SELECT sm.SKU_ID, sm.SKU_NAME, SUM(ord.QUANTITY) AS total_qty 
+FROM wms_to_wcs_order_line_request_data ord 
+JOIN sku_master sm ON ord.ARTICLE_ID = sm.SKU_ID 
+WHERE ord.INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
+GROUP BY sm.SKU_ID, sm.SKU_NAME 
+ORDER BY total_qty DESC LIMIT 5;
+
+-- Bins with most orders (location analysis):
+SELECT bc.bin_location, bc.zone, COUNT(obm.ORDER_BIN_ID) AS order_count
+FROM order_bin_mapping obm
+JOIN bin_info_master bim ON obm.BIN_ID = bim.BIN_ID
+JOIN bin_configuration bc ON bim.BIN_BARCODE = bc.bin_id
+WHERE obm.INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+GROUP BY bc.bin_location, bc.zone
+ORDER BY order_count DESC LIMIT 10;"""
     
     def _test_db_connection(self) -> bool:
         """Test if database connection is available"""
@@ -72,23 +196,23 @@ SELECT sku, SUM(quantity) AS total_qty FROM order_history WHERE order_date >= DA
             return False
     
     def _load_database_schema(self) -> str:
-        """Load database schema from file or connection"""
+        """Load database schema from HTML file"""
         try:
-            # Try to load schema.sql file
-            from pathlib import Path
-            schema_path = Path(__file__).parent.parent / "data" / "database" / "schema.sql"
+            from ..utils.schema_parser import get_schema_parser
             
-            if schema_path.exists():
-                with open(schema_path, 'r', encoding='utf-8') as f:
-                    schema = f.read()
-                logger.info(f"📂 Loaded database schema from {schema_path}")
-                return schema
-            else:
-                # Return default schema if file doesn't exist
-                logger.warning("⚠️ No schema.sql found, using default NEO schema")
-                return self._get_default_schema()
+            logger.info("🔍 Parsing database schema from HTML file...")
+            parser = get_schema_parser()
+            
+            # Get compact schema for LLM system prompt
+            schema = parser.get_compact_schema()
+            
+            table_count = len(parser.get_table_names())
+            logger.info(f"✅ Loaded {table_count} tables from database schema")
+            
+            return schema
         except Exception as e:
             logger.error(f"❌ Error loading database schema: {e}")
+            logger.warning("⚠️ Falling back to default schema")
             return self._get_default_schema()
     
     def _get_default_schema(self) -> str:
@@ -298,24 +422,18 @@ CREATE TABLE mining_job_logs (
     def get_schema_info(self) -> Dict[str, Any]:
         """Get database schema information"""
         return {
-            "schema": self.db_schema,
-            "tables": self._extract_table_names(),
-            "llm_provider": self.llm_service.get_provider_info()
+            "total_tables": len(self._extract_table_names()),
+            "tables": self._extract_table_names()[:20],  # Return first 20 tables
+            "llm_provider": self.llm_service.get_provider_info(),
+            "db_available": self.db_available
         }
     
     def _extract_table_names(self) -> List[str]:
-        """Extract table names from schema"""
+        """Extract table names from schema parser"""
         try:
-            tables = []
-            for line in self.db_schema.split('\n'):
-                if 'CREATE TABLE' in line.upper():
-                    # Extract table name
-                    parts = line.split()
-                    table_idx = parts.index('TABLE') + 1
-                    if table_idx < len(parts):
-                        table_name = parts[table_idx].strip('(').strip()
-                        tables.append(table_name)
-            return tables
+            if self.schema_parser:
+                return self.schema_parser.get_table_names()
+            return []
         except Exception as e:
             logger.error(f"❌ Error extracting table names: {e}")
             return []
@@ -327,22 +445,23 @@ CREATE TABLE mining_job_logs (
     def _generate_sql_with_strategy(self, question: str, strategy: str) -> Optional[str]:
         """Generate SQL with different strategies"""
         try:
+            # Get dynamic system prompt with relevant schema only
+            system_prompt = self._get_system_prompt(question)
+            
             if strategy == 'direct':
                 prompt = f"Convert to SQL: {question}"
             elif strategy == 'with_context':
                 prompt = f"""User question: {question}
 
-Available tables: order_history (order_id, sku, order_date, quantity, customer_id)
-
 Generate MySQL query to answer this question. Return ONLY the SQL."""
             else:  # simplified
-                prompt = f"Generate simple SQL for: {question}. Use table: order_history. Keep it basic."
+                prompt = f"Generate simple SQL for: {question}. Keep it basic with proper table names."
             
             messages = [{"role": "user", "content": prompt}]
             
             response = self.llm_service.generate_response(
                 messages=messages,
-                system_prompt=self.system_prompt,
+                system_prompt=system_prompt,
                 max_tokens=300,
                 temperature=0.1
             )
@@ -357,13 +476,23 @@ Generate MySQL query to answer this question. Return ONLY the SQL."""
     def _execute_query_safe(self, sql_query: str) -> Tuple[List[Dict[str, Any]], Optional[str]]:
         """Execute SQL query safely with timeout and error handling"""
         try:
-            # Security: Prevent dangerous operations
-            dangerous_keywords = ['DROP', 'DELETE', 'TRUNCATE', 'ALTER', 'CREATE', 'INSERT', 'UPDATE']
+            # Security: Prevent dangerous operations (use word boundaries to avoid false positives)
+            import re
+            dangerous_patterns = [
+                r'\bDROP\s+TABLE\b',
+                r'\bDROP\s+DATABASE\b',
+                r'\bDELETE\s+FROM\b',
+                r'\bTRUNCATE\b',
+                r'\bALTER\s+TABLE\b',
+                r'\bCREATE\s+TABLE\b',
+                r'\bINSERT\s+INTO\b',
+                r'\bUPDATE\s+\w+\s+SET\b'
+            ]
             query_upper = sql_query.upper()
             
-            for keyword in dangerous_keywords:
-                if keyword in query_upper:
-                    return [], f"Query contains dangerous operation: {keyword}"
+            for pattern in dangerous_patterns:
+                if re.search(pattern, query_upper):
+                    return [], f"Query contains dangerous operation: {pattern}"
             
             # Execute with timeout
             conn = pymysql.connect(**self.db_config, connect_timeout=5)

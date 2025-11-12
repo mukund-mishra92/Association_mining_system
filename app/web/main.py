@@ -2322,6 +2322,73 @@ def chatbot_upload_document():
         logger.error(f"Error uploading document: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/chatbot/feedback', methods=['POST'])
+def chatbot_feedback():
+    """Record user feedback on SQL query"""
+    try:
+        from app.modules.neo_chatbot.services.feedback_service import feedback_collector
+        
+        data = request.json
+        
+        feedback_record = feedback_collector.record_feedback(
+            query=data.get('user_question', ''),
+            sql_generated=data.get('sql_query', ''),
+            user_question=data.get('user_question', ''),
+            feedback_type=data.get('feedback_type', 'positive'),  # 'positive', 'negative', 'corrected'
+            corrected_sql=data.get('corrected_sql'),
+            error_message=data.get('error_message'),
+            session_id=data.get('session_id'),
+            tables_used=data.get('tables_used')
+        )
+        
+        return jsonify({
+            "status": "success",
+            "message": "Thank you for your feedback!",
+            "feedback_id": feedback_record.get('timestamp')
+        })
+        
+    except Exception as e:
+        logger.error(f"Error recording feedback: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/feedback/stats', methods=['GET'])
+def chatbot_feedback_stats():
+    """Get feedback statistics"""
+    try:
+        from app.modules.neo_chatbot.services.feedback_service import feedback_collector
+        
+        stats = feedback_collector.get_feedback_stats()
+        top_patterns = feedback_collector.get_top_positive_patterns(limit=10)
+        
+        return jsonify({
+            "stats": stats,
+            "top_patterns": top_patterns
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting feedback stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/feedback/auto-update', methods=['POST'])
+def chatbot_feedback_auto_update():
+    """Trigger auto-update of documentation based on feedback"""
+    try:
+        from app.modules.neo_chatbot.services.feedback_service import feedback_collector
+        
+        min_feedback = request.json.get('min_positive_feedback', 5)
+        
+        updated = feedback_collector.auto_update_quick_reference(min_positive_feedback=min_feedback)
+        
+        return jsonify({
+            "status": "success" if updated else "no_updates",
+            "message": "Documentation updated successfully" if updated else "No patterns meet criteria for documentation",
+            "updated": updated
+        })
+        
+    except Exception as e:
+        logger.error(f"Error auto-updating documentation: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)

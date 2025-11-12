@@ -703,6 +703,11 @@
             messageDiv.innerHTML = messageHTML;
             messagesContainer.insertBefore(messageDiv, messagesContainer.querySelector('.message.assistant:last-child'));
 
+            // Add feedback buttons for SQL Assistant responses
+            if (type === 'assistant' && data.sql_query && currentChatbotType === 'sql_assistant') {
+                addFeedbackButtons(messageDiv, data);
+            }
+
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -820,6 +825,122 @@
                 alert('❌ Error fetching statistics.');
             }
         }
+
+        // Feedback System Functions
+        function addFeedbackButtons(messageDiv, data) {
+            const feedbackHTML = `
+                <div class="feedback-buttons" style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
+                    <small style="color: #666; display: block; margin-bottom: 5px;">Was this query helpful?</small>
+                    <button class="btn btn-sm btn-success" onclick="sendFeedback('positive', ${JSON.stringify(data).replace(/"/g, '&quot;')}, this)" style="margin-right: 5px;">
+                        <i class="fas fa-thumbs-up"></i> Yes
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="sendFeedback('negative', ${JSON.stringify(data).replace(/"/g, '&quot;')}, this)">
+                        <i class="fas fa-thumbs-down"></i> No
+                    </button>
+                </div>
+            `;
+            
+            const contentDiv = messageDiv.querySelector('.message-content');
+            contentDiv.insertAdjacentHTML('beforeend', feedbackHTML);
+        }
+
+        async function sendFeedback(feedbackType, data, button) {
+            try {
+                // Get the user question from previous message
+                const userQuestion = document.querySelector('.message.user:last-of-type .message-content')?.textContent || '';
+                
+                const response = await fetch('/api/chatbot/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_question: userQuestion,
+                        sql_query: data.sql_query,
+                        feedback_type: feedbackType,
+                        session_id: sessionId,
+                        tables_used: extractTablesFromSQL(data.sql_query)
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    // Disable feedback buttons and show thank you message
+                    const feedbackDiv = button.closest('.feedback-buttons');
+                    feedbackDiv.innerHTML = `
+                        <small style="color: #28a745;">
+                            <i class="fas fa-check-circle"></i> Thank you for your feedback!
+                        </small>
+                    `;
+                    
+                    // Show toast notification
+                    showToast(feedbackType === 'positive' ? 
+                        '✅ Feedback recorded! This helps improve our SQL Assistant.' :
+                        '📝 Feedback recorded. We\'ll work on improving this query pattern.');
+                }
+            } catch (error) {
+                console.error('Error sending feedback:', error);
+                showToast('❌ Error recording feedback. Please try again.');
+            }
+        }
+
+        function extractTablesFromSQL(sql) {
+            if (!sql) return [];
+            const tables = [];
+            
+            // Extract FROM tables
+            const fromMatches = sql.match(/FROM\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi);
+            if (fromMatches) {
+                tables.push(...fromMatches.map(m => m.replace(/FROM\s+/i, '').trim()));
+            }
+            
+            // Extract JOIN tables
+            const joinMatches = sql.match(/JOIN\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi);
+            if (joinMatches) {
+                tables.push(...joinMatches.map(m => m.replace(/JOIN\s+/i, '').trim()));
+            }
+            
+            return [...new Set(tables)]; // Remove duplicates
+        }
+
+        function showToast(message) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #333;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Add CSS animations for toast
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
