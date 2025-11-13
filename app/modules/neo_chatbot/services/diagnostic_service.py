@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 
 from .llm_service import LLMService
+from .rlhf_service import RLHFService
 from ..models.schemas import ChatRequest, ChatResponse, ChatbotType, DiagnosticIssue, SystemHealthStatus
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class DiagnosticService:
     def __init__(self):
         """Initialize diagnostic service"""
         self.llm_service = LLMService()
+        self.rlhf_service = RLHFService()
         self.issues_db = self._load_issues_database()
         
         self.system_prompt = """You are a troubleshooting expert for the NEO Warehouse Management System.
@@ -118,12 +120,35 @@ Be patient, clear, and supportive. Break down complex solutions into simple step
                 # No direct match, use LLM for general troubleshooting
                 response_text = self._generate_general_diagnostic_response(chat_request)
             
+            # Calculate confidence based on matching issues
+            confidence = 0.9 if matching_issues else 0.5
+            suggested_actions = self._generate_diagnostic_actions(matching_issues)
+            
+            # Record for RLHF learning
+            try:
+                self.rlhf_service.record_feedback(
+                    chatbot_type="diagnostic_support",
+                    query=chat_request.message,
+                    response=response_text,
+                    feedback_type="neutral",  # Auto-logged on generation
+                    rating=None,
+                    comment=f"Auto-generated diagnostic response ({'matched' if matching_issues else 'general'})",
+                    metadata={
+                        "matched_issues_count": len(matching_issues),
+                        "best_match_title": best_match.get('title') if matching_issues else None,
+                        "confidence": confidence,
+                        "suggested_actions_count": len(suggested_actions)
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to record RLHF feedback: {e}")
+            
             return ChatResponse(
                 response=response_text,
                 chatbot_type=ChatbotType.DIAGNOSTIC,
                 session_id=chat_request.session_id or str(uuid.uuid4()),
-                confidence_score=0.9 if matching_issues else 0.5,
-                suggested_actions=self._generate_diagnostic_actions(matching_issues)
+                confidence_score=confidence,
+                suggested_actions=suggested_actions
             )
             
         except Exception as e:

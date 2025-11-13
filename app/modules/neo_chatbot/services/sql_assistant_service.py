@@ -12,6 +12,7 @@ import pandas as pd
 import re
 
 from .llm_service import LLMService
+from .rlhf_service import RLHFService
 from ..models.schemas import ChatRequest, ChatResponse, ChatbotType, SQLQueryRequest, SQLQueryResponse
 from app.shared.config.config import config
 
@@ -33,6 +34,7 @@ class SQLAssistantService:
     def __init__(self):
         """Initialize SQL assistant service with database connection"""
         self.llm_service = LLMService()
+        self.rlhf_service = RLHFService()
         self.schema_parser = self._load_schema_parser()
         self.db_config = {
             'host': config.DB_HOST,
@@ -162,18 +164,40 @@ CRITICAL TABLE RELATIONSHIPS:
      INSERTED_TIMESTAMP, MAINTENANCE_ID, IS_MP_BOT_HEALTHY
    - ⚠️ CRITICAL: Column is MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
 
+6. BOT INFORMATION & COUNTS:
+   - ⚠️ ALWAYS START WITH: bot_master (main bot registry)
+   - Key columns: BOT_ID (varchar, primary key), BOT_IP, BOT_TYPE, STATUS, IS_ACTIVE
+   - For bot counts: SELECT COUNT(*) FROM bot_master
+   - For active bots: WHERE IS_ACTIVE = 1 or STATUS = 'ACTIVE'
+   - Related tables: dashboard_bot_master, bot_master_log, bot_alarm_log
+   - ⚠️ CRITICAL: Use bot_master as starting point for ALL bot queries (counts, status, lists)
+
 {schema}
 
 IMPORTANT RULES:
 1. Use MySQL syntax (CURDATE(), DATE_SUB(), NOW(), etc.)
 2. Always add LIMIT clause (default 100, max 1000)
 3. Check data types: bin_configuration.bin_id is VARCHAR, bin_info_master.BIN_ID is INT
-4. For dates: use INSERTED_TIMESTAMP, UPDATED_TIMESTAMP, or specific date columns
-5. Return ONLY the SQL query, no explanations, no markdown code blocks
-6. When joining multiple tables, verify column names match exactly (case-sensitive)
-7. For maintenance tasks: Use MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
+4. For BOT queries: ALWAYS start from bot_master table
+5. For bot counts: COUNT(*) FROM bot_master with appropriate WHERE conditions
+6. For dates: use INSERTED_TIMESTAMP, UPDATED_TIMESTAMP, or specific date columns
+7. Return ONLY the SQL query, no explanations, no markdown code blocks
+8. When joining multiple tables, verify column names match exactly (case-sensitive)
+9. For maintenance tasks: Use MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
 
 EXAMPLE QUERIES:
+
+-- Count total bots:
+SELECT COUNT(*) AS total_bots FROM bot_master;
+
+-- Count active bots:
+SELECT COUNT(*) AS active_bots FROM bot_master WHERE IS_ACTIVE = 1;
+
+-- List all bots with status:
+SELECT BOT_ID, BOT_IP, BOT_TYPE, STATUS, IS_ACTIVE 
+FROM bot_master 
+ORDER BY BOT_ID 
+LIMIT 100;
 
 -- Orders with SKU names (2-table JOIN):
 SELECT sm.SKU_ID, sm.SKU_NAME, SUM(ord.QUANTITY) AS total_qty 
@@ -346,6 +370,26 @@ CREATE TABLE mining_job_logs (
                         confidence,
                         validation_msg
                     )
+                    
+                    # Record successful query for RLHF learning
+                    try:
+                        self.rlhf_service.record_feedback(
+                            chatbot_type="sql_assistant",
+                            query=chat_request.message,
+                            response=response_text,
+                            feedback_type="neutral",  # Auto-logged on generation
+                            rating=None,
+                            comment="Auto-generated with high confidence",
+                            metadata={
+                                "sql_query": sql_query,
+                                "confidence": confidence,
+                                "row_count": len(results) if results else 0,
+                                "strategy": strategy,
+                                "attempt": attempt + 1
+                            }
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to record RLHF feedback: {e}")
                     
                     return ChatResponse(
                         response=response_text,

@@ -43,3 +43,21 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2025-11-12 17:39:42.721326 ===
+🔍 Received schedule data from UI: {'job_name': 'asfdsfsf', 'job_description': 'nndhjsfk', 'schedule_type': 'daily', 'schedule_time': '17:41', 'is_active': True, 'min_support': 0.3, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.3
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2025-11-12 17:40:43.796031 ===
+🔍 Received schedule data from UI: {'job_name': 'ssss', 'job_description': 'sdsds', 'schedule_type': 'daily', 'schedule_time': '17:43', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05

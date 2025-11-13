@@ -352,6 +352,86 @@ ORDER BY task_date DESC;
 
 ---
 
+## 8. Bot Information & Status
+**Business Logic:** Track all bots in the system, their configurations, status, and activity
+
+**Primary Table:**
+- `bot_master` - **⚠️ ALWAYS START HERE for bot queries** (main bot registry)
+
+**Key Columns:**
+- `BOT_ID` (varchar) - **Primary key**, unique bot identifier
+- `BOT_IP` (varchar) - Bot IP address
+- `BOT_TYPE` (varchar) - Type/model of bot
+- `STATUS` (varchar) - Current operational status (e.g., 'ACTIVE', 'IDLE', 'ERROR')
+- `IS_ACTIVE` (tinyint) - 1 = active/online, 0 = inactive/offline
+
+**Common Queries:**
+```sql
+-- Count total bots in system
+SELECT COUNT(*) AS total_bots 
+FROM bot_master;
+
+-- Count active/online bots
+SELECT COUNT(*) AS active_bots 
+FROM bot_master 
+WHERE IS_ACTIVE = 1;
+
+-- Count bots by status
+SELECT 
+    STATUS,
+    COUNT(*) AS bot_count
+FROM bot_master 
+GROUP BY STATUS
+ORDER BY bot_count DESC;
+
+-- List all bots with details
+SELECT 
+    BOT_ID,
+    BOT_IP,
+    BOT_TYPE,
+    STATUS,
+    IS_ACTIVE
+FROM bot_master 
+ORDER BY BOT_ID 
+LIMIT 100;
+
+-- Filter bots by type
+SELECT 
+    BOT_ID,
+    BOT_IP,
+    STATUS,
+    IS_ACTIVE
+FROM bot_master 
+WHERE BOT_TYPE = 'AGV_STANDARD'  -- or specific type
+ORDER BY STATUS, BOT_ID
+LIMIT 50;
+
+-- Active bots with specific status
+SELECT BOT_ID, BOT_IP, BOT_TYPE 
+FROM bot_master 
+WHERE IS_ACTIVE = 1 
+  AND STATUS = 'ACTIVE'
+ORDER BY BOT_ID;
+```
+
+**Related Tables:**
+- `dashboard_bot_master` - Dashboard-specific bot data
+- `bot_master_log` - Historical status changes
+- `bot_alarm_log` - Bot errors and alarms
+- `bot_charging_bit_log` - Charging status logs
+- `dashboard_log_bot_charging` - Charging activity
+- `robot_charge_log` - Charging history
+- `dashboard_log_maintenance_task_master` - Maintenance tasks (uses MAINTENANCE_POINT_BOT_ID)
+
+**Important Notes:**
+- ⚠️ **ALWAYS use `bot_master` as primary table for bot counts, lists, and status checks**
+- Bot queries should start with `SELECT ... FROM bot_master`
+- For maintenance tasks, use `MAINTENANCE_POINT_BOT_ID` (NOT BOT_ID) in `dashboard_log_maintenance_task_master`
+- `STATUS` values vary by implementation - check actual data for valid values
+- `IS_ACTIVE` is the reliable indicator for bot availability
+
+---
+
 ## Performance Tips
 
 1. **Always use LIMIT** - Default to 100, max 1000

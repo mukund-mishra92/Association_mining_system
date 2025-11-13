@@ -2,6 +2,14 @@
 
 ## Fast Lookup: Table Relationships
 
+### ⚠️ Bot Queries → ALWAYS START FROM bot_master
+```
+PRIMARY: bot_master (BOT_ID, BOT_IP, BOT_TYPE, STATUS, IS_ACTIVE)
+For counts: SELECT COUNT(*) FROM bot_master
+For active: WHERE IS_ACTIVE = 1 or STATUS = 'ACTIVE'
+Related: dashboard_bot_master, bot_master_log, bot_alarm_log
+```
+
 ### Orders → SKU Names
 ```
 wms_to_wcs_order_line_request_data.ARTICLE_ID = sku_master.SKU_ID
@@ -168,6 +176,45 @@ LIMIT 100;
 - `MAINTENANCE_TASK_ID` (unique task identifier)
 - `TASK_DONE` (0 = incomplete, 1 = complete)
 - `INSERTED_TIMESTAMP` (when task was assigned)
+
+### Template 6: Bot Information & Counts
+```sql
+-- Count total bots
+SELECT COUNT(*) AS total_bots 
+FROM bot_master;
+
+-- Count active bots
+SELECT COUNT(*) AS active_bots 
+FROM bot_master 
+WHERE IS_ACTIVE = 1;
+
+-- List all bots with details
+SELECT 
+    BOT_ID,
+    BOT_IP,
+    BOT_TYPE,
+    STATUS,
+    IS_ACTIVE
+FROM bot_master 
+ORDER BY BOT_ID 
+LIMIT 100;
+
+-- Filter bots by type or status
+SELECT BOT_ID, BOT_TYPE, STATUS 
+FROM bot_master 
+WHERE BOT_TYPE = '[TYPE]' 
+  AND STATUS = 'ACTIVE'
+LIMIT 50;
+```
+
+**Important Columns:**
+- `BOT_ID` (varchar, primary key)
+- `BOT_IP` (IP address)
+- `BOT_TYPE` (type of bot)
+- `STATUS` (current bot status)
+- `IS_ACTIVE` (1 = active, 0 = inactive)
+
+**⚠️ CRITICAL:** Always start bot queries from `bot_master` table!
 
 ---
 

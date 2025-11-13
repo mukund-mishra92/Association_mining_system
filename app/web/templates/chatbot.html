@@ -139,6 +139,81 @@
             color: #333;
             border-bottom-left-radius: 4px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            line-height: 1.6;
+        }
+
+        .message-content h1,
+        .message-content h2,
+        .message-content h3 {
+            margin-top: 15px;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .message-content h1 {
+            font-size: 1.3em;
+            color: #2c3e50;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .message-content h2 {
+            font-size: 1.2em;
+            color: #34495e;
+        }
+
+        .message-content h3 {
+            font-size: 1.1em;
+            color: #34495e;
+        }
+
+        .message-content strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .message-content ul {
+            margin: 10px 0;
+            padding-left: 0;
+        }
+
+        .message-content li {
+            margin-bottom: 5px;
+            position: relative;
+            padding-left: 5px;
+        }
+
+        .message-content code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #d63384;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        .message-content table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .message-content table td {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .message-content table tr:nth-child(even) {
+            background: #f8f9fa;
         }
 
         .message-avatar {
@@ -703,8 +778,8 @@
             messageDiv.innerHTML = messageHTML;
             messagesContainer.insertBefore(messageDiv, messagesContainer.querySelector('.message.assistant:last-child'));
 
-            // Add feedback buttons for SQL Assistant responses
-            if (type === 'assistant' && data.sql_query && currentChatbotType === 'sql_assistant') {
+            // Add RLHF feedback buttons for all chatbot types
+            if (type === 'assistant') {
                 addFeedbackButtons(messageDiv, data);
             }
 
@@ -713,7 +788,8 @@
         }
 
         function formatMessage(content, data) {
-            let html = content.replace(/\n/g, '<br>');
+            // Convert markdown to HTML
+            let html = convertMarkdownToHTML(content);
 
             // Add confidence badge if available
             if (data.confidence_score) {
@@ -739,6 +815,49 @@
                 html += '</div>';
             }
 
+            return html;
+        }
+
+        function convertMarkdownToHTML(text) {
+            if (!text) return '';
+            
+            let html = text;
+            
+            // Convert headers (must be done before bold to avoid conflicts)
+            html = html.replace(/^### (.*?)$/gm, '<h3 style="font-weight: 600; font-size: 1.1em; margin: 15px 0 10px 0; color: #333;">$1</h3>');
+            html = html.replace(/^## (.*?)$/gm, '<h2 style="font-weight: 600; font-size: 1.2em; margin: 20px 0 10px 0; color: #333;">$1</h2>');
+            html = html.replace(/^# (.*?)$/gm, '<h1 style="font-weight: 700; font-size: 1.3em; margin: 20px 0 10px 0; color: #333;">$1</h1>');
+            
+            // Convert **bold** text
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong style="font-weight: 600; color: #2c3e50;">$1</strong>');
+            
+            // Convert *italic* text
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            
+            // Convert [Document Name] references to styled badges
+            html = html.replace(/\[([^\]]+)\]/g, '<span style="background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 4px; font-size: 0.9em; font-weight: 500;">📄 $1</span>');
+            
+            // Convert bullet points with • symbol
+            html = html.replace(/^[•·]\s*(.+)$/gm, '<li style="margin-left: 20px; margin-bottom: 5px;">$1</li>');
+            
+            // Convert numbered lists (1. 2. 3.)
+            html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="margin-left: 20px; margin-bottom: 8px;"><strong style="color: #667eea;">$1.</strong> $2</div>');
+            
+            // Wrap consecutive <li> items in <ul>
+            html = html.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, function(match) {
+                return '<ul style="list-style: none; padding-left: 0; margin: 10px 0;">' + match + '</ul>';
+            });
+            
+            // Convert line breaks
+            html = html.replace(/\n\n/g, '<br><br>');
+            html = html.replace(/\n/g, '<br>');
+            
+            // Convert inline code `code`
+            html = html.replace(/`([^`]+)`/g, '<code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace; font-size: 0.9em; color: #d63384;">$1</code>');
+            
+            // Add spacing after headers
+            html = html.replace(/<\/(h[1-3])>/g, '</$1><br>');
+            
             return html;
         }
 
@@ -828,15 +947,43 @@
 
         // Feedback System Functions
         function addFeedbackButtons(messageDiv, data) {
+            const feedbackId = 'feedback-' + Date.now();
             const feedbackHTML = `
-                <div class="feedback-buttons" style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
-                    <small style="color: #666; display: block; margin-bottom: 5px;">Was this query helpful?</small>
-                    <button class="btn btn-sm btn-success" onclick="sendFeedback('positive', ${JSON.stringify(data).replace(/"/g, '&quot;')}, this)" style="margin-right: 5px;">
-                        <i class="fas fa-thumbs-up"></i> Yes
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="sendFeedback('negative', ${JSON.stringify(data).replace(/"/g, '&quot;')}, this)">
-                        <i class="fas fa-thumbs-down"></i> No
-                    </button>
+                <div class="feedback-section" id="${feedbackId}" style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0;">
+                    <div class="feedback-quick-actions" style="margin-bottom: 8px;">
+                        <small style="color: #666; display: block; margin-bottom: 8px; font-weight: 500;">Was this response helpful?</small>
+                        <button class="btn btn-sm btn-outline-success" onclick="showDetailedFeedback('${feedbackId}', 'positive', ${JSON.stringify(data).replace(/"/g, '&quot;')})" style="margin-right: 8px;">
+                            <i class="fas fa-thumbs-up"></i> Yes
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="showDetailedFeedback('${feedbackId}', 'negative', ${JSON.stringify(data).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-thumbs-down"></i> No
+                        </button>
+                    </div>
+                    <div class="feedback-detailed" style="display: none; margin-top: 12px;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">Rating (1-5 stars):</label>
+                            <div class="star-rating" style="display: flex; gap: 5px;">
+                                ${[1,2,3,4,5].map(star => `
+                                    <i class="fas fa-star rating-star" data-rating="${star}" 
+                                       onclick="selectRating('${feedbackId}', ${star})"
+                                       style="cursor: pointer; color: #ddd; font-size: 18px; transition: color 0.2s;"></i>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 12px; color: #666; display: block; margin-bottom: 5px;">Comments (optional):</label>
+                            <textarea class="feedback-comment" placeholder="Tell us how we can improve..." 
+                                      style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; resize: vertical; min-height: 60px;"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-primary" onclick="submitDetailedFeedback('${feedbackId}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">
+                                <i class="fas fa-paper-plane"></i> Submit Feedback
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="cancelDetailedFeedback('${feedbackId}')">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             `;
             
@@ -844,44 +991,143 @@
             contentDiv.insertAdjacentHTML('beforeend', feedbackHTML);
         }
 
-        async function sendFeedback(feedbackType, data, button) {
+        function showDetailedFeedback(feedbackId, feedbackType, data) {
+            const feedbackSection = document.getElementById(feedbackId);
+            const quickActions = feedbackSection.querySelector('.feedback-quick-actions');
+            const detailedSection = feedbackSection.querySelector('.feedback-detailed');
+            
+            // Store feedback type for later submission
+            feedbackSection.dataset.feedbackType = feedbackType;
+            feedbackSection.dataset.data = JSON.stringify(data);
+            
+            // Set default rating based on feedback type
+            const defaultRating = feedbackType === 'positive' ? 4 : 2;
+            selectRating(feedbackId, defaultRating);
+            
+            // Show detailed feedback form
+            quickActions.style.display = 'none';
+            detailedSection.style.display = 'block';
+        }
+
+        function selectRating(feedbackId, rating) {
+            const feedbackSection = document.getElementById(feedbackId);
+            const stars = feedbackSection.querySelectorAll('.rating-star');
+            
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.style.color = '#ffc107'; // Gold color for selected stars
+                } else {
+                    star.style.color = '#ddd'; // Gray for unselected
+                }
+            });
+            
+            feedbackSection.dataset.rating = rating;
+        }
+
+        function cancelDetailedFeedback(feedbackId) {
+            const feedbackSection = document.getElementById(feedbackId);
+            const quickActions = feedbackSection.querySelector('.feedback-quick-actions');
+            const detailedSection = feedbackSection.querySelector('.feedback-detailed');
+            
+            quickActions.style.display = 'block';
+            detailedSection.style.display = 'none';
+            
+            // Reset form
+            feedbackSection.querySelector('.feedback-comment').value = '';
+            selectRating(feedbackId, 0);
+        }
+
+        async function submitDetailedFeedback(feedbackId, data) {
             try {
+                const feedbackSection = document.getElementById(feedbackId);
+                const feedbackType = feedbackSection.dataset.feedbackType;
+                const rating = parseInt(feedbackSection.dataset.rating) || 3;
+                const comment = feedbackSection.querySelector('.feedback-comment').value.trim();
+                
                 // Get the user question from previous message
                 const userQuestion = document.querySelector('.message.user:last-of-type .message-content')?.textContent || '';
+                const botResponse = feedbackSection.closest('.message-content').textContent.split('Was this response helpful?')[0].trim();
                 
-                const response = await fetch('/api/chatbot/feedback', {
+                // Determine chatbot type from current active tab
+                const activeButton = document.querySelector('.chatbot-btn.active');
+                let activeChatbot = activeButton?.dataset?.type || 'knowledge_base';
+                
+                // Map UI type to backend RLHF type
+                const chatbotTypeMapping = {
+                    'diagnostic': 'diagnostic_support',
+                    'sql_assistant': 'sql_assistant',
+                    'knowledge_base': 'knowledge_base'
+                };
+                activeChatbot = chatbotTypeMapping[activeChatbot] || activeChatbot;
+                
+                // Build metadata based on chatbot type and available data
+                const metadata = {
+                    session_id: sessionId,
+                    confidence: data.confidence_score || data.confidence
+                };
+                
+                // Add chatbot-specific metadata
+                if (data.sql_query) {
+                    metadata.sql_query = data.sql_query;
+                    metadata.tables_used = extractTablesFromSQL(data.sql_query);
+                }
+                if (data.sources) {
+                    metadata.sources = data.sources;
+                }
+                if (data.suggested_actions) {
+                    metadata.suggested_actions = data.suggested_actions;
+                }
+                
+                // Send RLHF feedback
+                const response = await fetch('/api/chatbot/rlhf/feedback', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        user_question: userQuestion,
-                        sql_query: data.sql_query,
+                        chatbot_type: activeChatbot,
+                        query: userQuestion,
+                        response: botResponse,
                         feedback_type: feedbackType,
-                        session_id: sessionId,
-                        tables_used: extractTablesFromSQL(data.sql_query)
+                        rating: rating,
+                        comment: comment || null,
+                        metadata: metadata
                     })
                 });
 
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    // Disable feedback buttons and show thank you message
-                    const feedbackDiv = button.closest('.feedback-buttons');
-                    feedbackDiv.innerHTML = `
-                        <small style="color: #28a745;">
-                            <i class="fas fa-check-circle"></i> Thank you for your feedback!
-                        </small>
+                    // Show thank you message
+                    feedbackSection.innerHTML = `
+                        <div style="padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; text-align: center;">
+                            <i class="fas fa-check-circle" style="color: #28a745; font-size: 20px;"></i>
+                            <p style="margin: 8px 0 0 0; color: #155724; font-size: 14px; font-weight: 500;">
+                                Thank you for your detailed feedback!
+                            </p>
+                            <small style="color: #155724; font-size: 12px;">
+                                Your input helps us improve continuously. Reward score: ${result.reward_score?.toFixed(2) || 'N/A'}
+                            </small>
+                        </div>
                     `;
                     
                     // Show toast notification
-                    showToast(feedbackType === 'positive' ? 
-                        '✅ Feedback recorded! This helps improve our SQL Assistant.' :
-                        '📝 Feedback recorded. We\'ll work on improving this query pattern.');
+                    showToast(`✅ Feedback recorded with ${rating} ${rating === 1 ? 'star' : 'stars'}! Learning from your input...`);
+                } else {
+                    throw new Error(result.error || 'Failed to record feedback');
                 }
             } catch (error) {
                 console.error('Error sending feedback:', error);
                 showToast('❌ Error recording feedback. Please try again.');
+            }
+        }
+
+        // Legacy function for backward compatibility
+        async function sendFeedback(feedbackType, data, button) {
+            // Redirect to detailed feedback
+            const feedbackSection = button.closest('.feedback-section');
+            if (feedbackSection && feedbackSection.id) {
+                showDetailedFeedback(feedbackSection.id, feedbackType, data);
             }
         }
 

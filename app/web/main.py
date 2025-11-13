@@ -2389,6 +2389,84 @@ def chatbot_feedback_auto_update():
         logger.error(f"Error auto-updating documentation: {e}")
         return jsonify({"error": str(e)}), 500
 
+# ============================================================================
+# RLHF (Reinforcement Learning from Human Feedback) Endpoints
+# ============================================================================
+
+@app.route('/api/chatbot/rlhf/feedback', methods=['POST'])
+def rlhf_record_feedback():
+    """Record detailed RLHF feedback with ratings and comments"""
+    try:
+        from app.modules.neo_chatbot.services.rlhf_service import RLHFService
+        
+        rlhf_service = RLHFService()
+        data = request.json
+        
+        feedback_record = rlhf_service.record_feedback(
+            chatbot_type=data.get('chatbot_type', 'sql_assistant'),
+            query=data.get('query', ''),
+            response=data.get('response', ''),
+            feedback_type=data.get('feedback_type', 'neutral'),  # positive, negative, neutral
+            rating=data.get('rating'),  # 1-5 scale
+            comment=data.get('comment'),
+            metadata=data.get('metadata', {})
+        )
+        
+        return jsonify({
+            "status": "success",
+            "message": "Thank you for your detailed feedback!",
+            "feedback_id": feedback_record.get('feedback_id'),
+            "reward_score": feedback_record.get('reward_score')
+        })
+        
+    except Exception as e:
+        logger.error(f"Error recording RLHF feedback: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/rlhf/analytics', methods=['GET'])
+def rlhf_analytics():
+    """Get RLHF analytics and learning metrics"""
+    try:
+        from app.modules.neo_chatbot.services.rlhf_service import RLHFService
+        
+        rlhf_service = RLHFService()
+        
+        chatbot_type = request.args.get('chatbot_type')  # Optional filter
+        days = int(request.args.get('days', 30))
+        
+        analytics = rlhf_service.get_analytics(
+            chatbot_type=chatbot_type,
+            days=days
+        )
+        
+        return jsonify(analytics)
+        
+    except Exception as e:
+        logger.error(f"Error getting RLHF analytics: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/chatbot/rlhf/suggestions', methods=['POST'])
+def rlhf_get_suggestions():
+    """Get response improvement suggestions based on learned patterns"""
+    try:
+        from app.modules.neo_chatbot.services.rlhf_service import RLHFService
+        
+        rlhf_service = RLHFService()
+        data = request.json
+        
+        suggestions = rlhf_service.get_response_suggestions(
+            chatbot_type=data.get('chatbot_type', 'sql_assistant'),
+            query=data.get('query', ''),
+            current_response=data.get('response', ''),
+            metadata=data.get('metadata')
+        )
+        
+        return jsonify(suggestions)
+        
+    except Exception as e:
+        logger.error(f"Error getting RLHF suggestions: {e}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist
     os.makedirs('templates', exist_ok=True)
