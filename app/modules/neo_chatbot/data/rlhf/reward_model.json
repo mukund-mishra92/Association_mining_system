@@ -1,15 +1,15 @@
 {
   "sql_assistant": {
-    "total_feedbacks": 12,
-    "total_reward": 7.299999999999999,
-    "average_reward": 0.6083333333333333,
-    "last_updated": "2025-11-17T12:26:21.072956"
+    "total_feedbacks": 24,
+    "total_reward": 6.4499999999999975,
+    "average_reward": 0.2687499999999999,
+    "last_updated": "2025-11-17T13:50:18.291287"
   },
   "knowledge_base": {
-    "total_feedbacks": 18,
-    "total_reward": 3.1000000000000014,
-    "average_reward": 0.1722222222222223,
-    "last_updated": "2025-11-17T12:24:14.469652"
+    "total_feedbacks": 19,
+    "total_reward": 3.2000000000000015,
+    "average_reward": 0.16842105263157903,
+    "last_updated": "2025-11-17T12:42:54.278440"
   },
   "diagnostic_support": {
     "total_feedbacks": 2,

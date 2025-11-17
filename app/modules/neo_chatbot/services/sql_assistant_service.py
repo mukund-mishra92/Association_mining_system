@@ -44,6 +44,12 @@ class SQLAssistantService:
             'database': config.DB_NAME
         }
         
+        # Session-based query cache: stores successful queries per session
+        self.session_query_cache: Dict[str, List[Dict[str, Any]]] = {}
+        
+        # Session-based corrections: stores user corrections per session
+        self.session_corrections: Dict[str, Dict[str, Any]] = {}
+        
         # Test database connection
         self.db_available = self._test_db_connection()
         
@@ -124,11 +130,188 @@ class SQLAssistantService:
         logger.info(f"📋 Using {len(relevant_tables)} relevant tables in schema")
         return schema
     
-    def _get_system_prompt(self, query: str) -> str:
-        """Generate system prompt with relevant schema"""
+    def _detect_user_correction(self, message: str, session_id: Optional[str]) -> bool:
+        """
+        Detect if user message is a correction/clarification and store it.
+        Returns True if it's a correction (so we should handle it specially)
+        """
+        message_lower = message.lower()
+        
+        # Patterns that indicate corrections
+        correction_indicators = [
+            'is wrong', 'not correct', 'should be', 'use instead',
+            'correct is', 'the correct', 'actually', 'it\'s actually',
+            'column is', 'field is', 'not means', 'doesn\'t mean'
+        ]
+        
+        is_correction = any(indicator in message_lower for indicator in correction_indicators)
+        
+        if is_correction and session_id:
+            # Extract and store correction
+            correction_patterns = [
+                (r'(\w+)\s+is\s+wrong.*?correct\s+is\s+(\w+)', 'column_name'),
+                (r'(\w+)\s+is\s+wrong.*?use\s+(\w+)', 'column_name'),
+                (r'not\s+(\w+).*?should\s+be\s+(\w+)', 'column_name'),
+                (r'use\s+(\w+)\s+instead', 'instruction'),
+                (r'correct\s+is\s+(\w+)', 'column_name'),
+                (r'column\s+is\s+(\w+)', 'column_name'),
+            ]
+            
+            for pattern, correction_type in correction_patterns:
+                matches = re.finditer(pattern, message_lower, re.IGNORECASE)
+                for match in matches:
+                    if match.lastindex >= 2:
+                        self._store_correction(session_id, match.group(1), match.group(2))
+                        logger.info(f"🔧 Stored correction: '{match.group(1)}' → '{match.group(2)}'")
+        
+        return is_correction
+    
+    def _extract_conversation_context(self, conversation_history: Optional[List], session_id: Optional[str]) -> Dict[str, Any]:
+        """
+        Extract important context from conversation history
+        - Previous tables mentioned
+        - Column name corrections
+        - Successful queries
+        - User clarifications
+        """
+        context = {
+            'tables_used': set(),
+            'columns_mentioned': {},  # table -> columns
+            'corrections': [],
+            'successful_queries': [],
+            'key_info': []
+        }
+        
+        if not conversation_history:
+            # Even without conversation history, check RLHF for past corrections
+            try:
+                rlhf_corrections = self.rlhf_service.get_sql_corrections(limit=10)
+                for rlhf_corr in rlhf_corrections:
+                    comment = rlhf_corr.get('comment', '')
+                    # Extract correction from comment
+                    if 'wrong' in comment.lower() and 'correct' in comment.lower():
+                        context['key_info'].append(f"Past correction: {comment[:100]}")
+            except Exception as e:
+                logger.warning(f"Could not retrieve RLHF corrections: {e}")
+            
+            return context
+        
+        # Get session-specific corrections if available
+        if session_id and session_id in self.session_corrections:
+            context['corrections'].extend(self.session_corrections[session_id].get('corrections', []))
+        
+        # Process conversation history
+        for msg in conversation_history[-10:]:  # Last 10 messages for context
+            content = msg.content.lower() if hasattr(msg, 'content') else str(msg).lower()
+            
+            # Extract table names mentioned
+            if self.schema_parser:
+                for table in self.schema_parser.get_table_names():
+                    if table.lower() in content:
+                        context['tables_used'].add(table)
+            
+            # Detect corrections (key patterns)
+            correction_patterns = [
+                (r'(\w+)\s+is\s+wrong.*?correct\s+is\s+(\w+)', 'column_name'),
+                (r'(\w+)\s+is\s+wrong.*?use\s+(\w+)', 'column_name'),
+                (r'not\s+(\w+).*?should\s+be\s+(\w+)', 'column_name'),
+                (r'use\s+(\w+)\s+instead\s+of\s+(\w+)', 'column_name'),
+                (r'column\s+is\s+(\w+)\s+not\s+(\w+)', 'column_name'),
+            ]
+            
+            for pattern, correction_type in correction_patterns:
+                matches = re.finditer(pattern, content, re.IGNORECASE)
+                for match in matches:
+                    if match.lastindex >= 2:
+                        context['corrections'].append({
+                            'wrong': match.group(2) if 'not' in pattern else match.group(1),
+                            'correct': match.group(1) if 'column is' in pattern else match.group(2),
+                            'type': correction_type
+                        })
+            
+            # Detect clarifications about query logic
+            if any(keyword in content for keyword in ['empty bin', 'available bin', 'free bin']):
+                context['key_info'].append("User asking about empty/available bins - check ARTICLE_ID='no-sku' in live_inventory_master")
+            
+            if 'virtual quantity' in content or 'quantity is 0 not means' in content:
+                context['key_info'].append("Important: Quantity=0 doesn't mean bin is empty due to virtual quantity allocation")
+        
+        # Get cached successful queries for this session
+        if session_id and session_id in self.session_query_cache:
+            context['successful_queries'] = self.session_query_cache[session_id][-3:]  # Last 3 successful queries
+        
+        logger.info(f"📚 Extracted context: {len(context['tables_used'])} tables, {len(context['corrections'])} corrections, {len(context['key_info'])} insights")
+        return context
+    
+    def _build_context_prompt(self, context: Dict[str, Any]) -> str:
+        """Build a prompt section from conversation context"""
+        prompt_parts = []
+        
+        if context['corrections']:
+            prompt_parts.append("\n🔧 USER CORRECTIONS (CRITICAL - MUST FOLLOW):")
+            for corr in context['corrections']:
+                prompt_parts.append(f"  - Use '{corr['correct']}' NOT '{corr['wrong']}'")
+        
+        if context['key_info']:
+            prompt_parts.append("\n💡 IMPORTANT CONTEXT FROM CONVERSATION:")
+            for info in context['key_info']:
+                prompt_parts.append(f"  - {info}")
+        
+        if context['successful_queries']:
+            prompt_parts.append("\n✅ PREVIOUS SUCCESSFUL QUERIES IN THIS SESSION:")
+            for i, query_info in enumerate(context['successful_queries'][-3:], 1):
+                prompt_parts.append(f"  {i}. Q: {query_info['question'][:50]}...")
+                prompt_parts.append(f"     SQL: {query_info['sql'][:80]}...")
+        
+        if context['tables_used']:
+            prompt_parts.append(f"\n📋 TABLES DISCUSSED: {', '.join(sorted(context['tables_used']))}")
+        
+        return "\n".join(prompt_parts) if prompt_parts else ""
+    
+    def _store_successful_query(self, session_id: str, question: str, sql: str, results_count: int):
+        """Store successful query in session cache"""
+        if not session_id:
+            return
+        
+        if session_id not in self.session_query_cache:
+            self.session_query_cache[session_id] = []
+        
+        self.session_query_cache[session_id].append({
+            'question': question,
+            'sql': sql,
+            'results_count': results_count,
+            'timestamp': pd.Timestamp.now().isoformat()
+        })
+        
+        # Keep only last 10 queries per session
+        if len(self.session_query_cache[session_id]) > 10:
+            self.session_query_cache[session_id] = self.session_query_cache[session_id][-10:]
+    
+    def _store_correction(self, session_id: str, wrong: str, correct: str):
+        """Store user correction in session"""
+        if not session_id:
+            return
+        
+        if session_id not in self.session_corrections:
+            self.session_corrections[session_id] = {'corrections': []}
+        
+        self.session_corrections[session_id]['corrections'].append({
+            'wrong': wrong,
+            'correct': correct,
+            'timestamp': pd.Timestamp.now().isoformat()
+        })
+    
+    def _get_system_prompt(self, query: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """Generate system prompt with relevant schema and conversation context"""
         schema = self._get_relevant_schema(query)
         
+        # Build context prompt if available
+        context_prompt = ""
+        if context:
+            context_prompt = self._build_context_prompt(context)
+        
         return f"""You are a SQL expert for the NEO Warehouse Management System.
+{context_prompt}
 
 CRITICAL TABLE RELATIONSHIPS:
 
@@ -185,6 +368,14 @@ IMPORTANT RULES:
 8. When joining multiple tables, verify column names match exactly (case-sensitive)
 9. For maintenance tasks: Use MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
 
+CRITICAL COLUMN NAME RULES:
+⚠️ Common mistakes - ALWAYS use the CORRECT column name:
+- live_inventory_master uses: ARTICLE_ID (NOT ArticleId, NOT article_id)
+- wms_to_wcs_order_line_request_data uses: ARTICLE_ID (NOT ArticleId)
+- For empty/available/free bins: Use ARTICLE_ID='no-sku' in live_inventory_master
+- Important: QUANTITY=0 doesn't necessarily mean bin is empty (due to virtual quantity allocation)
+- For truly empty bins, use WHERE ARTICLE_ID='no-sku' which indicates no SKU assigned
+
 EXAMPLE QUERIES:
 
 -- Count total bots:
@@ -221,7 +412,20 @@ SELECT MAINTENANCE_POINT_BOT_ID AS bot_id, MAINTENANCE_TASK_ID AS task_id,
        INSERTED_TIMESTAMP AS assigned_date
 FROM dashboard_log_maintenance_task_master
 WHERE TASK_DONE = 0
-ORDER BY INSERTED_TIMESTAMP DESC LIMIT 100;"""
+ORDER BY INSERTED_TIMESTAMP DESC LIMIT 100;
+
+-- ⚠️ CRITICAL: Count empty/available bins (correct way):
+SELECT COUNT(DISTINCT BIN_ID) AS available_bins
+FROM live_inventory_master
+WHERE ARTICLE_ID = 'no-sku' AND IS_ACTIVE = 1
+LIMIT 100;
+
+-- Get list of empty bins:
+SELECT BIN_ID
+FROM live_inventory_master
+WHERE ARTICLE_ID = 'no-sku'
+GROUP BY BIN_ID
+LIMIT 100;"""
     
     def _test_db_connection(self) -> bool:
         """Test if database connection is available"""
@@ -310,14 +514,15 @@ CREATE TABLE mining_job_logs (
         Process natural language query with intelligent SQL generation, execution, and validation
         
         Workflow:
-        1. Generate SQL from natural language
-        2. Execute query on database
-        3. Validate results with confidence scoring
-        4. Retry with different strategy if low confidence
-        5. Return formatted results only when confident
+        1. Extract conversation context and user corrections
+        2. Generate SQL from natural language with context
+        3. Execute query on database
+        4. Validate results with confidence scoring
+        5. Retry with different strategy if low confidence
+        6. Return formatted results only when confident
         
         Args:
-            chat_request: User's chat request
+            chat_request: User's chat request with conversation_history
             
         Returns:
             Chat response with validated query results
@@ -331,6 +536,31 @@ CREATE TABLE mining_job_logs (
                     chat_request.session_id
                 )
             
+            # Detect if user is providing a correction
+            is_correction = self._detect_user_correction(chat_request.message, chat_request.session_id)
+            
+            # Auto-correct column names using fuzzy matching
+            corrected_message, auto_corrections = self._extract_and_correct_column_names(chat_request.message)
+            
+            # Store auto-corrections in session for learning
+            if auto_corrections and chat_request.session_id:
+                for corr in auto_corrections:
+                    self._store_correction(chat_request.session_id, corr['wrong'], corr['correct'])
+            
+            # Use corrected message for SQL generation
+            original_message = chat_request.message
+            if corrected_message != original_message:
+                logger.info(f"📝 Using corrected query: {corrected_message[:80]}...")
+                query_to_process = corrected_message
+            else:
+                query_to_process = original_message
+            
+            # Extract conversation context and corrections
+            conversation_context = self._extract_conversation_context(
+                chat_request.conversation_history,
+                chat_request.session_id
+            )
+            
             # Try up to 3 strategies to get confident results
             max_attempts = 3
             strategies = ['direct', 'with_context', 'simplified']
@@ -339,8 +569,13 @@ CREATE TABLE mining_job_logs (
                 strategy = strategies[min(attempt, len(strategies) - 1)]
                 logger.info(f"🔄 Attempt {attempt + 1}/{max_attempts} using strategy: {strategy}")
                 
-                # Step 1: Generate SQL query
-                sql_query = self._generate_sql_with_strategy(chat_request.message, strategy)
+                # Step 1: Generate SQL query with conversation context
+                # Use corrected query (with auto-corrected column names)
+                sql_query = self._generate_sql_with_strategy(
+                    query_to_process, 
+                    strategy,
+                    conversation_context
+                )
                 
                 if not sql_query:
                     continue
@@ -366,9 +601,24 @@ CREATE TABLE mining_job_logs (
                     response_text = self._format_results_with_confidence(
                         results, 
                         sql_query, 
-                        chat_request.message,
+                        original_message,  # Use original message for display
                         confidence,
                         validation_msg
+                    )
+                    
+                    # Add note about auto-corrections if any were made
+                    if auto_corrections:
+                        correction_notes = []
+                        for corr in auto_corrections:
+                            correction_notes.append(f"'{corr['wrong']}' → '{corr['correct']}'")
+                        response_text = f"ℹ️ Auto-corrected column names: {', '.join(correction_notes)}\n\n{response_text}"
+                    
+                    # Store successful query in session cache
+                    self._store_successful_query(
+                        chat_request.session_id or str(uuid.uuid4()),
+                        chat_request.message,
+                        sql_query,
+                        len(results) if results else 0
                     )
                     
                     # Record successful query for RLHF learning
@@ -385,7 +635,8 @@ CREATE TABLE mining_job_logs (
                                 "confidence": confidence,
                                 "row_count": len(results) if results else 0,
                                 "strategy": strategy,
-                                "attempt": attempt + 1
+                                "attempt": attempt + 1,
+                                "auto_corrections": auto_corrections if auto_corrections else None
                             }
                         )
                     except Exception as e:
@@ -501,11 +752,157 @@ CREATE TABLE mining_job_logs (
     # NEW INTELLIGENT METHODS
     # ========================================
     
-    def _generate_sql_with_strategy(self, question: str, strategy: str) -> Optional[str]:
-        """Generate SQL with different strategies"""
+    def _find_closest_column_name(self, user_column: str, table_name: str) -> Optional[str]:
+        """
+        Find the closest matching column name in the given table.
+        Uses fuzzy matching to correct common mistakes like:
+        - ArticleId → ARTICLE_ID
+        - BinId → BIN_ID
+        - orderId → ORDER_ID
+        
+        Args:
+            user_column: Column name as user typed it
+            table_name: Table to search in
+            
+        Returns:
+            Closest matching column name or None
+        """
+        if not self.schema_parser or not table_name:
+            return None
+        
         try:
-            # Get dynamic system prompt with relevant schema only
-            system_prompt = self._get_system_prompt(question)
+            # Get columns for the table
+            columns = self.schema_parser.tables.get(table_name, [])
+            if not columns:
+                return None
+            
+            column_names = [col['field'] for col in columns]
+            user_column_lower = user_column.lower()
+            
+            # Direct match (case-insensitive)
+            for col in column_names:
+                if col.lower() == user_column_lower:
+                    return col
+            
+            # Fuzzy matching: Calculate similarity scores
+            from difflib import SequenceMatcher
+            
+            def similarity(a: str, b: str) -> float:
+                """Calculate similarity ratio between two strings"""
+                return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+            
+            # Score each column
+            matches = []
+            for col in column_names:
+                score = similarity(user_column, col)
+                matches.append((col, score))
+            
+            # Sort by score (highest first)
+            matches.sort(key=lambda x: x[1], reverse=True)
+            
+            # Return best match if similarity is high enough (>0.6)
+            if matches and matches[0][1] > 0.6:
+                best_match = matches[0][0]
+                logger.info(f"🔍 Fuzzy match: '{user_column}' → '{best_match}' (score: {matches[0][1]:.2f})")
+                return best_match
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Error finding closest column: {e}")
+            return None
+    
+    def _extract_and_correct_column_names(self, question: str) -> Tuple[str, List[Dict[str, str]]]:
+        """
+        Extract potential column names from user's query and suggest corrections.
+        
+        Detects patterns like:
+        - "where ArticleId='xyz'"
+        - "show me BinId"
+        - "order by OrderDate"
+        
+        Returns:
+            Tuple of (corrected_question, list of corrections made)
+        """
+        corrections = []
+        corrected_question = question
+        
+        if not self.schema_parser:
+            return question, corrections
+        
+        try:
+            # Extract table names from question
+            question_lower = question.lower()
+            tables_mentioned = []
+            
+            for table in self.schema_parser.get_table_names():
+                if table.lower() in question_lower:
+                    tables_mentioned.append(table)
+            
+            if not tables_mentioned:
+                return question, corrections
+            
+            # Pattern to find potential column names in WHERE clauses, ORDER BY, etc.
+            # Matches: word followed by = or space (likely column name)
+            import re
+            column_patterns = [
+                r'\bwhere\s+(\w+)\s*[=<>]',  # WHERE column_name =
+                r'\band\s+(\w+)\s*[=<>]',    # AND column_name =
+                r'\bor\s+(\w+)\s*[=<>]',     # OR column_name =
+                r'\border\s+by\s+(\w+)',     # ORDER BY column_name
+                r'\bgroup\s+by\s+(\w+)',     # GROUP BY column_name
+                r'\bselect\s+(\w+)',         # SELECT column_name
+                r'\bshow.*?(\w+Id)',         # show me ArticleId (pattern for Id columns)
+                r'\b(\w+Id)\s*[=\'"]',       # ArticleId='value'
+                r'\b(\w+_id)\s*[=\'"]',      # article_id='value'
+            ]
+            
+            potential_columns = set()
+            for pattern in column_patterns:
+                matches = re.finditer(pattern, question, re.IGNORECASE)
+                for match in matches:
+                    potential_columns.add(match.group(1))
+            
+            # For each table mentioned, try to find corrections
+            for table in tables_mentioned:
+                for user_col in potential_columns:
+                    # Skip common SQL keywords
+                    if user_col.upper() in ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER', 'GROUP', 'BY', 'HAVING']:
+                        continue
+                    
+                    correct_col = self._find_closest_column_name(user_col, table)
+                    
+                    if correct_col and correct_col != user_col:
+                        corrections.append({
+                            'table': table,
+                            'wrong': user_col,
+                            'correct': correct_col
+                        })
+                        
+                        # Replace in question (case-insensitive)
+                        corrected_question = re.sub(
+                            r'\b' + re.escape(user_col) + r'\b',
+                            correct_col,
+                            corrected_question,
+                            flags=re.IGNORECASE
+                        )
+            
+            if corrections:
+                logger.info(f"🔧 Auto-corrected {len(corrections)} column name(s) in query")
+                for corr in corrections:
+                    logger.info(f"   {corr['table']}: '{corr['wrong']}' → '{corr['correct']}'")
+            
+            return corrected_question, corrections
+            
+        except Exception as e:
+            logger.error(f"❌ Error extracting column names: {e}")
+            return question, corrections
+    
+    def _generate_sql_with_strategy(self, question: str, strategy: str, context: Optional[Dict[str, Any]] = None) -> Optional[str]:
+        """Generate SQL with different strategies and conversation context"""
+        try:
+            # Get dynamic system prompt with relevant schema and conversation context
+            system_prompt = self._get_system_prompt(question, context)
             
             if strategy == 'direct':
                 prompt = f"Convert to SQL: {question}"

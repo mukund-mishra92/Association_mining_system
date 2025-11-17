@@ -527,3 +527,46 @@ class RLHFService:
                 json.dump(self.learned_patterns, f, indent=2)
         except Exception as e:
             logger.error(f"Error saving learned patterns: {e}")
+    
+    def get_sql_corrections(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Retrieve SQL corrections from negative feedback history
+        Returns patterns where users provided corrections for SQL queries
+        """
+        try:
+            feedbacks = self._read_feedback_history()
+            
+            corrections = []
+            for feedback in feedbacks:
+                # Look for SQL assistant feedback with corrections
+                if feedback.get('chatbot_type') != 'sql_assistant':
+                    continue
+                
+                # Check if it's negative feedback or a correction
+                comment = feedback.get('comment', '')
+                if not comment:
+                    continue
+                
+                comment_lower = comment.lower()
+                
+                # Detect correction patterns in comments
+                if any(indicator in comment_lower for indicator in [
+                    'wrong', 'incorrect', 'should be', 'use instead',
+                    'not correct', 'the correct', 'actually'
+                ]):
+                    corrections.append({
+                        'query': feedback.get('query'),
+                        'comment': comment,
+                        'timestamp': feedback.get('timestamp'),
+                        'reward': feedback.get('reward_score', 0),
+                        'metadata': feedback.get('metadata', {})
+                    })
+            
+            # Sort by timestamp (most recent first)
+            corrections.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            
+            return corrections[:limit]
+            
+        except Exception as e:
+            logger.error(f"❌ Error retrieving SQL corrections: {e}")
+            return []
