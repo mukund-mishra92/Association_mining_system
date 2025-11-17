@@ -156,6 +156,69 @@
         "strategy": "direct",
         "attempt": 1
       }
+    },
+    {
+      "query": "can you give me all the table available in the database",
+      "query_keywords": [
+        "give",
+        "table",
+        "available",
+        "database"
+      ],
+      "query_length": 11,
+      "response": "**Query:** can you give me all the table available in the database\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 183 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_",
+      "response_length": 919,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:25:37.632776",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 183,
+        "strategy": "with_context",
+        "attempt": 2
+      }
+    },
+    {
+      "query": "which database we are accessing, localhot or something else",
+      "query_keywords": [
+        "which",
+        "database",
+        "accessing,",
+        "localhot",
+        "something",
+        "else"
+      ],
+      "query_length": 9,
+      "response": "**Query:** which database we are accessing, localhot or something else\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| DATABASE() |\n| --- |\n| neo |\n\n\n**SQL Query:**\n```sql\nSELECT DATABASE()\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 344,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:26:04.150740",
+      "metadata": {
+        "sql_query": "SELECT DATABASE()",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1
+      }
+    },
+    {
+      "query": "whta is the hostname",
+      "query_keywords": [
+        "whta",
+        "hostname"
+      ],
+      "query_length": 4,
+      "response": "**Query:** whta is the hostname\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| @@hostname |\n| --- |\n| WIN-SR1LS906416 |\n\n\n**SQL Query:**\n```sql\nSELECT @@hostname\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 317,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:26:21.073792",
+      "metadata": {
+        "sql_query": "SELECT @@hostname",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1
+      }
     }
   ],
   "knowledge_base": [
@@ -365,6 +428,211 @@
           "Dashboard Manual.pdf",
           "Dashboard Manual.pdf",
           "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "hi can you tell me about neo",
+      "query_keywords": [
+        "tell",
+        "about"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe NEO system is an automation solution designed for warehouse management, specifically for Automatic Storage and Retrieval Systems (ASRS). The system has certain requirements and specifications for shipments to be loaded, including size, weight, and packaging. The NEO system is proposed by Falcon Autotech Pvt. Ltd. as a solution for various companies, including Style Union and UHP.\n\n**Key Points**\n\u2022 The NEO system has specific requirements for shipments, including a minimum width ",
+      "response_length": 1741,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T11:23:14.868099",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "Explore related documentation",
+      "query_keywords": [
+        "explore",
+        "related",
+        "documentation"
+      ],
+      "query_length": 3,
+      "response": "The provided documentation includes multiple versions of the Dashboard Manual, which outlines the steps for logging out of the IT dashboard and describes table functionalities such as columns and filter options. Additionally, there is a techno-commercial offer document from Burjeel Holdings that lists accumulation rollers with various specifications. [Document 1-5]",
+      "response_length": 367,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T11:23:49.511231",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "View practical examples",
+      "query_keywords": [
+        "view",
+        "practical",
+        "examples"
+      ],
+      "query_length": 3,
+      "response": "Practical examples of NEO implementations can be seen in projects such as a large French sports goods retailer, a fast-growing Indian Q-commerce company, and a Middle East courier company, as mentioned in the documentation [Document 1]. These examples demonstrate the versatility of the NEO system in various industries. The documentation provides specific details about each project [Document 1].",
+      "response_length": 397,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T11:24:00.335962",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "Check getting started guide",
+      "query_keywords": [
+        "check",
+        "getting",
+        "started",
+        "guide"
+      ],
+      "query_length": 4,
+      "response": "There is no getting started guide provided in the given documents, but the SOP Document NEO ASRS and Dashboard Manual may serve as a reference for initial setup and operation. These documents outline error codes, system operations, and user manual for the NEO ASRS system. [Document 1, Document 5]",
+      "response_length": 297,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T11:24:10.125866",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "SOP Document NEO ASRS.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "Learn about report generation",
+      "query_keywords": [
+        "learn",
+        "about",
+        "report",
+        "generation"
+      ],
+      "query_length": 4,
+      "response": "Report generation is not explicitly mentioned in the provided documents, but the Automation Management System (AMS) in the NEO system includes features such as Issue Logging, Preventive Maintenance Check List, and Predictive Maintenance, which may involve report generation. The UAT Plan and test cases may also include reporting on system performance and functionality. [DHL NEO Techno-commercial offer.pdf]",
+      "response_length": 408,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T11:24:28.965843",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "whta is the wather today",
+      "query_keywords": [
+        "whta",
+        "wather",
+        "today"
+      ],
+      "query_length": 5,
+      "response": "[Local LLM Mock Response - phi-2-2.7b]\nThis is a simulated response from the local fallback system. In production, this would use the actual phi-2-2.7b model you have downloaded (models are present in your system). To enable real local LLM inference, install llama-cpp-python with proper C++ build tools.\nYour query has been processed by the fallback system successfully!",
+      "response_length": 371,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:11:36.707864",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "hi can you explain what is neo",
+      "query_keywords": [
+        "explain",
+        "what"
+      ],
+      "query_length": 7,
+      "response": "[Local LLM Mock Response - phi-2-2.7b]\n\nThis is a simulated response from the local fallback system. In production, this would use the actual phi-2-2.7b model you have downloaded (models are present in your system). To enable real local LLM inference, install llama-cpp-python with proper C++ build tools.\n\nYour query has been processed by the fallback system successfully!",
+      "response_length": 373,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:13:20.797730",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "hi, can you explain neo in 30 words",
+      "query_keywords": [
+        "explain",
+        "words"
+      ],
+      "query_length": 8,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:22:21.469447",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "hi, can you explain neo in 30 words",
+      "query_keywords": [
+        "explain",
+        "words"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\nNEO is a warehouse management system designed to handle high-volume shipments with automated sorting and scanning capabilities. It is proposed by FALCON for supply to UHP. \n\n**Key Points**\n\u2022 Designed to handle 7200 shipments per hour\n\u2022 Equipped with automatic label applicator and barcode scanner\n\u2022 Sorts directly to 58 end destinations using Loop Cross Belt Sorter\n\n**Additional Details**\nThe system consists of powered belt conveyors, automatic induct lines, and automatic barcode scan",
+      "response_length": 709,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T12:24:14.471093",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
         ]
       }
     }

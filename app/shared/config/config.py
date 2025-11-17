@@ -47,5 +47,11 @@ class Config:
     API_TITLE = "Association Rule Mining API"
     API_VERSION = "1.0.0"
     API_DESCRIPTION = "Production-ready association rule mining system with temporal analysis"
+    
+    # Local LLM Configuration (Fallback when Groq API fails)
+    LOCAL_LLM_ENABLED = os.getenv("LOCAL_LLM_ENABLED", "true").lower() == "true"
+    LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "phi-2-2.7b")  # Options: tinyllama-1.1b, phi-2-2.7b, mistral-7b-instruct
+    LOCAL_LLM_MAX_TOKENS = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "500"))
+    LOCAL_LLM_TEMPERATURE = float(os.getenv("LOCAL_LLM_TEMPERATURE", "0.3"))
 
 config = Config()

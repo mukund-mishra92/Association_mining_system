@@ -1,6 +1,6 @@
 """
-LLM Service - Integration with Large Language Models (OpenAI/Anthropic)
-Handles AI interactions for the chatbot
+LLM Service - Integration with Large Language Models (OpenAI/Anthropic/Local)
+Handles AI interactions for the chatbot with fallback to local LLM
 """
 
 import os
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class LLMService:
     """
     Service for interacting with Large Language Models
-    Supports OpenAI GPT and Anthropic Claude with automatic fallback
+    Supports Groq, OpenAI, Anthropic with automatic fallback to local LLM
     """
     
     def __init__(self):
@@ -21,6 +21,12 @@ class LLMService:
         self.groq_api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")  # Groq (fast inference) - Priority 1
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        
+        # Local LLM fallback settings
+        from app.shared.config.config import config
+        self.local_llm_enabled = config.LOCAL_LLM_ENABLED
+        self.local_llm_model = config.LOCAL_LLM_MODEL
+        self.local_llm_service = None
         
         # Determine which provider to use (Groq has priority)
         self.provider = None
@@ -67,9 +73,20 @@ class LLMService:
             except Exception as e:
                 logger.warning(f"⚠️ Anthropic initialization failed: {e}")
         
+        # Initialize local LLM if enabled and no cloud API available
+        if not self.provider and self.local_llm_enabled:
+            try:
+                from .local_llm_service import get_local_llm
+                self.local_llm_service = get_local_llm(model_name=self.local_llm_model)
+                self.provider = "local_llm"
+                logger.info(f"✅ Local LLM initialized ({self.local_llm_model})")
+            except Exception as e:
+                logger.warning(f"⚠️ Local LLM initialization failed: {e}")
+        
         if not self.provider:
-            logger.warning("⚠️ No LLM API keys found - using mock responses")
-            logger.warning("   Add GROQ_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY to .env file")
+            logger.warning("⚠️ No LLM available - using mock responses")
+            logger.warning("   Add GROQ_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY to .env")
+            logger.warning("   Or enable LOCAL_LLM_ENABLED=true in config")
             self.provider = "mock"
     
     def generate_response(
@@ -98,10 +115,22 @@ class LLMService:
                 return self._generate_openai(messages, system_prompt, max_tokens, temperature)
             elif self.provider == "anthropic":
                 return self._generate_anthropic(messages, system_prompt, max_tokens, temperature)
+            elif self.provider == "local_llm":
+                return self._generate_local_llm(messages, system_prompt, max_tokens, temperature)
             else:
                 return self._generate_mock(messages)
+                
         except Exception as e:
-            logger.error(f"❌ Error generating LLM response: {e}", exc_info=True)
+            logger.error(f"❌ Error with {self.provider} LLM: {e}")
+            
+            # Try fallback to local LLM if enabled and not already using it
+            if self.local_llm_enabled and self.provider != "local_llm":
+                try:
+                    logger.info("🔄 Attempting fallback to local LLM...")
+                    return self._generate_local_llm(messages, system_prompt, max_tokens, temperature)
+                except Exception as fallback_error:
+                    logger.error(f"❌ Local LLM fallback also failed: {fallback_error}")
+            
             return "I apologize, but I encountered an error processing your request. Please try again."
     
     def _generate_groq(
@@ -165,6 +194,35 @@ class LLMService:
         )
         
         return response.content[0].text
+    
+    def _generate_local_llm(
+        self,
+        messages: List[Dict[str, str]],
+        system_prompt: Optional[str],
+        max_tokens: int,
+        temperature: float
+    ) -> str:
+        """Generate response using local LLM (fallback)"""
+        # Initialize local LLM if not already done
+        if self.local_llm_service is None:
+            from .local_llm_service import get_local_llm
+            self.local_llm_service = get_local_llm(model_name=self.local_llm_model)
+        
+        # Prepare messages with system prompt
+        full_messages = []
+        if system_prompt:
+            full_messages.append({"role": "system", "content": system_prompt})
+        full_messages.extend(messages)
+        
+        # Generate using local LLM
+        logger.info(f"💾 Using local LLM: {self.local_llm_model}")
+        response = self.local_llm_service.chat(
+            messages=full_messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        
+        return response
     
     def _generate_mock(self, messages: List[Dict[str, str]]) -> str:
         """Generate mock response when no API key is available"""

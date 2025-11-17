@@ -104,3 +104,7 @@ Thumbs.db
 # *.xlsx
 # *.xls
 # data/
+
+# Local LLM models (large binary files - download separately)
+app/modules/neo_chatbot/data/models/*.gguf
+app/modules/neo_chatbot/data/models/
