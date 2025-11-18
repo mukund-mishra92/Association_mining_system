@@ -21,12 +21,25 @@ class LLMService:
         self.groq_api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")  # Groq (fast inference) - Priority 1
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         self.anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        self.huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY") or os.getenv("HF_TOKEN")  # HuggingFace for FREE embeddings
         
         # Local LLM fallback settings
         from app.shared.config.config import config
         self.local_llm_enabled = config.LOCAL_LLM_ENABLED
         self.local_llm_model = config.LOCAL_LLM_MODEL
         self.local_llm_service = None
+        
+        # HuggingFace client for embeddings
+        self.hf_client = None
+        if self.huggingface_api_key:
+            try:
+                from huggingface_hub import InferenceClient
+                self.hf_client = InferenceClient(token=self.huggingface_api_key)
+                logger.info("✅ HuggingFace API initialized for FREE embeddings")
+            except ImportError:
+                logger.warning("⚠️ huggingface_hub not installed. Run: pip install huggingface_hub")
+            except Exception as e:
+                logger.warning(f"⚠️ HuggingFace initialization failed: {e}")
         
         # Determine which provider to use (Groq has priority)
         self.provider = None
@@ -147,7 +160,10 @@ class LLMService:
         full_messages.extend(messages)
         
         response = self.groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",  # Fast Llama model on Groq
+            #model="llama-3.3-70b-versatile",  # Fast Llama model on Groq
+            #model = "llama-3.1-8b-instant",
+            #model = "mixtral-8x7b",
+            model = "qwen2-72b-instruct",
             messages=full_messages,
             max_tokens=max_tokens,
             temperature=temperature
@@ -302,32 +318,78 @@ How can I help you today?"""
         """
         Generate embedding vector for text (for vector search)
         
+        Priority:
+        1. HuggingFace (FREE, unlimited, high quality)
+        2. OpenAI (paid, high quality)
+        3. Mock embeddings (fallback)
+        
         Args:
             text: Text to embed
             
         Returns:
-            Embedding vector (1536 dimensions for OpenAI)
+            Embedding vector (768 or 1536 dimensions)
         """
         try:
-            # Note: Groq doesn't support embeddings, fall back to OpenAI or simple method
+            # Priority 1: HuggingFace FREE Embeddings (BEST FOR PRODUCTION!)
+            if self.hf_client:
+                try:
+                    # Using sentence-transformers/all-MiniLM-L6-v2 (FREE, fast, 384 dims)
+                    # Or BAAI/bge-small-en-v1.5 (FREE, better quality, 384 dims)
+                    response = self.hf_client.feature_extraction(
+                        text,
+                        model="BAAI/bge-small-en-v1.5"  # High-quality free embeddings
+                    )
+                    
+                    # HuggingFace returns nested list, flatten it
+                    if isinstance(response, list):
+                        if isinstance(response[0], list):
+                            embedding = response[0]
+                        else:
+                            embedding = response
+                    else:
+                        embedding = list(response)
+                    
+                    logger.debug(f"✅ Generated HuggingFace embedding ({len(embedding)} dims)")
+                    return embedding
+                    
+                except Exception as hf_error:
+                    logger.warning(f"⚠️ HuggingFace embedding failed: {hf_error}, falling back...")
+            
+            # Priority 2: OpenAI Embeddings (paid but high quality)
             if self.provider == "openai" and self.openai_client:
                 response = self.openai_client.embeddings.create(
                     model="text-embedding-3-small",
                     input=text
                 )
-                return response.data[0].embedding
-            else:
-                # Return mock embedding for testing
-                logger.debug("⚠️ Using mock embeddings - install OpenAI for real embeddings")
-                # Simple hash-based mock embedding
-                import hashlib
-                hash_val = int(hashlib.md5(text.encode()).hexdigest(), 16)
-                # Generate 1536 dimensions from hash
-                embedding = [(hash_val >> (i % 128)) % 1000 / 1000.0 for i in range(1536)]
+                embedding = response.data[0].embedding
+                logger.debug(f"✅ Generated OpenAI embedding ({len(embedding)} dims)")
                 return embedding
+            
+            # Fallback: Mock embeddings (for development/testing only)
+            logger.warning("⚠️ Using MOCK embeddings - Add HUGGINGFACE_API_KEY to .env for FREE real embeddings!")
+            logger.warning("   Get your FREE key at: https://huggingface.co/settings/tokens")
+            
+            # Simple sentence-transformer-like mock
+            import hashlib
+            import numpy as np
+            
+            # Create deterministic embedding from text
+            hash_val = int(hashlib.md5(text.encode()).hexdigest(), 16)
+            np.random.seed(hash_val % (2**32))
+            
+            # Generate 384 dimensions (same as bge-small-en-v1.5)
+            embedding = np.random.randn(384).tolist()
+            
+            # Normalize to unit length (like real embeddings)
+            norm = np.linalg.norm(embedding)
+            embedding = (np.array(embedding) / norm).tolist()
+            
+            return embedding
+            
         except Exception as e:
-            logger.error(f"❌ Error generating embedding: {e}")
-            return [0.0] * 1536
+            logger.error(f"❌ Error generating embedding: {e}", exc_info=True)
+            # Return zero vector as last resort
+            return [0.0] * 384
     
     def is_available(self) -> bool:
         """Check if LLM service is available with real API"""

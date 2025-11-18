@@ -469,6 +469,352 @@
         "attempt": 1,
         "auto_corrections": null
       }
+    },
+    {
+      "query": "give me all the tuble available in the database",
+      "query_keywords": [
+        "give",
+        "tuble",
+        "available",
+        "database"
+      ],
+      "query_length": 9,
+      "response": "**Query:** give me all the tuble available in the database\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 183 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_alarm_lo",
+      "response_length": 911,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T14:02:04.190090",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 183,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "show me all ther collumn names available in sku_master",
+      "query_keywords": [
+        "show",
+        "ther",
+        "collumn",
+        "names",
+        "available",
+        "sku_master"
+      ],
+      "query_length": 9,
+      "response": "**Query:** show me all ther collumn names available in sku_master\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 100 result(s):**\n\n| COLUMN_NAME |\n| --- |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n| SKU_ID |\n\n\n*Showing first 20 of 100 results*\n\n**SQL Query:**\n```sql\nSELECT COLUMN_NAME \nFROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_NAME = 'sk",
+      "response_length": 697,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T14:03:40.572946",
+      "metadata": {
+        "sql_query": "SELECT COLUMN_NAME \nFROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_NAME = 'sku_master' \nORDER BY ORDINAL_POSITION \nLIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 100,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what are the different tables available in the database",
+      "query_keywords": [
+        "what",
+        "different",
+        "tables",
+        "available",
+        "database"
+      ],
+      "query_length": 9,
+      "response": "**Query:** what are the different tables available in the database\n\n\ud83d\udfe2 **High Confidence** (90%)\n\n**Found 183 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_",
+      "response_length": 900,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T14:25:20.022995",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.9,
+        "row_count": 183,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "give me all the data for the / table available in the database",
+      "query_keywords": [
+        "give",
+        "data",
+        "table",
+        "available",
+        "database"
+      ],
+      "query_length": 13,
+      "response": "**Query:** give me all the data for the / table available in the database\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 100 result(s):**\n\n| TABLE_CATALOG | TABLE_SCHEMA | TABLE_NAME | TABLE_TYPE | ENGINE | VERSION | ROW_FORMAT | TABLE_ROWS | AVG_ROW_LENGTH | DATA_LENGTH | MAX_DATA_LENGTH | INDEX_LENGTH | DATA_FREE | AUTO_INCREMENT | CREATE_TIME | UPDATE_TIME | CHECK_TIME | TABLE_COLLATION | CHECKSUM | CREATE_OPTIONS | TABLE_COMMENT |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --",
+      "response_length": 5318,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:39:04.025617",
+      "metadata": {
+        "sql_query": "SELECT * FROM information_schema.tables LIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 100,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "give me all the tables where bot data is available",
+      "query_keywords": [
+        "give",
+        "tables",
+        "where",
+        "data",
+        "available"
+      ],
+      "query_length": 10,
+      "response": "**Query:** give me all the tables where bot data is available\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 100 result(s):**\n\n| TABLE_NAME |\n| --- |\n| bot_master |\n| bot_master |\n| bot_master_log |\n| bot_charging_bit_log |\n| bot_master |\n| bot_master_log |\n| dashboard_log_maintenance_task_master |\n| bot_master |\n| bot_master_log |\n| bot_master |\n| bot_master_log |\n| bot_master |\n| bot_master_log |\n| bot_charging_bit_log |\n| bot_master |\n| bot_master_log |\n| dashboard_log_maintenance_task_master |\n| bot_",
+      "response_length": 941,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:39:38.362940",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_NAME IN ('bot_master', 'bot_master_log', 'dashboard_log_maintenance_task_master', 'bot_charging_bit_log') \nLIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 100,
+        "strategy": "simplified",
+        "attempt": 3,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: give me all the tables where bot data is available\ud83d\udfe2 High Confidence (95%)Found 100 result(s):| TABLE_NAME || --- || bot_master || bot_master || bot_master_log || bot_charging_bit_log || bot_master || bot_master_log || dashboard_log_maintenance_task_master || bot_master || bot_master_log || bot_master || bot_master_log || bot_master || bot_master_log || bot_charging_bit_log || bot_master || bot_master_log || dashboard_log_maintenance_task_master || bot_charging_bit_log || bot_master || bot",
+      "response_length": 892,
+      "reward": -0.55,
+      "timestamp": "2025-11-17T16:40:48.918528",
+      "metadata": {
+        "session_id": "c1ffe069-787b-4320-a3cd-e9338be437ee",
+        "confidence": 0.95,
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_NAME IN ('bot_master', 'bot_master_log', 'dashboard_log_maintenance_task_master', 'bot_charging_bit_log') \nLIMIT 100;",
+        "tables_used": [
+          "information_schema"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "show me the stations",
+      "query_keywords": [
+        "show",
+        "stations"
+      ],
+      "query_length": 4,
+      "response": "**Query:** show me the stations\n\n\ud83d\udfe2 **High Confidence** (90%)\n\n**Found 2 result(s):**\n\n| STATION_ID |\n| --- |\n| 3 |\n| 9 |\n\n\n**SQL Query:**\n```sql\nSELECT DISTINCT STATION_ID FROM order_bin_mapping LIMIT 100;\n```\n\n*Validation: \u2705 2 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data*",
+      "response_length": 312,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T11:55:32.223024",
+      "metadata": {
+        "sql_query": "SELECT DISTINCT STATION_ID FROM order_bin_mapping LIMIT 100;",
+        "confidence": 0.9,
+        "row_count": 2,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "show me all the stations",
+      "query_keywords": [
+        "show",
+        "stations"
+      ],
+      "query_length": 5,
+      "response": "**Query:** show me all the stations\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 2 result(s):**\n\n| ORDER_BIN_ID | BIN_ID | STATION_ID | TYPE | STATUS | BOT_ID | IS_SYNCED | INSERTED_TIMESTAMP | UPDATED_TIMESTAMP |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 6181 | 3427 | 3 | RACK_PICK | POST_ON_STATION | None | 0 | 2025-10-24 17:39:48.504000 | 2025-10-24 17:40:15.997000 |\n| 3980 | 1701 | 9 | RACK_PICK | POST_ON_STATION | None | 0 | 2025-10-21 10:16:42.179000 | 2025-10-21 10:16:57.326000 |",
+      "response_length": 734,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:01:38.146432",
+      "metadata": {
+        "sql_query": "SELECT * FROM order_bin_mapping GROUP BY STATION_ID LIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 2,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "no, this is giving me something else.i need al the unique station ids available in the system",
+      "query_keywords": [
+        "this",
+        "giving",
+        "something",
+        "else.i",
+        "need",
+        "unique",
+        "station",
+        "available",
+        "system"
+      ],
+      "query_length": 17,
+      "response": "**Query:** no, this is giving me something else.i need al the unique station ids available in the system\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 2 result(s):**\n\n| STATION_ID |\n| --- |\n| 37 |\n| 38 |\n\n\n**SQL Query:**\n```sql\nSELECT DISTINCT STATION_ID FROM hw_charging_station_master LIMIT 100;\n```\n\n*Validation: \u2705 2 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 436,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:02:17.607374",
+      "metadata": {
+        "sql_query": "SELECT DISTINCT STATION_ID FROM hw_charging_station_master LIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 2,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "can you give me all the tables available",
+      "query_keywords": [
+        "give",
+        "tables",
+        "available"
+      ],
+      "query_length": 8,
+      "response": "**Query:** can you give me all the tables available\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 188 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_alarm_log |\n| b",
+      "response_length": 932,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:04:10.128371",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 188,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "list out all the table avlaibale with us",
+      "query_keywords": [
+        "list",
+        "table",
+        "avlaibale"
+      ],
+      "query_length": 8,
+      "response": "**Query:** list out all the table avlaibale with us\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 188 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_alarm_log |\n| b",
+      "response_length": 932,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:49:11.156538",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 188,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what are the different unique bot ids we have",
+      "query_keywords": [
+        "what",
+        "different",
+        "unique",
+        "have"
+      ],
+      "query_length": 9,
+      "response": "**Query:** what are the different unique bot ids we have\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 24 result(s):**\n\n| BOT_ID |\n| --- |\n| BOT-0001 |\n| BOT-0002 |\n| BOT-0003 |\n| BOT-0004 |\n| BOT-0005 |\n| BOT-0006 |\n| BOT-0007 |\n| BOT-0008 |\n| BOT-0009 |\n| BOT-0010 |\n| BOT-0011 |\n| BOT-0012 |\n| BOT-0013 |\n| BOT-0014 |\n| BOT-0015 |\n| BOT-0016 |\n| BOT-0017 |\n| BOT-0018 |\n| BOT-0019 |\n| BOT-0020 |\n\n\n*Showing first 20 of 24 results*\n\n**SQL Query:**\n```sql\nSELECT DISTINCT BOT_ID FROM bot_master LIMIT 100;\n`",
+      "response_length": 646,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:49:31.389373",
+      "metadata": {
+        "sql_query": "SELECT DISTINCT BOT_ID FROM bot_master LIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 24,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "tell me the station ids for the charging station",
+      "query_keywords": [
+        "tell",
+        "station",
+        "charging",
+        "station"
+      ],
+      "query_length": 9,
+      "response": "**Query:** tell me the station ids for the charging station\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 2 result(s):**\n\n| STATION_ID |\n| --- |\n| 37 |\n| 38 |\n\n\n**SQL Query:**\n```sql\nSELECT STATION_ID FROM hw_charging_station_master LIMIT 100;\n```\n\n*Validation: \u2705 2 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 382,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:50:36.584911",
+      "metadata": {
+        "sql_query": "SELECT STATION_ID FROM hw_charging_station_master LIMIT 100;",
+        "confidence": 0.95,
+        "row_count": 2,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "no, this is not right",
+      "query_keywords": [
+        "this",
+        "right"
+      ],
+      "query_length": 5,
+      "response": "**Query:** no, this is not right\n\n\ud83d\udfe2 **High Confidence** (90%)\n\n**Found 1 result(s):**\n\n| answer |\n| --- |\n| no |\n\n\n**SQL Query:**\n```sql\nSELECT 'no' AS answer;\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data*",
+      "response_length": 266,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:54:40.124455",
+      "metadata": {
+        "sql_query": "SELECT 'no' AS answer;",
+        "confidence": 0.9,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what are the different table in our database",
+      "query_keywords": [
+        "what",
+        "different",
+        "table",
+        "database"
+      ],
+      "query_length": 8,
+      "response": "**Query:** what are the different table in our database\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 188 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_alarm_log |",
+      "response_length": 936,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:37:21.441091",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 188,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: what are the different table in our database\ud83d\udfe2 High Confidence (95%)Found 188 result(s):| TABLE_NAME || --- || alarm_master || alarm_master_copy || api_master || article_proximity_score || article_registered || articles_registered || auto_calibration_logs || bin_info_master || bin_loading_wave_order_master || bin_recall_wave_wms_data_dsb_temp || bin_recall_wave_wms_data_dsb_upload_validation || bot_alarm_log || bot_charging_bit_log || bot_manual_alarm_log || bot_master || bot_master_log ||",
+      "response_length": 886,
+      "reward": 0.65,
+      "timestamp": "2025-11-18T16:38:02.666562",
+      "metadata": {
+        "session_id": "283a4619-a823-4447-802a-98d18868abd6",
+        "confidence": 0.95,
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "tables_used": [
+          "information_schema"
+        ],
+        "suggested_actions": []
+      }
     }
   ],
   "knowledge_base": [
@@ -905,6 +1251,1354 @@
           "SOP Document NEO ASRS.pdf",
           "SOP Document NEO ASRS.pdf",
           "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an Automated Storage and Retrieval System (ASRS) that uses autonomous robots to store and retrieve bins efficiently. It is designed to optimize warehouse operations and improve productivity. [NEO System Documentation]",
+      "response_length": 224,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T14:24:53.305349",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial offer For Trent_Wakhari_CBS_24K_22012025.pdf",
+          "Techno Commercial offer For Trent_Wakhari_CBS_24K_22012025.pdf",
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an Automated Storage and Retrieval System (ASRS) that uses autonomous robots to store and retrieve bins efficiently. It is designed to optimize warehouse operations and improve productivity. [NEO System Documentation]",
+      "response_length": 224,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T15:32:09.052702",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial offer For Trent_Wakhari_CBS_24K_22012025.pdf",
+          "Techno Commercial offer For Trent_Wakhari_CBS_24K_22012025.pdf",
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what do you know about proposals",
+      "query_keywords": [
+        "what",
+        "know",
+        "about",
+        "proposals"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nProposals are detailed documents that outline the terms and conditions of a project or system implementation, including technical specifications, pricing, and support services. The provided documentation includes various proposals from Falcon Autotech for different clients, showcasing their expertise in conveyor systems, sorting conveyors, and automation solutions. These proposals highlight the company's capabilities, system features, and warranty periods.\n\n**Key Points**\n\u2022 Proposal",
+      "response_length": 2114,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:29:47.424564",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Amaon_ISK3_Bhiwandi_Technocommercial offer_Linear CBS_Option AMZ_03-10-24.pdf",
+          "F23-00173-02_Techno-commercial_Offer_CBS_Hyderabad_Delhivery_01042023.pdf",
+          "F22-00224.01 Revised Techno- commercial offer_ conveyor automation _ 15-07-2022.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you outline all the major segments available in a project proposals we have",
+      "query_keywords": [
+        "outline",
+        "major",
+        "segments",
+        "available",
+        "project",
+        "proposals",
+        "have"
+      ],
+      "query_length": 14,
+      "response": "**Overview**\nThe project proposals for the NEO Warehouse Management System outline various segments, including technical specifications, commercial terms, and payment schedules. These segments are crucial in understanding the scope and requirements of the project. The documentation provides a comprehensive overview of the different components involved in the project.\n\n**Key Points**\n\u2022 **Technical Specifications**: The proposals outline the technical details of the NEO ASRS system, including the ",
+      "response_length": 2265,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:30:28.343129",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "FK_TEchnical_Kolkata_Loop CBS_40K PPH_Single Belt.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you create one proposal for me",
+      "query_keywords": [
+        "create",
+        "proposal"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nFalcon Autotech proposes a comprehensive solution for warehouse automation, incorporating innovative combinations of product lines for effective materials handling, sortation, and movement. The proposed system is controlled by in-house WCS applications, ensuring real-time monitoring and accuracy. This proposal aims to provide a tailored solution for clients, such as Flipkart, Festo, and FedEx, to enhance their intralogistics operations.\n\n**Key Points**\n\u2022 **Innovative Combinations**:",
+      "response_length": 2010,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:31:15.547575",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Flipkart_NCR_Technocommercial_Offer_PTL System_25-06-25 (1).pdf",
+          "Flipkart_NCR_Technocommercial_Offer_PTL System_25-06-25.pdf",
+          "Festo_technocommercial offer_Option 5A_10-09-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "this is very short,please create a full proposal like we have for cbs or neo",
+      "query_keywords": [
+        "this",
+        "very",
+        "short,please",
+        "create",
+        "full",
+        "proposal",
+        "like",
+        "have"
+      ],
+      "query_length": 15,
+      "response": "I completely understand that you're looking for a more comprehensive proposal, similar to what we have for CBS or NEO. However, I want to clarify that I can only provide information and examples from our existing documentation. I'm not capable of generating new content from scratch.\n\nThat being said, I'd be happy to help you explore our existing documentation and find relevant examples or templates that might be useful for your needs. We have a range of documents that cover various aspects of ou",
+      "response_length": 1395,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:31:59.746817",
+      "metadata": {
+        "query_type": "GENERATIVE",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial Offer for Shipment Sorter_Delhivery Bangalore_31102023.pdf",
+          "Offer for Robodome.pdf",
+          "Falcon's Arm Diverter techno-commercial offer - 1200 PPH- 27-05-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "I completely understand that you're looking for a more comprehensive proposal, similar to what we have for CBS or NEO. However, I want to clarify that I can only provide information and examples from our existing documentation. I'm not capable of generating new content from scratch.That being said, I'd be happy to help you explore our existing documentation and find relevant examples or templates that might be useful for your needs. We have a range of documents that cover various aspects of our ",
+      "response_length": 1554,
+      "reward": -0.55,
+      "timestamp": "2025-11-17T16:38:10.934954",
+      "metadata": {
+        "session_id": "c1ffe069-787b-4320-a3cd-e9338be437ee",
+        "confidence": 1,
+        "suggested_actions": [
+          "Explore related documentation",
+          "View practical examples",
+          "Check getting started guide",
+          "Ask about specific features"
+        ]
+      }
+    },
+    {
+      "query": "what are the different type of solution Falcon Autotech is providing",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "solution",
+        "falcon",
+        "autotech",
+        "providing"
+      ],
+      "query_length": 11,
+      "response": "**Overview**\nFalcon Autotech provides various solutions for warehouse management and sortation systems, including Linear CBS, Loop CBS, and ASRS racking systems. These solutions are designed to improve efficiency and productivity in logistics and supply chain operations. The company offers customized solutions to meet the specific needs of its clients.\n\n**Key Points**\n\u2022 Linear CBS: A sortation system with a linear design, featuring electric actuation technology and various chutes for live, colle",
+      "response_length": 1824,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:53:29.655324",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Amaon_ISK3_Bhiwandi_Technocommercial offer_Linear CBS_Option AMZ_03-10-24.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "FK_Kalash_TechnoCommercial Offer_Option 3-Phase 2-02-02-24 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "let understand Linear CBS in detail",
+      "query_keywords": [
+        "understand",
+        "linear",
+        "detail"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe Linear Cross-Belt Sorter (CBS) is a critical component in warehouse management systems, enabling efficient sorting and processing of parcels. The documentation provides insight into the technical and commercial aspects of Linear CBS, including its features, specifications, and applications. This explanation will delve into the details of Linear CBS, exploring its key components, functionalities, and benefits.\n\n**Key Points**\n\u2022 **Cross-Belt Carrier System**: The Linear CBS utiliz",
+      "response_length": 2012,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T16:55:21.593855",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "F22-00317_01_Techno-commercial offer_SAB Express _SWEDI.pdf",
+          "Techno Commercial Offer for Bag Sorter_Phase2_Delhivery Bangalore_0102205.pdf"
+        ]
+      }
+    },
+    {
+      "query": "What is NEO warehouse system?",
+      "query_keywords": [
+        "what",
+        "warehouse",
+        "system?"
+      ],
+      "query_length": 5,
+      "response": "NEO is an Automated Storage and Retrieval System (ASRS) that uses autonomous robots to store and retrieve bins efficiently. It is designed to optimize warehouse operations and improve productivity. [NEO System Documentation]",
+      "response_length": 224,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T17:42:02.642253",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "FK_Technical_Patna_Loop CBS_40K_Single Belt.pdf",
+          "F22-00224 Techno-Commercial offer_Conveyor automation _ 17-06-2022.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 1_18-11-2023 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "Ask about specific features",
+      "query_keywords": [
+        "about",
+        "specific",
+        "features"
+      ],
+      "query_length": 4,
+      "response": "The system has a max length of 800mm, max width of 800mm, and max height of 600mm, with a weighing accuracy of +- 0.06kg or 0.5%, whichever is higher. Parcels must be perfectly and safely packed with no protrusions or open surfaces. The system also has variable speed to meet throughput requirements [Document 1].",
+      "response_length": 313,
+      "reward": 0.1,
+      "timestamp": "2025-11-17T17:42:17.791263",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "FK_Malur_Techno-commercial Offer_WRS 2.5K OP2_R1 (1).pdf",
+          "FK_Malur_Techno-commercial Offer_WRS 2.5K OP2_R1.pdf",
+          "DHL_Levis_CBS_Technocommercial_ Offer_9K_16-09-2025.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an Automated Storage and Retrieval System that utilizes autonomous robots for efficient storage and retrieval of items. It is designed to optimize warehouse management and logistics. [No relevant documentation found]",
+      "response_length": 223,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:46:15.633201",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "what is FMS",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "FMS stands for Factory Management System or Flexible Manufacturing System, but without specific context, its exact meaning is unclear. It can refer to a system that manages and controls manufacturing processes, or a system that enables flexible production. [No relevant documentation found]",
+      "response_length": 290,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:46:31.843347",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "ohh, i mean fleet management system",
+      "query_keywords": [
+        "ohh,",
+        "mean",
+        "fleet",
+        "management",
+        "system"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nA Fleet Management System is a comprehensive tool designed to manage and coordinate fleet operations, including vehicles, drivers, and routes. It aims to optimize fleet performance, reduce costs, and improve overall efficiency. By leveraging technology, fleet management systems streamline various aspects of fleet operations.\n\n**Key Points**\n\u2022 **Vehicle Tracking**: Fleet management systems utilize GPS technology to track vehicle locations, monitor driver behavior, and optimize routes",
+      "response_length": 1423,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:46:58.755085",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "do we have any specific doc or code available for fms",
+      "query_keywords": [
+        "have",
+        "specific",
+        "code",
+        "available"
+      ],
+      "query_length": 11,
+      "response": "**\ud83d\udcc1 File:** No specific file available\n\n**\ud83d\udcdd Purpose:** The question is asking for documentation or code related to FMS (likely Facility Management System), but no relevant information is found in the provided documentation.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Class:** Not applicable\n\u2022 **Methods:** Not applicable\n\u2022 **Properties:** Not applicable\n\n**\ud83d\udcbb Implementation:**\n```csharp\n// No code available\n```\n\n**\ud83d\udccb Explanation:**\nSince no relevant documentation is found, we cannot provide specific code or documen",
+      "response_length": 845,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:47:19.625810",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "any sql",
+      "query_keywords": [],
+      "query_length": 2,
+      "response": "SQL is a standard programming language for managing relational databases. It is used to perform various operations such as creating, modifying, and querying databases. [No relevant documentation found]",
+      "response_length": 201,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:47:31.094791",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "great. can you list out some important code you have related to neo",
+      "query_keywords": [
+        "great.",
+        "list",
+        "some",
+        "important",
+        "code",
+        "have",
+        "related"
+      ],
+      "query_length": 13,
+      "response": "**\ud83d\udcc1 File:** NEO Warehouse Management System Core\n\n**\ud83d\udcdd Purpose:** This code manages the core functionality of the NEO Warehouse Management System, including inventory tracking, order processing, and warehouse operations. It provides a foundation for the overall system, enabling efficient and organized warehouse management.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Class:** `WarehouseManager`\n\u2022 **Methods:** \n  - `ProcessOrder`\n  - `UpdateInventory`\n  - `ManageWarehouseOperations`\n\u2022 **Properties:** \n  - `Warehous",
+      "response_length": 2596,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:48:02.401084",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "ok. so what is warehouse management according to the document availa le",
+      "query_keywords": [
+        "what",
+        "warehouse",
+        "management",
+        "according",
+        "document",
+        "availa"
+      ],
+      "query_length": 12,
+      "response": "**Overview**\nSince no relevant documentation was found, I will provide a general explanation of warehouse management. Warehouse management refers to the process of overseeing and controlling the daily operations of a warehouse, including receiving, storing, and shipping goods. This involves managing the inventory, space, and labor within the warehouse to ensure efficient and effective operations.\n\n**Key Points**\n\u2022 Warehouse management involves tracking and managing inventory levels, including re",
+      "response_length": 1400,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T12:48:44.283896",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "what do you know about neo",
+      "query_keywords": [
+        "what",
+        "know",
+        "about"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe NEO system is an automated storage and retrieval system (ASRS) designed to revolutionize the way goods are stored and retrieved within warehouses. It offers a multitude of benefits over traditional storage systems, including enhanced productivity, space optimization, and fast and accurate retrieval. The NEO system is scalable, adaptable, and can be deployed quickly in a cost-effective manner.\n\n**Key Points**\n\u2022 **Enhanced Productivity**: NEO enhances operator productivity by 4-5X",
+      "response_length": 1926,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:01:09.042531",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is fms",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "FMS is not explicitly defined in the provided documents, but based on the context of warehouse management and automation, it could potentially refer to a Facility Management System or a Fleet Management System, although this is not directly stated. The documents primarily discuss the Falcon WCS (Warehouse Control System) and its integration with other systems. [Document 1]",
+      "response_length": 375,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:01:26.122106",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.84,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "ok. can you give me some idea about how the order used to be completed. you can take the reference of code as well for the explanation",
+      "query_keywords": [
+        "give",
+        "some",
+        "idea",
+        "about",
+        "order",
+        "used",
+        "completed.",
+        "take",
+        "reference",
+        "code"
+      ],
+      "query_length": 27,
+      "response": "**\ud83d\udcc1 File:** NEO Automation Documentation (various files)\n\n**\ud83d\udcdd Purpose:** The provided documentation outlines the process of completing an order in the NEO Warehouse Management System, including the steps involved in picking, packing, and shipping items.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Class:** OrderCompletionProcess\n\u2022 **Methods:** pickAndPut, confirmOrderCompletion, updateSystem\n\u2022 **Properties:** orderID, waveID, cartonID\n\n**\ud83d\udcbb Implementation:**\n```csharp\n// Example code snippet for completing an orde",
+      "response_length": 3301,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:03:10.144118",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "What is NEO and it's usage?",
+      "query_keywords": [
+        "what",
+        "it's",
+        "usage?"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nNEO is an end-to-end engineered robotic system designed for storage and order picking, providing higher storage density, adaptability, and cost-effectiveness compared to traditional material handling systems. It is an integrated system consisting of storage bins, storage grids, robots, goods-to-person workstations, and software. NEO is used to enhance productivity, optimize space, and ensure fast and accurate retrieval of products within warehouses.\n\n**Key Points**\n\u2022 NEO is a roboti",
+      "response_length": 1813,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:06:59.197705",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the key pointers in NEO's proposal?",
+      "query_keywords": [
+        "what",
+        "pointers",
+        "neo's",
+        "proposal?"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\nThe NEO proposal outlines a comprehensive automation system designed to meet the requirements of various clients, including UHP and LW Reid. The system consists of several key components, including the Neo Grid, Pick Stations, and Put Stations. The proposal aims to provide a cost-effective and efficient solution for storage and order picking.\n\n**Key Points**\n\u2022 **Neo Grid**: The Neo Grid is designed to accommodate a specific number of tote locations, ranging from 4,244/5,544 to 9,792",
+      "response_length": 1868,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:07:31.910773",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can u give HLD of NEO?",
+      "query_keywords": [
+        "give",
+        "neo?"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe NEO Warehouse Management System is a comprehensive solution offered by Falcon Autotech, designed to provide automated storage and retrieval systems (ASRS) for various industries. The system aims to enhance warehouse efficiency, productivity, and accuracy. Based on the provided documentation, this response will outline the key points and additional details of the NEO system.\n\n**Key Points**\n\u2022 The NEO system is designed to provide automated storage and retrieval solutions for ware",
+      "response_length": 1995,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:07:51.685138",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "Can NEO fly?",
+      "query_keywords": [
+        "fly?"
+      ],
+      "query_length": 3,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:08:14.849071",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.95,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what was u r error?",
+      "query_keywords": [
+        "what",
+        "error?"
+      ],
+      "query_length": 5,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:08:28.879166",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.92,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "SOP Document NEO ASRS.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "who named NEO?",
+      "query_keywords": [
+        "named",
+        "neo?"
+      ],
+      "query_length": 3,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:08:42.810774",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.79,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "SOP Document NEO ASRS.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "Can u give me the source code of NEO?",
+      "query_keywords": [
+        "give",
+        "source",
+        "code",
+        "neo?"
+      ],
+      "query_length": 9,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:08:58.588820",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "How Many combinations of Solutions can be designed using NEO?",
+      "query_keywords": [
+        "many",
+        "combinations",
+        "solutions",
+        "designed",
+        "using",
+        "neo?"
+      ],
+      "query_length": 10,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:11:03.592258",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "View practical examples",
+      "query_keywords": [
+        "view",
+        "practical",
+        "examples"
+      ],
+      "query_length": 3,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:11:13.810945",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.88,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. [DHL NEO Techno-commercial offer.pdf]",
+      "response_length": 370,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:28:52.044242",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can neo fly",
+      "query_keywords": [],
+      "query_length": 3,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:29:04.144943",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.96,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different dashboard we have",
+      "query_keywords": [
+        "what",
+        "different",
+        "dashboard",
+        "have"
+      ],
+      "query_length": 7,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:31:31.638462",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Dashboard Manual.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "What is NEO and it's usage?",
+      "query_keywords": [
+        "what",
+        "it's",
+        "usage?"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nNEO is an end-to-end engineered robotic system for storage and order picking, providing higher storage density, adaptability, and cost-effective deployment compared to traditional material handling systems. It is an integrated system consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software.\n\n**Key Points**\n\u2022 **Integrated System**: NEO is a comprehensive system that includes storage bins or totes, storage grids, robots, goods-to-person wo",
+      "response_length": 2017,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:52:23.583471",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the key pointers in NEO's proposal?",
+      "query_keywords": [
+        "what",
+        "pointers",
+        "neo's",
+        "proposal?"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\nThe NEO proposal involves the design, manufacturing, installation, commissioning, testing, and acceptance testing of the NEO automation system, as per the client's requirements. The system consists of major components such as Neo Grid, Pick Stations, and Put Stations, designed to accommodate a specific number of tote locations and provide efficient storage and order picking capabilities.\n\n**Key Points**\n\u2022 **Neo Grid**: The Neo Grid is designed to accommodate a specific number of tot",
+      "response_length": 2090,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:52:45.295295",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can u give HLD of NEO?",
+      "query_keywords": [
+        "give",
+        "neo?"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe High-Level Design (HLD) of the NEO (Neon Edge Optimization) Warehouse Management System is a comprehensive framework that outlines the system's architecture, components, and functionality. The HLD is a crucial document that provides a detailed understanding of the system's design, enabling stakeholders to visualize and evaluate the system's capabilities.\n\n**Key Points**\n\n\u2022 **System Architecture**: The NEO system is designed as a modular architecture, comprising multiple componen",
+      "response_length": 2396,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:53:25.430591",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "Can NEO fly?",
+      "query_keywords": [
+        "fly?"
+      ],
+      "query_length": 3,
+      "response": "No, NEO does not fly. NEO Bots move in all three dimensions under the structure but do not have the capability to fly. They move at 2 m/s and can carry bins weighing up to 40Kgs. [Document 1]",
+      "response_length": 191,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:54:02.858741",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.95,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is QPL",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "There is no mention of QPL in the provided documents.",
+      "response_length": 53,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:56:51.057951",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.8,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is OPS",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "There is no mention of \"OPS\" in the provided documentation.",
+      "response_length": 59,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:57:04.743351",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.88,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is QPL in neo perfomrance",
+      "query_keywords": [
+        "what",
+        "perfomrance"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nQPL in NEO performance refers to the Quality Performance Level, which is a measure of the system's ability to meet specific performance standards. It is an essential aspect of the NEO Automated Storage and Retrieval System (ASRS) that Falcon Autotech provides.\n\n**Key Points**\n\u2022 QPL is a measure of the system's performance, ensuring it meets specific standards.\n\u2022 It is an essential aspect of the NEO ASRS system provided by Falcon Autotech.\n\u2022 QPL is related to the system's ability to ",
+      "response_length": 1857,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T15:57:25.435987",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.94,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is a wave in our neo system",
+      "query_keywords": [
+        "what",
+        "wave",
+        "system"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\nA \"wave\" in the NEO system refers to a batch of orders that are processed together by the system. It is a key concept in understanding the workflow and automation of the NEO system.\n\n**Key Points**\n\u2022 A wave starts with NEO retrieving and bringing totes with desired products to the picking stations.\n\u2022 During the wave, humans at the picking stations pick items into the order totes.\n\u2022 Once the picking is finished, NEO stores the inventory totes back to the grid.\n\u2022 Post-completion of th",
+      "response_length": 1725,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:04:13.741679",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "one wave can run on how many stations",
+      "query_keywords": [
+        "wave",
+        "many",
+        "stations"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\nThe NEO system allows multiple stations to be assigned to a single wave, enabling efficient processing of orders. The number of stations that can run a single wave is not explicitly stated in the provided documentation, but we can infer this information from the available details.\n\n**Key Points**\n\u2022 Multiple stations can be assigned to a single wave.\n\u2022 A single station can run a wave, but this is not the most efficient use of resources.\n\u2022 The NEO system allows for dynamic enabling or",
+      "response_length": 1602,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:04:51.092276",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is eaches",
+      "query_keywords": [
+        "what",
+        "eaches"
+      ],
+      "query_length": 3,
+      "response": "Eaches refer to individual items or units of a product, as opposed to cases or pallets. In the context of NEO, eaches are typically stored and managed as single units. [Document 3]",
+      "response_length": 180,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:05:20.578037",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.79,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is storage id",
+      "query_keywords": [
+        "what",
+        "storage"
+      ],
+      "query_length": 4,
+      "response": "Storage ID is the destination storage location assigned to each pallet during a putaway operation. It is displayed in the Pallet View when the selected station is running a Putaway Operation. [Document 3] Dashboard Manual.pdf",
+      "response_length": 225,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:09:58.283085",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "explain stock adjustment eaches",
+      "query_keywords": [
+        "explain",
+        "stock",
+        "adjustment",
+        "eaches"
+      ],
+      "query_length": 4,
+      "response": "**Overview**\nStock adjustment eaches refer to the process of adjusting the quantity of stock in the system to reflect the actual count of items in the warehouse. This process involves comparing the expected quantity with the actual quantity put away, and making necessary adjustments to ensure inventory accuracy.\n\n**Key Points**\n\u2022 **Total Stock Adjustment**: This is the total adjustment made during the putaway process to reflect the actual count of items in the warehouse.\n\u2022 **Expected Eaches**: T",
+      "response_length": 1948,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:15:59.822924",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.95,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different types of reports we have for neo",
+      "query_keywords": [
+        "what",
+        "different",
+        "types",
+        "reports",
+        "have"
+      ],
+      "query_length": 11,
+      "response": "**Overview**\nThe NEO Warehouse Management System offers various reports to provide insights into inventory levels, system performance, and operational efficiency. These reports enable users to make informed decisions and optimize their warehouse operations.\n\n**Key Points**\n\n\u2022 **Inventory Reports**: These reports provide real-time visibility into inventory levels, helping users make informed decisions. (Document 1: \"Style Union Neo _ Final Techno Commercial Offer (12).pdf\")\n\u2022 **System Performance",
+      "response_length": 2191,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:17:13.601246",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different types of mrettrics we have to evaluate the system",
+      "query_keywords": [
+        "what",
+        "different",
+        "types",
+        "mrettrics",
+        "have",
+        "evaluate",
+        "system"
+      ],
+      "query_length": 13,
+      "response": "**Overview**\nThe NEO ASRS system, a warehouse management system, requires evaluation using various metrics to ensure its performance, efficiency, and accuracy. The evaluation involves different types of tests and checks to identify and rectify any performance bottlenecks or inefficiencies.\n\n**Key Points**\n\u2022 **Audit Metrics**: The system utilizes four types of stock audits to ensure inventory accuracy and integrity: Audit Wave (Short Pick Bin), Random Bin Recall, and other types of audits.\n\u2022 **Pe",
+      "response_length": 2182,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:18:32.510659",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.97,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "is this the metrcis we are using for evaluation or these are general metrics needed.",
+      "query_keywords": [
+        "this",
+        "metrcis",
+        "using",
+        "evaluation",
+        "these",
+        "general",
+        "metrics",
+        "needed."
+      ],
+      "query_length": 15,
+      "response": "**Overview**\nThe provided documentation appears to be related to the NEO Warehouse Management System, specifically focusing on techno-commercial offers and system specifications. The question revolves around whether the metrics mentioned in the documents are for evaluation or general purposes.\n\n**Key Points**\n\u2022 The documents mention various metrics such as retrieval throughput, item handling times, and system efficiency, which are likely used for evaluation purposes.\n\u2022 The metrics mentioned in D",
+      "response_length": 2450,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:19:19.062532",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is bin utilizatioon",
+      "query_keywords": [
+        "what",
+        "utilizatioon"
+      ],
+      "query_length": 4,
+      "response": "Bin utilization is not explicitly mentioned in the provided documents. However, based on the calculations in Document 5, bin utilization can be inferred as the number of actual bin picks per day divided by the bin picks per day, which is 3229 / 404 = approximately 8. \n[Document 5] DHL NEO Techno-commercial offer.pdf",
+      "response_length": 317,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:22:10.323368",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.93,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "SOP Document NEO ASRS.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can we calculate storage capacity",
+      "query_keywords": [
+        "calculate",
+        "storage",
+        "capacity"
+      ],
+      "query_length": 5,
+      "response": "Yes, the storage capacity for NEO can be calculated based on the stock summary and SKU dimensions, considering the size of the NEO tote and the allowed range of cartons that can be stored and conveyed. The NEO storage grid can go up to 16 meters to maximize vertical space utilization. [Document 3]",
+      "response_length": 298,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T16:22:52.882969",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "give me the code we are using to combine the order",
+      "query_keywords": [
+        "give",
+        "code",
+        "using",
+        "combine",
+        "order"
+      ],
+      "query_length": 11,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:19:54.456118",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstacle",
+      "query_keywords": [
+        "taking",
+        "obstacle"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe bot is taking an obstacle due to an issue with its navigation or movement within the grid. This can be caused by various factors, including incorrect configuration, faulty sensors, or inadequate training. To resolve this issue, it is essential to understand the possible causes and the steps to troubleshoot and correct the problem.\n\n**Key Points**\n\u2022 **Incorrect Configuration**: The bot's movement may be restricted due to incorrect configuration of the grid or the bot's settings. ",
+      "response_length": 2775,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:24:38.324347",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "OverviewThe bot is taking an obstacle due to an issue with its navigation or movement within the grid. This can be caused by various factors, including incorrect configuration, faulty sensors, or inadequate training. To resolve this issue, it is essential to understand the possible causes and the steps to troubleshoot and correct the problem.Key PointsIncorrect Configuration: The bot's movement may be restricted due to incorrect configuration of the grid or the bot's settings. This can include i",
+      "response_length": 2829,
+      "reward": 0.75,
+      "timestamp": "2025-11-18T17:29:25.915301",
+      "metadata": {
+        "session_id": "283a4619-a823-4447-802a-98d18868abd6",
+        "confidence": 0.99,
+        "suggested_actions": [
+          "Learn about bot operations",
+          "View bot configuration guide",
+          "Check bot maintenance procedures"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstacle",
+      "query_keywords": [
+        "taking",
+        "obstacle"
+      ],
+      "query_length": 6,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:29:41.558855",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstacle",
+      "query_keywords": [
+        "taking",
+        "obstacle"
+      ],
+      "query_length": 6,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:29:52.318568",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstacle",
+      "query_keywords": [
+        "taking",
+        "obstacle"
+      ],
+      "query_length": 6,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:36:09.903357",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstackle",
+      "query_keywords": [
+        "taking",
+        "obstackle"
+      ],
+      "query_length": 6,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:48:42.267519",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why my bot is taking obstackle",
+      "query_keywords": [
+        "taking",
+        "obstackle"
+      ],
+      "query_length": 6,
+      "response": "I apologize, but I encountered an error processing your request. Please try again.",
+      "response_length": 82,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:50:08.756804",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you try again",
+      "query_keywords": [
+        "again"
+      ],
+      "query_length": 4,
+      "response": "Sure, here's a direct, concise answer in 1-3 sentences:\nQ: Can you try again?\nA: Absolutely! Here's a direct, concise answer in 1-3 sentences:\n\u2022 Reset\nIf the operator has made a mistake in quantity entry or scanned the wrong SKU, they may click the \"Reset\" button to clear the current entry. \u2022 Before using Reset, the operator must physically remove any SKUs already placed in the bin to ensure consistency. \u2022 Add/DeleteShortPutReasons\nIf the operator is unable to put the full expected quantity, the",
+      "response_length": 1227,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:53:02.844442",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.83,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "Dashboard Manual.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking. It is an integrated system consisting of storage bin...",
+      "response_length": 133,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T17:54:37.875177",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
         ]
       }
     }

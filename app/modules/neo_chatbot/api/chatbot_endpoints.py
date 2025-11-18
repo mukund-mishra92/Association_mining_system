@@ -248,3 +248,250 @@ async def health_check():
         "service": "NEO Chatbot API",
         "version": "1.0.0"
     }
+
+
+# ===== Chat History & Analytics Endpoints =====
+
+@router.get("/analytics/sql-queries")
+async def get_sql_query_analytics(days: int = 7):
+    """
+    Get analytics for SQL queries over specified time period
+    
+    Query Parameters:
+        days: Number of days to analyze (default: 7)
+    
+    Returns:
+        Analytics including success rates, common tables, intents, and errors
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        analytics = sql_service.chat_history_service.get_query_analytics(days=days)
+        
+        return {
+            "status": "success",
+            "analytics": analytics
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error getting SQL analytics: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analytics/learned-patterns")
+async def get_learned_patterns(limit: int = 50):
+    """
+    Get learned query patterns that have high success rates
+    
+    Query Parameters:
+        limit: Maximum number of patterns to return (default: 50)
+    
+    Returns:
+        List of successful query patterns with frequency and confidence
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        patterns = sql_service.chat_history_service.get_common_query_patterns(limit=limit)
+        
+        return {
+            "status": "success",
+            "patterns_count": len(patterns),
+            "patterns": patterns
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error getting learned patterns: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analytics/column-mappings")
+async def get_learned_column_mappings(min_frequency: int = 3):
+    """
+    Get learned column name mappings from corrections
+    
+    Query Parameters:
+        min_frequency: Minimum number of times mapping must occur (default: 3)
+    
+    Returns:
+        Column mappings grouped by table with frequency and confidence
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        mappings = sql_service.chat_history_service.get_learned_column_mappings(
+            min_frequency=min_frequency
+        )
+        
+        return {
+            "status": "success",
+            "tables_count": len(mappings),
+            "mappings": mappings
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error getting column mappings: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analytics/improvement-suggestions")
+async def get_improvement_suggestions():
+    """
+    Get suggestions for improving the SQL assistant based on historical data
+    
+    Returns:
+        Categorized suggestions for system improvements
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        suggestions = sql_service.chat_history_service.get_improvement_suggestions()
+        
+        total_suggestions = sum(len(v) for v in suggestions.values())
+        
+        return {
+            "status": "success",
+            "total_suggestions": total_suggestions,
+            "suggestions": suggestions
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error getting improvement suggestions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history/{session_id}")
+async def get_persistent_session_history(session_id: str, limit: int = 50):
+    """
+    Get persistent chat history for a session from database
+    
+    Query Parameters:
+        limit: Maximum number of messages to return (default: 50)
+    
+    Returns:
+        Chat history with queries, responses, SQL, and execution status
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        history = sql_service.chat_history_service.get_session_history(
+            session_id=session_id,
+            limit=limit
+        )
+        
+        return {
+            "status": "success",
+            "session_id": session_id,
+            "message_count": len(history),
+            "history": history
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error getting session history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/feedback")
+async def submit_feedback(
+    chat_id: str,
+    session_id: str,
+    feedback_type: str,
+    rating: int = None,
+    comment: str = None
+):
+    """
+    Submit user feedback for a specific chat interaction
+    
+    Body Parameters:
+        chat_id: Unique ID of the chat interaction
+        session_id: Session ID
+        feedback_type: Type of feedback ('positive', 'negative', 'neutral')
+        rating: Optional numerical rating (1-5)
+        comment: Optional text comment
+    
+    Returns:
+        Success confirmation
+    """
+    try:
+        if not hasattr(sql_service, 'chat_history_service') or not sql_service.chat_history_service:
+            raise HTTPException(
+                status_code=503, 
+                detail="Chat history service not available"
+            )
+        
+        # Validate feedback_type
+        if feedback_type not in ['positive', 'negative', 'neutral']:
+            raise HTTPException(
+                status_code=400,
+                detail="feedback_type must be 'positive', 'negative', or 'neutral'"
+            )
+        
+        # Validate rating if provided
+        if rating is not None and (rating < 1 or rating > 5):
+            raise HTTPException(
+                status_code=400,
+                detail="rating must be between 1 and 5"
+            )
+        
+        sql_service.chat_history_service.log_feedback(
+            chat_id=chat_id,
+            session_id=session_id,
+            feedback_type=feedback_type,
+            rating=rating,
+            comment=comment
+        )
+        
+        # Also log to RLHF service for cross-session learning
+        try:
+            sql_service.rlhf_service.record_feedback(
+                chatbot_type="sql_assistant",
+                query="",  # Would need to fetch from DB
+                response="",  # Would need to fetch from DB
+                feedback_type=feedback_type,
+                rating=rating,
+                comment=comment,
+                metadata={"chat_id": chat_id}
+            )
+        except Exception as e:
+            logger.warning(f"Failed to record RLHF feedback: {e}")
+        
+        return {
+            "status": "success",
+            "message": "Feedback recorded successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error submitting feedback: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

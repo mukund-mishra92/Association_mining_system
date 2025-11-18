@@ -176,7 +176,7 @@ class DocumentProcessor:
             logger.warning(f"⚠️ Error generating embedding: {e}")
             logger.info("   Using fallback hash-based embedding")
             
-            # Fallback to hash-based approach (384 dimensions)
+            # Fallback to hash-based approach (1536 dimensions - matches OpenAI)
             import hashlib
             text_hash = hashlib.sha256(text.encode()).hexdigest()
             embedding = []
@@ -185,11 +185,11 @@ class DocumentProcessor:
                 byte_val = int(text_hash[i:i+2], 16)
                 embedding.append(float(byte_val) / 255.0)
             
-            # Pad to 384 dimensions
-            while len(embedding) < 384:
+            # Pad to 1536 dimensions (matches OpenAI text-embedding-3-small)
+            while len(embedding) < 1536:
                 embedding.append(0.0)
             
-            return embedding[:384]
+            return embedding[:1536]
     
     def ingest_pdf(self, pdf_path: str, category: str = "documentation") -> Dict[str, Any]:
         """Ingest a PDF document into vector store"""

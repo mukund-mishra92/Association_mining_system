@@ -50,8 +50,19 @@ class VectorStoreService:
             # Create directory if it doesn't exist
             os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
             
+            # Convert numpy types to Python types for JSON serialization
+            serializable_documents = []
+            for doc in self.documents:
+                serializable_doc = {
+                    "id": doc["id"],
+                    "content": doc["content"],
+                    "embedding": [float(x) for x in doc["embedding"]],  # Convert numpy.float32 to Python float
+                    "metadata": doc["metadata"]
+                }
+                serializable_documents.append(serializable_doc)
+            
             with open(self.storage_path, 'w', encoding='utf-8') as f:
-                json.dump(self.documents, f, indent=2)
+                json.dump(serializable_documents, f, indent=2)
             logger.info(f"💾 Saved {len(self.documents)} documents to vector store")
         except Exception as e:
             logger.error(f"❌ Error saving vector store: {e}")

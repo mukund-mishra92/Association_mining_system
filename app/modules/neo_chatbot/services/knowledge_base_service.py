@@ -34,6 +34,7 @@ class KnowledgeBaseService:
 Your knowledge base includes:
 - NEO system documentation and user manuals
 - Technical specifications and proposals
+- **C# codebase** from NEO Fleet Manager (classes, methods, implementations)
 - Code examples and implementations
 - Standard Operating Procedures (SOPs)
 - Safety guidelines and best practices
@@ -41,19 +42,30 @@ Your knowledge base includes:
 Response Guidelines:
 1. **Structure your answers clearly** with headings and sections
 2. **Use formatting** - bullet points, numbered lists, bold/italic for emphasis
-3. **Be specific and accurate** - cite document names when referencing information
+3. **Be specific and accurate** - cite document/file names when referencing information
 4. **Provide context** - explain technical terms when needed
 5. **Be concise yet comprehensive** - break complex topics into digestible parts
-6. **Include examples** when they help clarify concepts
-7. **If information is incomplete**, clearly state what's missing
-8. **Use professional tone** - helpful, clear, and authoritative
+6. **Include code examples** when relevant - show actual implementation details
+7. **For code queries**: Explain the code's purpose, key methods, and how it fits in the system
+8. **If information is incomplete**, clearly state what's missing
+9. **Use professional tone** - helpful, clear, and authoritative
 
 Formatting Standards:
-- Use **bold** for key terms and section headers
+- Use **bold** for key terms, class names, and section headers
 - Use bullet points (•) or numbered lists for multi-item information
 - Use line breaks between sections for readability
-- Include relevant document references in [brackets]
-- Use code blocks for technical examples when applicable
+- Include relevant document/file references in [brackets]
+- Use code blocks (```csharp, ```python) for code snippets
+- For code answers: Show class name, method signatures, and key logic
+
+Code Response Format:
+When answering code questions, structure your response as:
+1. **What it does**: Brief overview
+2. **Location**: File path and class name
+3. **Key Methods/Properties**: List important members
+4. **Implementation Details**: Show relevant code snippets
+5. **Usage Example**: How to use/call this code
+6. **Related Components**: What other classes/methods it interacts with
 
 Always prioritize clarity and user understanding."""
 
@@ -193,6 +205,19 @@ Always prioritize clarity and user understanding."""
             if re.search(pattern, query_lower):
                 return "SIMPLE_FACT"
         
+        # Code-related queries
+        code_patterns = [
+            r'\bclass\b', r'\bmethod\b', r'\bfunction\b', r'\bcode\b',
+            r'\bimplementation\b', r'\bcontroller\b', r'\bservice\b',
+            r'\b(show|find|get|display)\s+(me\s+)?(the\s+)?code\b',
+            r'\bhow\s+is\s+\w+\s+(implemented|coded|written)\b',
+            r'\bsource\s+code\b', r'\b\.cs\b', r'\bc#\b'
+        ]
+        
+        for pattern in code_patterns:
+            if re.search(pattern, query_lower):
+                return "CODE_QUERY"
+        
         # Definition queries
         if any(phrase in query_lower for phrase in [
             "what does", "define", "definition of", "meaning of", "what is meant by"
@@ -299,6 +324,38 @@ FORMAT:
 **Summary:** [Which is better for what use case]
 
 [Source: Document name]
+"""
+        
+        elif query_type == "CODE_QUERY":
+            return base_prompt + """
+
+TASK: Provide detailed code information with context.
+
+FORMAT:
+**📁 File:** [Filename and path if available]
+
+**📝 Purpose:** [What this code does - 1-2 sentences]
+
+**🔧 Key Components:**
+• **Class:** [ClassName]
+• **Methods:** [List important methods]
+• **Properties:** [Key properties if relevant]
+
+**💻 Implementation:**
+```csharp
+[Show relevant code snippet - focus on key logic]
+```
+
+**📋 Explanation:**
+[Explain what the code does step by step]
+
+**🔗 Related Components:**
+[What other classes/services this interacts with]
+
+**💡 Usage Example:**
+[How to use or call this code if applicable]
+
+[Source: Filename]
 """
         
         elif query_type == "GENERATIVE":
