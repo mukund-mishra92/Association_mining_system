@@ -1063,6 +1063,7 @@
                 // Build metadata based on chatbot type and available data
                 const metadata = {
                     session_id: sessionId,
+                    chat_id: data.chat_id,  // Add chat_id for database linking
                     confidence: data.confidence_score || data.confidence
                 };
                 

@@ -2220,6 +2220,7 @@ def chatbot_chat():
             "response": response.response,
             "chatbot_type": response.chatbot_type.value,
             "session_id": response.session_id,
+            "chat_id": response.chat_id if hasattr(response, 'chat_id') else None,  # Add chat_id
             "confidence_score": response.confidence_score,
             "source_documents": [
                 {

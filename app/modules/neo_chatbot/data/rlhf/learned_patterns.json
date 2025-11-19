@@ -815,6 +815,488 @@
         ],
         "suggested_actions": []
       }
+    },
+    {
+      "query": "can you give me all the tables available in the database",
+      "query_keywords": [
+        "give",
+        "tables",
+        "available",
+        "database"
+      ],
+      "query_length": 11,
+      "response": "**Query:** can you give me all the tables available in the database\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 188 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual",
+      "response_length": 948,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T15:08:10.137556",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 188,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what are the table use in pick wave",
+      "query_keywords": [
+        "what",
+        "table",
+        "pick",
+        "wave"
+      ],
+      "query_length": 8,
+      "response": "**Query:** what are the table use in pick wave\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 2 result(s):**\n\n| TABLE_NAME |\n| --- |\n| lpn_pick_wave_order_mapping |\n| lpn_pick_wave_order_mapping_archive |\n\n\n**SQL Query:**\n```sql\nSELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nAND TABLE_NAME IN ('lpn_pick_wave_order_mapping', 'lpn_pick_wave_order_mapping_archive') \nORDER BY TABLE_NAME\n```\n\n*Validation: \u2705 2 results found | \u2705 Result count looks reasonable | \u2705 Results cont",
+      "response_length": 560,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T15:24:23.258772",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nAND TABLE_NAME IN ('lpn_pick_wave_order_mapping', 'lpn_pick_wave_order_mapping_archive') \nORDER BY TABLE_NAME",
+        "confidence": 0.95,
+        "row_count": 2,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "give me the list of tables we have",
+      "query_keywords": [
+        "give",
+        "list",
+        "tables",
+        "have"
+      ],
+      "query_length": 8,
+      "response": "**Query:** give me the list of tables we have\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 188 result(s):**\n\n| TABLE_NAME |\n| --- |\n| alarm_master |\n| alarm_master_copy |\n| api_master |\n| article_proximity_score |\n| article_registered |\n| articles_registered |\n| auto_calibration_logs |\n| bin_info_master |\n| bin_loading_wave_order_master |\n| bin_recall_wave_wms_data_dsb_temp |\n| bin_recall_wave_wms_data_dsb_upload_validation |\n| bot_alarm_log |\n| bot_charging_bit_log |\n| bot_manual_alarm_log |\n| bot_mas",
+      "response_length": 926,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:11:24.144413",
+      "metadata": {
+        "sql_query": "SELECT TABLE_NAME \nFROM information_schema.TABLES \nWHERE TABLE_SCHEMA = DATABASE() \nORDER BY TABLE_NAME \nLIMIT 1000;",
+        "confidence": 0.95,
+        "row_count": 188,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "show details from config_master",
+      "query_keywords": [
+        "show",
+        "details",
+        "from",
+        "config_master"
+      ],
+      "query_length": 4,
+      "response": "**Query:** show details from config_master\n\n\ud83d\udfe2 **High Confidence** (90%)\n\n**Found 1 result(s):**\n\n| SIM_MODE | X_PITCH | Y_PITCH | Z_PITCH | X_MAX | Y_MAX | Z_MAX | COMM_TIMEOUT | TOWER_PARKING_Z | BATTERY_LOW_LIMIT | BATTERY_HIGH_LIMIT | AH_UPPER_LIMIT | AH_LOWER_LIMIT | VOLTAGE_THRESHOLD | AH_THRESHOLD | MAX_BUFFER_STEPS_SIZE | VOLUME_OF_BIN | DOWNTIME_LOG_INTERVAL | SHIFT_START_HOUR | AH_THRESHOLD_CHARGING | BIN_IN_LOOP | AUTOCALDISTANCEUPPERLIMIT | AUTOCALDISTANCELOWERLIMIT | BATTERY_BIT_ON_C",
+      "response_length": 1122,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:28:50.394055",
+      "metadata": {
+        "sql_query": "SELECT * FROM config_master LIMIT 100",
+        "confidence": 0.9,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "how many bins where ArticleId='no-sku'",
+      "query_keywords": [
+        "many",
+        "bins",
+        "where",
+        "articleid='no-sku'"
+      ],
+      "query_length": 5,
+      "response": "**Query:** how many bins where ArticleId='no-sku'\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| available_bins |\n| --- |\n| 2218 |\n\n\n**SQL Query:**\n```sql\nSELECT COUNT(DISTINCT BIN_ID) AS available_bins\nFROM live_inventory_master\nWHERE ARTICLE_ID = 'no-sku'\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 413,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:29:17.582603",
+      "metadata": {
+        "sql_query": "SELECT COUNT(DISTINCT BIN_ID) AS available_bins\nFROM live_inventory_master\nWHERE ARTICLE_ID = 'no-sku'",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "give me the location id for the stations",
+      "query_keywords": [
+        "give",
+        "location",
+        "stations"
+      ],
+      "query_length": 8,
+      "response": "**Query:** give me the location id for the stations\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| ID |\n| --- |\n| 3 |\n\n\n**SQL Query:**\n```sql\nSELECT ID FROM dashboard_grid_points_master WHERE TYPE = 'STATION'\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 364,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:31:33.680713",
+      "metadata": {
+        "sql_query": "SELECT ID FROM dashboard_grid_points_master WHERE TYPE = 'STATION'",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "with_context",
+        "attempt": 2,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "total how many stations are there including charging station",
+      "query_keywords": [
+        "total",
+        "many",
+        "stations",
+        "there",
+        "including",
+        "charging",
+        "station"
+      ],
+      "query_length": 9,
+      "response": "**Query:** total how many stations are there including charging station\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| total_stations |\n| --- |\n| 14 |\n\n\n**SQL Query:**\n```sql\nSELECT COUNT(*) AS total_stations\nFROM (\n  SELECT STATION_ID FROM hw_station_master\n  UNION ALL\n  SELECT STATION_ID FROM hw_charging_station_master\n) AS combined_stations;\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question contex",
+      "response_length": 502,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:31:58.279474",
+      "metadata": {
+        "sql_query": "SELECT COUNT(*) AS total_stations\nFROM (\n  SELECT STATION_ID FROM hw_station_master\n  UNION ALL\n  SELECT STATION_ID FROM hw_charging_station_master\n) AS combined_stations;",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "out of these 14 how many are charging stations and how many are pickup station",
+      "query_keywords": [
+        "these",
+        "many",
+        "charging",
+        "stations",
+        "many",
+        "pickup",
+        "station"
+      ],
+      "query_length": 15,
+      "response": "**Query:** out of these 14 how many are charging stations and how many are pickup station\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| charging_stations | pickup_stations |\n| --- | --- |\n| 2 | 12 |\n\n\n**SQL Query:**\n```sql\nSELECT \n  COUNT(CASE WHEN HARDWARE_TYPE = 'CHARING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN HARDWARE_TYPE = 'STATION' THEN 1 END) AS pickup_stations\nFROM hardware_registered\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705",
+      "response_length": 573,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:32:32.029196",
+      "metadata": {
+        "sql_query": "SELECT \n  COUNT(CASE WHEN HARDWARE_TYPE = 'CHARING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN HARDWARE_TYPE = 'STATION' THEN 1 END) AS pickup_stations\nFROM hardware_registered",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what is the average articlu per bin",
+      "query_keywords": [
+        "what",
+        "average",
+        "articlu"
+      ],
+      "query_length": 7,
+      "response": "**Query:** what is the average articlu per bin\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| avg_articles_per_bin |\n| --- |\n| 1.0192 |\n\n\n**SQL Query:**\n```sql\nSELECT \n    AVG(li.BIN_ARTICLE_ID_COUNT) AS avg_articles_per_bin\nFROM \n    (SELECT \n         BIN_ID, \n         COUNT(DISTINCT ARTICLE_ID) AS BIN_ARTICLE_ID_COUNT\n     FROM \n         live_inventory_master\n     WHERE \n         ARTICLE_ID != 'no-sku'\n     GROUP BY \n         BIN_ID) li;\n```\n\n*Validation: \u2705 1 results found | \u2705 Result ",
+      "response_length": 599,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:41:29.139656",
+      "metadata": {
+        "sql_query": "SELECT \n    AVG(li.BIN_ARTICLE_ID_COUNT) AS avg_articles_per_bin\nFROM \n    (SELECT \n         BIN_ID, \n         COUNT(DISTINCT ARTICLE_ID) AS BIN_ARTICLE_ID_COUNT\n     FROM \n         live_inventory_master\n     WHERE \n         ARTICLE_ID != 'no-sku'\n     GROUP BY \n         BIN_ID) li;",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "what is the average distinct article per bin",
+      "query_keywords": [
+        "what",
+        "average",
+        "distinct",
+        "article"
+      ],
+      "query_length": 8,
+      "response": "**Query:** what is the average distinct article per bin\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| avg_distinct_articles_per_bin |\n| --- |\n| 1.0192 |\n\n\n**SQL Query:**\n```sql\nSELECT \n  AVG(li.DISTINCT_ARTICLE_COUNT) AS avg_distinct_articles_per_bin\nFROM \n  (SELECT \n       BIN_ID, \n       COUNT(DISTINCT ARTICLE_ID) AS DISTINCT_ARTICLE_COUNT\n    FROM \n       live_inventory_master\n    WHERE ARTICLE_ID != 'no-sku'\n    GROUP BY \n       BIN_ID) li;\n```\n\n*Validation: \u2705 1 results found | \u2705 R",
+      "response_length": 605,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:42:03.753285",
+      "metadata": {
+        "sql_query": "SELECT \n  AVG(li.DISTINCT_ARTICLE_COUNT) AS avg_distinct_articles_per_bin\nFROM \n  (SELECT \n       BIN_ID, \n       COUNT(DISTINCT ARTICLE_ID) AS DISTINCT_ARTICLE_COUNT\n    FROM \n       live_inventory_master\n    WHERE ARTICLE_ID != 'no-sku'\n    GROUP BY \n       BIN_ID) li;",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: what is the average distinct article per bin\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| avg_distinct_articles_per_bin || --- || 1.0192 |SQL Query:``sqlSELECT   AVG(li.DISTINCT_ARTICLE_COUNT) AS avg_distinct_articles_per_binFROM   (SELECT        BIN_ID,        COUNT(DISTINCT ARTICLE_ID) AS DISTINCT_ARTICLE_COUNT    FROM        live_inventory_master    WHERE ARTICLE_ID != 'no-sku'    GROUP BY        BIN_ID) li;``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results cont",
+      "response_length": 572,
+      "reward": 0.9,
+      "timestamp": "2025-11-19T16:42:50.447553",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT \n  AVG(li.DISTINCT_ARTICLE_COUNT) AS avg_distinct_articles_per_bin\nFROM \n  (SELECT \n       BIN_ID, \n       COUNT(DISTINCT ARTICLE_ID) AS DISTINCT_ARTICLE_COUNT\n    FROM \n       live_inventory_master\n    WHERE ARTICLE_ID != 'no-sku'\n    GROUP BY \n       BIN_ID) li;",
+        "tables_used": [
+          "live_inventory_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "how many food and non food articles are there in the system",
+      "query_keywords": [
+        "many",
+        "food",
+        "food",
+        "articles",
+        "there",
+        "system"
+      ],
+      "query_length": 12,
+      "response": "**Query:** how many food and non food articles are there in the system\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| food_articles | non_food_articles |\n| --- | --- |\n| 0 | 0 |\n\n\n**SQL Query:**\n```sql\nSELECT \n  COUNT(CASE WHEN CATEGORY = 1 THEN 1 END) AS food_articles,\n  COUNT(CASE WHEN CATEGORY = 0 THEN 1 END) AS non_food_articles\nFROM sku_master;\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question c",
+      "response_length": 507,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:43:27.158862",
+      "metadata": {
+        "sql_query": "SELECT \n  COUNT(CASE WHEN CATEGORY = 1 THEN 1 END) AS food_articles,\n  COUNT(CASE WHEN CATEGORY = 0 THEN 1 END) AS non_food_articles\nFROM sku_master;",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "I generated a SQL query for your question, but I'm not confident in the results.Your Question: how many expired batches are there and which bins contain itGenerated SQL:``sqlSELECT   COUNT(*) AS expired_batches_count,  bc.bin_id, bc.bin_locationFROM   live_inventory_master limJOIN   bin_configuration bc ON lim.BIN_ID = bc.bin_idWHERE   lim.ARTICLE_ID = 'no-sku' AND   lim.BATCH_ID IS NOT NULL AND   lim.BATCH_ID != ''GROUP BY   bc.bin_id, bc.bin_locationLIMIT 100;``Issue: The query execution didn'",
+      "response_length": 921,
+      "reward": -0.9,
+      "timestamp": "2025-11-19T17:07:33.776708",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.5,
+        "sql_query": "SELECT \n  COUNT(*) AS expired_batches_count,\n  bc.bin_id, bc.bin_location\nFROM \n  live_inventory_master lim\nJOIN \n  bin_configuration bc ON lim.BIN_ID = bc.bin_id\nWHERE \n  lim.ARTICLE_ID = 'no-sku' AND \n  lim.BATCH_ID IS NOT NULL AND \n  lim.BATCH_ID != ''\nGROUP BY \n  bc.bin_id, bc.bin_location\nLIMIT 100;",
+        "tables_used": [
+          "live_inventory_master",
+          "bin_configuration"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "I generated a SQL query for your question, but I'm not confident in the results.Your Question: how many expired batches are there and which bins contain itGenerated SQL:``sqlSELECT   COUNT(*) AS expired_batches_count,  bc.bin_id, bc.bin_locationFROM   live_inventory_master limJOIN   bin_configuration bc ON lim.BIN_ID = bc.bin_idWHERE   lim.ARTICLE_ID = 'no-sku' AND   lim.BATCH_ID IN (SELECT BATCH_ID FROM prepare_orders_wms_data_dsb_upload_validation WHERE EXPIRATION_DATE <= CURDATE())GROUP BY   ",
+      "response_length": 991,
+      "reward": -0.9,
+      "timestamp": "2025-11-19T17:07:42.636830",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.5,
+        "sql_query": "SELECT \n  COUNT(*) AS expired_batches_count,\n  bc.bin_id, bc.bin_location\nFROM \n  live_inventory_master lim\nJOIN \n  bin_configuration bc ON lim.BIN_ID = bc.bin_id\nWHERE \n  lim.ARTICLE_ID = 'no-sku' AND \n  lim.BATCH_ID IN (SELECT BATCH_ID FROM prepare_orders_wms_data_dsb_upload_validation WHERE EXPIRATION_DATE <= CURDATE())\nGROUP BY \n  bc.bin_id, bc.bin_location\nLIMIT 100;",
+        "tables_used": [
+          "live_inventory_master",
+          "prepare_orders_wms_data_dsb_upload_validation",
+          "bin_configuration"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "I generated a SQL query for your question, but I'm not confident in the results.Your Question: how many expired batches are there and which bins contain itGenerated SQL:``sqlSELECT   COUNT(*) AS expired_batches_count,  bc.bin_id, bc.bin_locationFROM   live_inventory_master limJOIN   bin_configuration bc ON lim.BIN_ID = bc.bin_idWHERE   lim.EXPIRATION_DATE <= CURDATE()GROUP BY   bc.bin_id, bc.bin_locationLIMIT 100;``Issue: The query execution didn't return results I'm confident about. This could ",
+      "response_length": 872,
+      "reward": -0.9,
+      "timestamp": "2025-11-19T17:07:56.585472",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.5,
+        "sql_query": "SELECT \n  COUNT(*) AS expired_batches_count,\n  bc.bin_id, bc.bin_location\nFROM \n  live_inventory_master lim\nJOIN \n  bin_configuration bc ON lim.BIN_ID = bc.bin_id\nWHERE \n  lim.EXPIRATION_DATE <= CURDATE()\nGROUP BY \n  bc.bin_id, bc.bin_location\nLIMIT 100;",
+        "tables_used": [
+          "live_inventory_master",
+          "bin_configuration"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: how many food and non food articles are there in the system\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| food_articles | non_food_articles || --- | --- || 0 | 0 |SQL Query:``sqlSELECT   COUNT(CASE WHEN CATEGORY = 1 THEN 1 END) AS food_articles,  COUNT(CASE WHEN CATEGORY = 0 THEN 1 END) AS non_food_articlesFROM sku_master;``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context95% Confident",
+      "response_length": 481,
+      "reward": -0.55,
+      "timestamp": "2025-11-19T17:09:08.068889",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT \n  COUNT(CASE WHEN CATEGORY = 1 THEN 1 END) AS food_articles,\n  COUNT(CASE WHEN CATEGORY = 0 THEN 1 END) AS non_food_articles\nFROM sku_master;",
+        "tables_used": [
+          "sku_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: what is the average articlu per bin\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| avg_articles_per_bin || --- || 1.0192 |SQL Query:``sqlSELECT     AVG(li.BIN_ARTICLE_ID_COUNT) AS avg_articles_per_binFROM     (SELECT          BIN_ID,          COUNT(DISTINCT ARTICLE_ID) AS BIN_ARTICLE_ID_COUNT     FROM          live_inventory_master     WHERE          ARTICLE_ID != 'no-sku'     GROUP BY          BIN_ID) li;``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain mea",
+      "response_length": 565,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:09:19.591914",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT \n    AVG(li.BIN_ARTICLE_ID_COUNT) AS avg_articles_per_bin\nFROM \n    (SELECT \n         BIN_ID, \n         COUNT(DISTINCT ARTICLE_ID) AS BIN_ARTICLE_ID_COUNT\n     FROM \n         live_inventory_master\n     WHERE \n         ARTICLE_ID != 'no-sku'\n     GROUP BY \n         BIN_ID) li;",
+        "tables_used": [
+          "live_inventory_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "OverviewThe inventory of the system is managed through the NEO Warehouse Management System (WMS), which includes storage bins or totes, storage grids, robots, and goods-to-person workstations. The system is designed to store and manage various types of inventory, including full pallets, cartons, and loose items.Key PointsStorage Capacity: The system has a total storage capacity of 1680 bins, with an average of 12 parcels per bin, as calculated in Document 2.Inventory Types: The system can store ",
+      "response_length": 2040,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:09:29.853507",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 1,
+        "suggested_actions": [
+          "Explore related documentation",
+          "View practical examples",
+          "Check getting started guide",
+          "Ask about specific features"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: out of these 14 how many are charging stations and how many are pickup station\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| charging_stations | pickup_stations || --- | --- || 2 | 12 |SQL Query:``sqlSELECT   COUNT(CASE WHEN HARDWARE_TYPE = 'CHARING_STATION' THEN 1 END) AS charging_stations,  COUNT(CASE WHEN HARDWARE_TYPE = 'STATION' THEN 1 END) AS pickup_stationsFROM hardware_registered``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 C",
+      "response_length": 547,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:09:37.221896",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT \n  COUNT(CASE WHEN HARDWARE_TYPE = 'CHARING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN HARDWARE_TYPE = 'STATION' THEN 1 END) AS pickup_stations\nFROM hardware_registered",
+        "tables_used": [
+          "hardware_registered"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: total how many stations are there including charging station\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| total_stations || --- || 14 |SQL Query:``sqlSELECT COUNT() AS total_stationsFROM (  SELECT STATION_ID FROM hw_station_master  UNION ALL  SELECT STATION_ID FROM hw_charging_station_master) AS combined_stations;``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*95% Confident",
+      "response_length": 474,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:09:44.832505",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT COUNT(*) AS total_stations\nFROM (\n  SELECT STATION_ID FROM hw_station_master\n  UNION ALL\n  SELECT STATION_ID FROM hw_charging_station_master\n) AS combined_stations;",
+        "tables_used": [
+          "hw_station_master",
+          "hw_charging_station_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: give me the location id for the stations\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| ID || --- || 3 |SQL Query:``sqlSELECT ID FROM dashboard_grid_points_master WHERE TYPE = 'STATION'``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context95% Confident",
+      "response_length": 341,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:09:49.206579",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT ID FROM dashboard_grid_points_master WHERE TYPE = 'STATION'",
+        "tables_used": [
+          "dashboard_grid_points_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: how many bins where ArticleId='no-sku'\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| available_bins || --- || 2218 |SQL Query:``sqlSELECT COUNT(DISTINCT BIN_ID) AS available_binsFROM live_inventory_masterWHERE ARTICLE_ID = 'no-sku'``Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context95% Confident",
+      "response_length": 388,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:10:03.387596",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT COUNT(DISTINCT BIN_ID) AS available_bins\nFROM live_inventory_master\nWHERE ARTICLE_ID = 'no-sku'",
+        "tables_used": [
+          "live_inventory_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: show details from config_master\ud83d\udfe2 High Confidence (90%)Found 1 result(s):| SIM_MODE | X_PITCH | Y_PITCH | Z_PITCH | X_MAX | Y_MAX | Z_MAX | COMM_TIMEOUT | TOWER_PARKING_Z | BATTERY_LOW_LIMIT | BATTERY_HIGH_LIMIT | AH_UPPER_LIMIT | AH_LOWER_LIMIT | VOLTAGE_THRESHOLD | AH_THRESHOLD | MAX_BUFFER_STEPS_SIZE | VOLUME_OF_BIN | DOWNTIME_LOG_INTERVAL | SHIFT_START_HOUR | AH_THRESHOLD_CHARGING | BIN_IN_LOOP | AUTOCALDISTANCEUPPERLIMIT | AUTOCALDISTANCELOWERLIMIT | BATTERY_BIT_ON_COUNTER | AUTOCALDI",
+      "response_length": 1099,
+      "reward": 0.65,
+      "timestamp": "2025-11-19T17:10:09.713422",
+      "metadata": {
+        "session_id": "c4cb8e27-29af-4384-b24b-9884ebbbacf6",
+        "chat_id": null,
+        "confidence": 0.9,
+        "sql_query": "SELECT * FROM config_master LIMIT 100",
+        "tables_used": [
+          "config_master"
+        ],
+        "suggested_actions": []
+      }
     }
   ],
   "knowledge_base": [
@@ -2599,6 +3081,103 @@
           "DHL NEO Techno-commercial offer.pdf",
           "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
           "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "ok. what is sorter in falcon",
+      "query_keywords": [
+        "what",
+        "sorter",
+        "falcon"
+      ],
+      "query_length": 6,
+      "response": "The Sorter in Falcon's NEO-ASRS solution is a sorting system that is designed to handle a volume of 7200 shipments per hour. It is equipped with three infected conveyors integrated with an automatic label applicator before shipments enter the sortation system. The shipments are sorted using Falcon's Loop Cross Belt Sorter, which is equipped with an automatic barcode scanning, dimensioning, weighing, and image capture capabilities. The sorter is installed on the mezzanine floor and sorts directly",
+      "response_length": 857,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T18:36:37.919334",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different type of sorter solution falcon provides",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "sorter",
+        "solution",
+        "falcon",
+        "provides"
+      ],
+      "query_length": 10,
+      "response": "The different type of sorter solution Falcon provides is as follows:\n\n1. Loop Cross Belt Sorter (LCBS): This is a patented solution that Falcon offers for sorting parcels. It is designed to sort parcels using a combination of belt conveyors and cross-belt conveyors. The cross-belt conveyors are designed to move the parcels horizontally, while the belt conveyors are designed to move the parcels vertically. The LCBS is a highly efficient and reliable solution for sorting large volumes of parcels.\n",
+      "response_length": 962,
+      "reward": 0.1,
+      "timestamp": "2025-11-18T18:59:01.140354",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "give me all the tables availbale in the database",
+      "query_keywords": [
+        "give",
+        "tables",
+        "availbale",
+        "database"
+      ],
+      "query_length": 9,
+      "response": "Documentation:\n\n[Document 1] F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf\nCategoary: neo-documentation | Relevance: 63.4%\n\nand 3D animation of the sorter system\n\u2022 Interface with other equipment not specified in this offer.\n\u2022 Provision of facilities for the control room (furniture, air conditioning, heating, etc.).\n\u2022 The supply and installation of fencing around the different corridor\n\u2022 Any item specifically indicated as not forming part of the subject matter of the Seller's su",
+      "response_length": 2292,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T15:00:24.841987",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.97,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is the inventory of the systme",
+      "query_keywords": [
+        "what",
+        "inventory",
+        "systme"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe inventory of the system is managed through the NEO Warehouse Management System (WMS), which includes storage bins or totes, storage grids, robots, and goods-to-person workstations. The system is designed to store and manage various types of inventory, including full pallets, cartons, and loose items.\n\n**Key Points**\n\u2022 **Storage Capacity**: The system has a total storage capacity of 1680 bins, with an average of 12 parcels per bin, as calculated in Document 2.\n\u2022 **Inventory Types",
+      "response_length": 1951,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T16:40:34.197717",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Dashboard Manual.pdf"
         ]
       }
     }

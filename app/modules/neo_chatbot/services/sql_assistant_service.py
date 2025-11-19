@@ -171,17 +171,83 @@ class SQLAssistantService:
         elif any(word in query_lower for word in ['show', 'list', 'get', 'display', 'details']):
             intent = 'retrieve'
         
-        # Detect entities (domain concepts)
+        # Detect entities (domain concepts) - comprehensive mapping based on actual schema
         entities = []
         entity_map = {
-            'bin': ['bin', 'bins', 'location', 'locations'],
-            'order': ['order', 'orders', 'shipment', 'delivery'],
-            'sku': ['sku', 'article', 'product', 'item', 'inventory'],
-            'bot': ['bot', 'bots', 'robot', 'robots'],
-            'alarm': ['alarm', 'alarms', 'alert', 'alerts', 'error'],
-            'maintenance': ['maintenance', 'repair', 'service'],
-            'velocity': ['velocity', 'speed', 'frequency'],
-            'configuration': ['config', 'configuration', 'setting'],
+            # Bin and location management (14 tables)
+            'bin': ['bin', 'bins', 'location', 'locations', 'zone', 'zones', 'aisle', 'rack', 
+                   'bin_info', 'bin_configuration', 'bin_loading', 'bin_velocity', 'bin_mapping'],
+            
+            # Bot and robot operations (9 tables)
+            'bot': ['bot', 'bots', 'robot', 'robots', 'agv', 'charging', 'battery', 
+                   'bot_master', 'robot_charge', 'bot_velocity', 'bot_alarm'],
+            
+            # Order management (17 tables)
+            'order': ['order', 'orders', 'shipment', 'delivery', 'order_master', 
+                     'order_mapping', 'order_bin', 'order_detail', 'order_line'],
+            
+            # Wave operations (30 tables)
+            'wave': ['wave', 'waves', 'pick_wave', 'put_wave', 'wave_order', 
+                    'wave_station', 'wave_rule', 'wave_mapping', 'wave_detail'],
+            
+            # SKU and article management (13 tables)
+            'sku': ['sku', 'article', 'product', 'item', 'sku_master', 
+                   'article_proximity', 'sku_recommendations', 'sku_velocity'],
+            
+            # Inventory management (13 tables)
+            'inventory': ['inventory', 'stock', 'live_inventory', 'stock_audit', 
+                         'stock_location', 'stock_movement', 'inventory_master'],
+            
+            # Pick operations (11 tables)
+            'pick': ['pick', 'picks', 'picking', 'picker', 'pick_wave', 'pick_task', 
+                    'pick_station', 'pick_order', 'pick_detail', 'pick_bin'],
+            
+            # Put operations (12 tables)
+            'put': ['put', 'puts', 'putting', 'putaway', 'put_wave', 'put_task', 
+                   'put_station', 'put_order', 'put_detail', 'put_bin'],
+            
+            # Station operations (5 tables)
+            'station': ['station', 'stations', 'workstation', 'hw_station', 
+                       'station_master', 'station_pick', 'station_put', 'station_rule'],
+            
+            # Task management (13 tables)
+            'task': ['task', 'tasks', 'job', 'jobs', 'task_master', 'pick_task', 
+                    'put_task', 'maintenance_task', 'task_mapping'],
+            
+            # Alarms and errors (9 tables)
+            'alarm': ['alarm', 'alarms', 'alert', 'alerts', 'error', 'errors', 
+                     'alarm_master', 'bot_alarm', 'integration_error'],
+            
+            # Maintenance operations (5 tables)
+            'maintenance': ['maintenance', 'repair', 'service', 'maintenance_task', 
+                           'maintenance_log', 'maintenance_schedule'],
+            
+            # User management (4 tables)
+            'user': ['user', 'users', 'operator', 'picker', 'packer', 'user_master', 
+                    'user_rule', 'user_mapping'],
+            
+            # Dashboard and monitoring (28 tables)
+            'dashboard': ['dashboard', 'monitor', 'monitoring', 'dashboard_bot', 
+                         'dashboard_order', 'dashboard_inventory'],
+            
+            # Charging operations (4 tables)
+            'charging': ['charging', 'charge', 'battery', 'robot_charge', 
+                        'charging_station', 'charging_log'],
+            
+            # Conveyor systems (2 tables)
+            'conveyor': ['conveyor', 'conveyors', 'conveyor_system', 'conveyor_configuration'],
+            
+            # Logs and audit trail (38 tables)
+            'log': ['log', 'logs', 'history', 'audit', 'tracking', 'trace', 
+                   'alarm_log', 'charge_log', 'integration_log', 'bot_log'],
+            
+            # Master data tables (44 tables)
+            'master': ['master', 'config', 'configuration', 'setting', 'settings', 
+                      'rule', 'rules', 'mapping', 'api_master', 'zone_master'],
+            
+            # Analysis and velocity (7 tables)
+            'velocity': ['velocity', 'speed', 'frequency', 'analysis', 'bin_velocity', 
+                        'bot_velocity', 'sku_velocity', 'velocity_analysis'],
         }
         
         for entity, keywords in entity_map.items():
@@ -228,46 +294,232 @@ class SQLAssistantService:
         Returns:
             Dict mapping entity to list of relevant tables
         """
-        # Entity to table mapping (based on NEO WMS domain)
+        # Comprehensive entity to table mapping (based on actual schema - 162 tables)
         entity_table_map = {
+            # Bin and location management (14 tables)
             'bin': [
                 'bin_configuration',
                 'bin_info_master',
                 'live_inventory_master',
-                'order_bin_mapping'
-            ],
-            'order': [
-                'wms_to_wcs_order_line_request_data',
                 'order_bin_mapping',
-                'order_history'
+                'bin_velocity_scores',
+                'location_master',
+                'location_block_master',
+                'bin_loading_wave_order_master',
+                'order_bin_task_master',
+                'store_bin_master'
             ],
-            'sku': [
-                'sku_master',
-                'articles_registered',
-                'article_proximity_score',
-                'live_inventory_master'
-            ],
+            
+            # Bot and robot operations (9 tables)
             'bot': [
                 'bot_master',
                 'bot_master_log',
                 'bot_alarm_log',
-                'bot_charging_bit_log'
+                'bot_charging_bit_log',
+                'dashboard_bot_master',
+                'robot_charge_log',
+                'dashboard_log_bot_charging',
+                'bot_manual_alarm_log'
             ],
+            
+            # Order management (17 tables)
+            'order': [
+                'wms_to_wcs_order_line_request_data',
+                'order_bin_mapping',
+                'pick_wave_order_master',
+                'put_wave_order_master',
+                'bin_loading_wave_order_master',
+                'stock_audit_wave_order_master',
+                'order_bin_task_master',
+                'lpn_pick_wave_order_mapping',
+                'order_bin_mapping_log'
+            ],
+            
+            # Wave operations (29 tables)
+            'wave': [
+                'pick_wave_order_master',
+                'put_wave_order_master',
+                'bin_loading_wave_order_master',
+                'stock_audit_wave_order_master',
+                'pick_wave_wms_data',
+                'put_wave_wms_data',
+                'wave_station_rule_mapping',
+                'dashboard_log_wave_process',
+                'lpn_pick_wave_order_mapping',
+                'short_pick_wave_reason',
+                'short_put_wave_reason'
+            ],
+            
+            # SKU and article management (13 tables)
+            'sku': [
+                'sku_master',
+                'articles_registered',
+                'article_registered',
+                'article_proximity_score',
+                'sku_recommendations',
+                'sku_velocity_scores',
+                'sku_velocity_history',
+                'sku_batch_master',
+                'sku_ean_mapping',
+                'live_inventory_master'
+            ],
+            
+            # Inventory management (13 tables)
+            'inventory': [
+                'live_inventory_master',
+                'live_inventory_master_log',
+                'stock_audit_bin_data_push',
+                'stock_audit_bin_segments',
+                'stock_audit_list',
+                'stock_audit_wave_order_master',
+                'stock_audit_wave_wms_data',
+                'lpn_master_stock_audit'
+            ],
+            
+            # Pick operations (11 tables)
+            'pick': [
+                'pick_wave_order_master',
+                'station_pick_task_master',
+                'pick_wave_wms_data',
+                'lpn_pick_wave_order_mapping',
+                'pick_rule_master',
+                'recovery_pick_task_master',
+                'short_pick_wave_reason'
+            ],
+            
+            # Put/Putaway operations (7 tables)
+            'put': [
+                'put_wave_order_master',
+                'put_wave_wms_data',
+                'short_put_wave_reason',
+                'put_wave_order_master_archive',
+                'put_wave_wms_data_archive'
+            ],
+            
+            # Station operations (5 tables)
+            'station': [
+                'hw_station_master',
+                'station_pick_task_master',
+                'hw_charging_station_master',
+                'station_home_master',
+                'wave_station_rule_mapping'
+            ],
+            
+            # Task management (13 tables)
+            'task': [
+                'station_pick_task_master',
+                'maintenance_task_master',
+                'dashboard_log_maintenance_task_master',
+                'order_bin_task_master',
+                'recovery_pick_task_master',
+                'task_master',
+                'task_detail',
+                'dashboard_manual_task_master',
+                'mining_job_logs',
+                'velocity_calculation_jobs'
+            ],
+            
+            # Alarms and errors (9 tables)
             'alarm': [
                 'alarm_master',
                 'bot_alarm_log',
-                'bot_manual_alarm_log'
+                'bot_manual_alarm_log',
+                'integration_error_logs',
+                'dashboard_log_error_api',
+                'maintenance_alarm_logs',
+                'manual_alarm_master',
+                'pseudo_bot_alarm_log'
             ],
+            
+            # Maintenance operations (5 tables)
             'maintenance': [
-                'dashboard_log_maintenance_task_master'
+                'maintenance_task_master',
+                'dashboard_log_maintenance_task_master',
+                'hw_maintenance_master',
+                'maintenance_alarm_logs',
+                'hw_maintenance_scanner_multiplexer_master'
             ],
-            'velocity': [
-                'bin_velocity_scores',
-                'sku_velocity_analysis'
+            
+            # User management (4 tables)
+            'user': [
+                'dashboard_user_master',
+                'dashboard_user_role_setting_mapping',
+                'dashboard_log_user_login_attempts',
+                'dashboard_table_header_json_user_mapping'
             ],
-            'configuration': [
+            
+            # Dashboard and monitoring (28 tables - top 10 most relevant)
+            'dashboard': [
+                'dashboard_bot_master',
+                'dashboard_log_bot_charging',
+                'dashboard_log_maintenance_task_master',
+                'dashboard_log_wave_process',
+                'dashboard_log_error_api',
+                'dashboard_config',
+                'dashboard_user_master',
+                'dashboard_master_data',
+                'dashboard_menu_master',
+                'dashboard_access_master'
+            ],
+            
+            # Charging operations (4 tables)
+            'charging': [
+                'robot_charge_log',
+                'bot_charging_bit_log',
+                'dashboard_log_bot_charging',
+                'hw_charging_station_master'
+            ],
+            
+            # Conveyor systems (2 tables)
+            'conveyor': [
+                'hw_conveyor_master',
+                'hw_conveyor_mux_master'
+            ],
+            
+            # Logs and audit trail (38 tables - top 12 most relevant)
+            'log': [
+                'bot_alarm_log',
+                'bot_master_log',
+                'bot_charging_bit_log',
+                'robot_charge_log',
+                'live_inventory_master_log',
+                'order_bin_mapping_log',
+                'task_master_log',
+                'task_detail_log',
+                'mining_job_logs',
+                'sku_velocity_log',
+                'integration_error_logs',
+                'dashboard_log_wave_process'
+            ],
+            
+            # Master data tables (73 tables - top 15 most important)
+            'master': [
+                'bot_master',
+                'sku_master',
+                'bin_info_master',
+                'alarm_master',
                 'config_master',
-                'bin_configuration'
+                'location_master',
+                'hw_station_master',
+                'api_master',
+                'task_master',
+                'maintenance_task_master',
+                'pick_rule_master',
+                'zone_master',
+                'category_master',
+                'sku_batch_master',
+                'store_bin_master'
+            ],
+            
+            # Velocity and analysis (7 tables)
+            'velocity': [
+                'sku_velocity_scores',
+                'bin_velocity_scores',
+                'sku_velocity_history',
+                'sku_velocity_log',
+                'sku_velocity_state',
+                'velocity_calculation_config',
+                'velocity_calculation_jobs'
             ],
         }
         

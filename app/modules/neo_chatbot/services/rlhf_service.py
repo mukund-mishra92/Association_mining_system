@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from collections import defaultdict
 import numpy as np
+import pymysql
+from app.shared.config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +39,25 @@ class RLHFService:
         self.rewards_file = self.data_dir / "reward_model.json"
         self.patterns_file = self.data_dir / "learned_patterns.json"
         
+        # Database configuration
+        self.db_config = {
+            'host': config.DB_HOST,
+            'port': config.DB_PORT,
+            'user': config.DB_USER,
+            'password': config.DB_PASSWORD,
+            'database': config.DB_NAME,
+            'charset': 'utf8mb4'
+        }
+        
         # Load existing data
         self.reward_model = self._load_reward_model()
         self.learned_patterns = self._load_learned_patterns()
         
         logger.info("✅ RLHF Service initialized")
+    
+    def _get_connection(self):
+        """Get database connection"""
+        return pymysql.connect(**self.db_config)
     
     def record_feedback(
         self,
@@ -462,9 +478,42 @@ class RLHFService:
         ]
     
     def _append_feedback(self, feedback: Dict):
-        """Append feedback to JSONL file"""
+        """Append feedback to JSONL file AND MySQL database"""
+        # Save to JSON file (for backup/analytics)
         with open(self.feedback_file, 'a', encoding='utf-8') as f:
             f.write(json.dumps(feedback) + '\n')
+        
+        # Save to MySQL database
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            # Get chat_id from metadata if available
+            chat_id = feedback.get('metadata', {}).get('chat_id')
+            session_id = feedback.get('metadata', {}).get('session_id', 'unknown')
+            
+            cursor.execute("""
+                INSERT INTO chatbot_feedback 
+                (chat_id, session_id, feedback_type, rating, comment, feedback_category, timestamp)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                chat_id,
+                session_id,
+                feedback.get('feedback_type'),
+                feedback.get('rating'),
+                feedback.get('comment'),
+                feedback.get('chatbot_type'),  # Store chatbot type as category
+                datetime.fromisoformat(feedback.get('timestamp'))
+            ))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            logger.debug(f"💾 Feedback saved to database: {feedback.get('feedback_id')}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving feedback to database: {e}", exc_info=True)
     
     def _load_recent_feedback(
         self,

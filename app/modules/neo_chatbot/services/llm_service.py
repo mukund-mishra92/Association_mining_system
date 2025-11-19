@@ -47,18 +47,15 @@ class LLMService:
         self.openai_client = None
         self.anthropic_client = None
         
-        # Try Groq first (Fast inference API - OpenAI-compatible)
+        # Try Groq first (Fast inference API)
         if self.groq_api_key:
             try:
-                from openai import OpenAI
-                self.groq_client = OpenAI(
-                    api_key=self.groq_api_key,
-                    base_url="https://api.groq.com/openai/v1"
-                )
+                from groq import Groq
+                self.groq_client = Groq(api_key=self.groq_api_key)
                 self.provider = "groq"
                 logger.info("✅ Groq (Fast Inference) LLM initialized")
             except ImportError:
-                logger.warning("⚠️ OpenAI package not installed. Run: pip install openai")
+                logger.warning("⚠️ Groq package not installed. Run: pip install groq")
             except Exception as e:
                 logger.warning(f"⚠️ Groq initialization failed: {e}")
         
@@ -161,9 +158,9 @@ class LLMService:
         
         response = self.groq_client.chat.completions.create(
             #model="llama-3.3-70b-versatile",  # Fast Llama model on Groq
-            #model = "llama-3.1-8b-instant",
+            model = "llama-3.1-8b-instant",
             #model = "mixtral-8x7b",
-            model = "qwen2-72b-instruct",
+            #model = "qwen2-72b-instruct",
             messages=full_messages,
             max_tokens=max_tokens,
             temperature=temperature

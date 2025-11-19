@@ -1,30 +1,30 @@
 """
-HTML Database Schema Parser
-Parses the database_schema.htm file to extract table and column information.
+Database Schema Parser
+Parses schema.json file (SQL dump) to extract table and column information.
 """
 
 from typing import Dict, List, Tuple
 from pathlib import Path
-from bs4 import BeautifulSoup
 import re
+import json
 
 
 class SchemaParser:
-    """Parser for HTML database schema files."""
+    """Parser for JSON/SQL database schema files."""
     
     def __init__(self, schema_file_path: str):
         """
         Initialize the schema parser.
         
         Args:
-            schema_file_path: Path to the HTML schema file
+            schema_file_path: Path to the JSON schema file (SQL dump)
         """
         self.schema_file_path = Path(schema_file_path)
         self.tables: Dict[str, List[Dict[str, str]]] = {}
         
     def parse(self) -> Dict[str, List[Dict[str, str]]]:
         """
-        Parse the HTML schema file and extract table structures.
+        Parse the JSON/SQL schema file and extract table structures.
         
         Returns:
             Dictionary mapping table names to list of column dictionaries
@@ -35,62 +35,73 @@ class SchemaParser:
         with open(self.schema_file_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        soup = BeautifulSoup(content, 'html.parser')
+        # Extract CREATE TABLE statements using regex
+        table_pattern = r'CREATE TABLE `(\w+)` \((.*?)\) ENGINE='
+        matches = re.finditer(table_pattern, content, re.DOTALL | re.IGNORECASE)
         
-        # Find all table anchors
-        table_anchors = soup.find_all('a', attrs={'name': True})
-        
-        for anchor in table_anchors:
-            table_name = anchor.get('name')
-            if not table_name or table_name.strip() == '':
-                continue
+        for match in matches:
+            table_name = match.group(1)
+            columns_sql = match.group(2)
             
-            # Get the next table element that contains field information
-            current = anchor.find_next('table')
-            if not current:
-                continue
-            
-            # Skip the header table, look for the field data table
-            field_table = current.find_next('table', attrs={'border': '1'})
-            if not field_table:
-                continue
-            
-            # Extract column information
-            columns = self._parse_columns(field_table)
+            # Parse column definitions
+            columns = self._parse_columns_from_sql(columns_sql)
             if columns:
                 self.tables[table_name] = columns
         
         return self.tables
     
-    def _parse_columns(self, table) -> List[Dict[str, str]]:
+    def _parse_columns_from_sql(self, columns_sql: str) -> List[Dict[str, str]]:
         """
-        Parse column information from a table element.
+        Parse column information from CREATE TABLE SQL definition.
         
         Args:
-            table: BeautifulSoup table element
+            columns_sql: SQL column definitions string
             
         Returns:
             List of column dictionaries with field details
         """
         columns = []
-        rows = table.find_all('tr')[1:]  # Skip header row
         
-        for row in rows:
-            cells = row.find_all('td')
-            if len(cells) < 9:
+        # Split by lines, filter out PRIMARY KEY, KEY, CONSTRAINT lines
+        lines = [line.strip() for line in columns_sql.split('\n') 
+                if line.strip() and not line.strip().startswith(('PRIMARY KEY', 'KEY', 'UNIQUE KEY', 'CONSTRAINT'))]
+        
+        for line in lines:
+            if not line or line.startswith('--'):
                 continue
-            
-            column = {
-                'field': self._clean_text(cells[0].get_text()),
-                'type': self._clean_text(cells[1].get_text()),
-                'collation': self._clean_text(cells[2].get_text()),
-                'null': self._clean_text(cells[3].get_text()),
-                'key': self._clean_text(cells[4].get_text()),
-                'default': self._clean_text(cells[5].get_text()),
-                'extra': self._clean_text(cells[6].get_text()),
-                'comment': self._clean_text(cells[8].get_text()) if len(cells) > 8 else ''
-            }
-            columns.append(column)
+                
+            # Extract column name (between backticks)
+            col_match = re.match(r'`(\w+)`\s+(.+)', line)
+            if col_match:
+                col_name = col_match.group(1)
+                col_definition = col_match.group(2).rstrip(',')
+                
+                # Parse data type
+                type_match = re.match(r'(\w+(?:\([^)]+\))?)', col_definition)
+                data_type = type_match.group(1) if type_match else 'UNKNOWN'
+                
+                # Check constraints
+                is_nullable = 'NOT NULL' not in col_definition.upper()
+                is_auto_increment = 'AUTO_INCREMENT' in col_definition.upper()
+                is_primary_key = 'PRIMARY KEY' in col_definition.upper()
+                
+                # Extract comment
+                comment_match = re.search(r"COMMENT '([^']*)'", col_definition)
+                comment = comment_match.group(1) if comment_match else ''
+                
+                # Extract default value
+                default_match = re.search(r"DEFAULT\s+([^\s,]+)", col_definition, re.IGNORECASE)
+                default_value = default_match.group(1) if default_match else ''
+                
+                columns.append({
+                    'field': col_name,
+                    'type': data_type,
+                    'null': 'YES' if is_nullable else 'NO',
+                    'key': 'PRI' if is_primary_key else '',
+                    'default': default_value,
+                    'extra': 'auto_increment' if is_auto_increment else '',
+                    'comment': comment
+                })
         
         return columns
     
@@ -190,7 +201,7 @@ def get_schema_parser() -> SchemaParser:
     Returns:
         SchemaParser instance
     """
-    schema_file = Path(__file__).parent.parent / "data" / "database" / "database_schema.htm"
+    schema_file = Path(__file__).parent.parent / "data" / "database" / "schema.json"
     parser = SchemaParser(str(schema_file))
     parser.parse()
     return parser
