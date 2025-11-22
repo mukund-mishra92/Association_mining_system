@@ -824,7 +824,13 @@ class SQLAssistantService:
             'correct is', 'the correct', 'actually', 'it\'s actually',
             'column is', 'field is', 'not means', 'doesn\'t mean',
             'table is null', 'table is empty', 'no data in', 'not available in',
-            'find in other table', 'check other table', 'different table'
+            'find in other table', 'check other table', 'different table',
+            # CRITICAL: Table existence corrections
+            'does not exist', 'doesn\'t exist', 'do not exist', 'don\'t exist',
+            'not exist', 'table not available', 'is not available',
+            'don\'t use', 'do not use', 'stop using', 'avoid',
+            'i told you', 'i already told', 'already told you',
+            'making mistake', 'still using', 'again using'
         ]
         
         is_correction = any(indicator in message_lower for indicator in correction_indicators)
@@ -847,15 +853,36 @@ class SQLAssistantService:
                         self._store_correction(session_id, match.group(1), match.group(2))
                         logger.info(f"🔧 Stored correction: '{match.group(1)}' → '{match.group(2)}'")
             
-            # Check if user says table has no data
-            if any(phrase in message_lower for phrase in ['table is null', 'table is empty', 'no data', 'not ready']):
-                # Extract table name
-                table_pattern = r'([\w_]+)\s+(?:table\s+)?(?:is\s+)?(?:null|empty|not ready)'
-                table_match = re.search(table_pattern, message_lower)
-                if table_match and session_id:
-                    failed_table = table_match.group(1)
-                    logger.info(f"⚠️ User reported empty table: {failed_table}")
-                    self._store_failed_table(session_id, failed_table, "Empty/no data")
+            # Check if user says table has no data or doesn't exist
+            if any(phrase in message_lower for phrase in ['table is null', 'table is empty', 'no data', 'not ready', 
+                                                           'does not exist', 'doesn\'t exist', 'do not exist', 'not available']):
+                # Extract table name - multiple patterns
+                table_patterns = [
+                    r'(?:table\s+)?[\'"`]?([\w_]+)[\'"`]?\s+(?:table\s+)?(?:does\s+not|doesn\'t|do\s+not|don\'t)\s+exist',
+                    r'([\w_]+)\s+(?:table\s+)?(?:is\s+)?(?:null|empty|not\s+ready|not\s+available)',
+                    r'(?:table|the)\s+[\'"`]?([\w_]+)[\'"`]?\s+(?:is\s+)?(?:not\s+available|doesn\'t\s+exist)',
+                    r'(?:avoid|don\'t\s+use|stop\s+using)\s+(?:the\s+)?(?:table\s+)?[\'"`]?([\w_]+)[\'"`]?'
+                ]
+                
+                failed_table = None
+                reason = "User correction: table issue"
+                
+                for pattern in table_patterns:
+                    table_match = re.search(pattern, message_lower)
+                    if table_match:
+                        failed_table = table_match.group(1)
+                        
+                        # Determine reason based on message
+                        if 'doesn\'t exist' in message_lower or 'does not exist' in message_lower or 'not exist' in message_lower:
+                            reason = "Table does not exist (USER CONFIRMED)"
+                        elif 'empty' in message_lower or 'no data' in message_lower:
+                            reason = "Empty/no data (USER CONFIRMED)"
+                        elif 'not available' in message_lower:
+                            reason = "Not available (USER CONFIRMED)"
+                        
+                        logger.warning(f"🚫 USER CORRECTION: Table '{failed_table}' - {reason}")
+                        self._store_failed_table(session_id, failed_table, reason)
+                        break
         
         return is_correction
     
@@ -960,10 +987,12 @@ class SQLAssistantService:
                 prompt_parts.append(f"  - Use '{corr['correct']}' NOT '{corr['wrong']}'")
         
         if context['failed_tables']:
-            prompt_parts.append("\n⚠️ TABLES THAT FAILED/HAVE NO DATA (DO NOT USE):")
+            prompt_parts.append("\n🚨 CRITICAL: TABLES THAT DO NOT EXIST OR FAILED (ABSOLUTELY DO NOT USE THESE!):")
+            prompt_parts.append("⚠️ USER HAS EXPLICITLY TOLD YOU THESE TABLES ARE INVALID - DO NOT USE THEM UNDER ANY CIRCUMSTANCES!")
             for failed in context['failed_tables']:
-                prompt_parts.append(f"  - ❌ {failed['table']} ({failed['reason']})")
-            prompt_parts.append("  → Find alternative tables with similar data!")
+                prompt_parts.append(f"  - ❌ BLACKLISTED: {failed['table']} ({failed['reason']})")
+            prompt_parts.append("\n  🔄 INSTEAD: Find alternative tables with similar data from the schema!")
+            prompt_parts.append("  📋 Example: If bin_configuration doesn't exist, use bin_info_master or location_master")
         
         if context['previous_results']:
             prompt_parts.append("\n📊 PREVIOUS QUERY RESULTS IN THIS CONVERSATION:")
@@ -1150,8 +1179,16 @@ class SQLAssistantService:
         
         return f"""You are a SQL expert for the NEO Warehouse Management System.
 
-{query_guidance}
 {context_prompt}
+
+⚠️⚠️⚠️ CRITICAL WARNING ⚠️⚠️⚠️
+IF THE USER CORRECTION SECTION ABOVE SAYS A TABLE DOESN'T EXIST OR IS BLACKLISTED:
+- DO NOT USE THAT TABLE UNDER ANY CIRCUMSTANCES
+- FIND AN ALTERNATIVE TABLE FROM THE SCHEMA
+- IF YOU USE A BLACKLISTED TABLE, THE QUERY WILL FAIL IMMEDIATELY
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+
+{query_guidance}
 {sql_examples_prompt}
 {historical_learning}
 
@@ -1165,18 +1202,18 @@ CRITICAL TABLE RELATIONSHIPS:
    - JOIN: ord.ARTICLE_ID = sm.SKU_ID
 
 2. BINS & LOCATIONS:
-   - Bin config: bin_configuration
-     Key columns: bin_id (varchar), sku_code, bin_location, zone, current_sku_count
    - Bin info: bin_info_master
-     Key columns: BIN_ID (int, primary key), BIN_BARCODE, BIN_TYPE
+     Key columns: BIN_ID (int, primary key), BIN_BARCODE, BIN_TYPE, ZONE_ID
+   - Location: location_master
+     Key columns: LOCATION_ID, LOCATION_NAME, ZONE_ID
    - Order-bin mapping: order_bin_mapping
      Key columns: ORDER_BIN_ID, BIN_ID (int), STATION_ID, TYPE, STATUS, INSERTED_TIMESTAMP
    
 3. BINS & ORDERS (Multi-table JOIN):
-   - To link orders to bin locations:
-     wms_to_wcs_order_line_request_data → (via intermediate tables) → bin_configuration
+   - To link orders to bins:
+     wms_to_wcs_order_line_request_data → order_bin_mapping → bin_info_master
    - Direct bin-order link: order_bin_mapping.BIN_ID = bin_info_master.BIN_ID
-   - Then: bin_info_master to bin_configuration via bin_id/BIN_BARCODE matching
+   - For location info: Join bin_info_master with location_master via ZONE_ID
 
 4. SKU RECOMMENDATIONS:
    - Table: sku_recommendations
@@ -1202,13 +1239,14 @@ CRITICAL TABLE RELATIONSHIPS:
 IMPORTANT RULES:
 1. Use MySQL syntax (CURDATE(), DATE_SUB(), NOW(), etc.)
 2. Always add LIMIT clause (default 100, max 1000)
-3. Check data types: bin_configuration.bin_id is VARCHAR, bin_info_master.BIN_ID is INT
+3. Check data types: bin_info_master.BIN_ID is INT, location_master uses VARCHAR
 4. For BOT queries: ALWAYS start from bot_master table
 5. For bot counts: COUNT(*) FROM bot_master with appropriate WHERE conditions
 6. For dates: use INSERTED_TIMESTAMP, UPDATED_TIMESTAMP, or specific date columns
 7. Return ONLY the SQL query, no explanations, no markdown code blocks
 8. When joining multiple tables, verify column names match exactly (case-sensitive)
 9. For maintenance tasks: Use MAINTENANCE_POINT_BOT_ID, NOT BOT_ID
+10. ⚠️ NEVER use tables mentioned in the BLACKLISTED section above!
 
 CRITICAL COLUMN NAME RULES:
 ⚠️ Common mistakes - ALWAYS use the CORRECT column name:
@@ -1240,13 +1278,12 @@ WHERE ord.INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 7 DAY)
 GROUP BY sm.SKU_ID, sm.SKU_NAME 
 ORDER BY total_qty DESC LIMIT 5;
 
--- Bins with most orders (location analysis):
-SELECT bc.bin_location, bc.zone, COUNT(obm.ORDER_BIN_ID) AS order_count
+-- Bins with most orders:
+SELECT bim.BIN_ID, bim.BIN_BARCODE, bim.BIN_TYPE, COUNT(obm.ORDER_BIN_ID) AS order_count
 FROM order_bin_mapping obm
 JOIN bin_info_master bim ON obm.BIN_ID = bim.BIN_ID
-JOIN bin_configuration bc ON bim.BIN_BARCODE = bc.bin_id
 WHERE obm.INSERTED_TIMESTAMP >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-GROUP BY bc.bin_location, bc.zone
+GROUP BY bim.BIN_ID, bim.BIN_BARCODE, bim.BIN_TYPE
 ORDER BY order_count DESC LIMIT 10;
 
 -- Incomplete maintenance tasks by bot:
@@ -1409,6 +1446,44 @@ I'm here to help - just tell me what you need! 💡""",
             
             # Detect if user is providing a correction
             is_correction = self._detect_user_correction(chat_request.message, chat_request.session_id)
+            
+            # If correction detected, acknowledge it and ask user to restate question
+            if is_correction and chat_request.session_id:
+                failed_tables = self.session_corrections.get(chat_request.session_id, {}).get('failed_tables', [])
+                corrections = self.session_corrections.get(chat_request.session_id, {}).get('corrections', [])
+                
+                acknowledgment = "✅ **Got it! I've noted your corrections:**\n\n"
+                
+                if failed_tables:
+                    acknowledgment += "**Tables I will NOT use:**\n"
+                    for failed in failed_tables[-3:]:  # Last 3 corrections
+                        acknowledgment += f"- ❌ `{failed['table']}` - {failed['reason']}\n"
+                    acknowledgment += "\n"
+                
+                if corrections:
+                    acknowledgment += "**Column/field corrections:**\n"
+                    for corr in corrections[-3:]:
+                        acknowledgment += f"- Use `{corr['correct']}` instead of `{corr['wrong']}`\n"
+                    acknowledgment += "\n"
+                
+                acknowledgment += "📝 **What I'll do now:**\n"
+                acknowledgment += "- Use alternative tables from the schema\n"
+                acknowledgment += "- Apply your corrections to all future queries\n"
+                acknowledgment += "- Find the data you need using correct tables\n\n"
+                acknowledgment += "🔄 **Please restate your question**, and I'll generate a corrected query."
+                
+                return ChatResponse(
+                    response=acknowledgment,
+                    chatbot_type=ChatbotType.SQL_ASSISTANT,
+                    session_id=chat_request.session_id,
+                    sources=[],
+                    confidence_score=0.0,
+                    metadata={
+                        'type': 'correction_acknowledgment',
+                        'failed_tables': [f['table'] for f in failed_tables],
+                        'corrections': corrections
+                    }
+                )
             
             # Auto-correct column names using fuzzy matching
             corrected_message, auto_corrections = self._extract_and_correct_column_names(chat_request.message)
@@ -1905,9 +1980,22 @@ Generate MySQL query to answer this question. Return ONLY the SQL."""
             logger.error(f"❌ SQL generation error with strategy {strategy}: {e}")
             return None
     
-    def _execute_query_safe(self, sql_query: str) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+    def _execute_query_safe(self, sql_query: str, session_id: Optional[str] = None) -> Tuple[List[Dict[str, Any]], Optional[str]]:
         """Execute SQL query safely with timeout and error handling"""
         try:
+            # CRITICAL: Check if query uses blacklisted tables
+            if session_id and session_id in self.session_corrections:
+                failed_tables = self.session_corrections[session_id].get('failed_tables', [])
+                if failed_tables:
+                    sql_lower = sql_query.lower()
+                    for failed in failed_tables:
+                        blacklisted_table = failed['table'].lower()
+                        # Check if blacklisted table is in the query
+                        if re.search(r'\b' + re.escape(blacklisted_table) + r'\b', sql_lower):
+                            error_msg = f"❌ QUERY USES BLACKLISTED TABLE '{failed['table']}' - {failed['reason']}. USER EXPLICITLY SAID THIS TABLE {failed['reason'].upper()}!"
+                            logger.error(error_msg)
+                            return [], error_msg
+            
             # Security: Prevent dangerous operations (use word boundaries to avoid false positives)
             import re
             dangerous_patterns = [

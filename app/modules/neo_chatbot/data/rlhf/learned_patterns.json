@@ -1297,6 +1297,94 @@
         ],
         "suggested_actions": []
       }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "I generated a SQL query for your question, but I'm not confident in the results.Your Question: give me list of top 10 SKU with their count which has been orderd mostGenerated SQL:``sqlSELECT sm.SKU_ID, sm.SKU_NAME, SUM(ord.QUANTITY) AS total_qty FROM wms_to_wcs_order_line_request_data ord JOIN sku_master sm ON ord.ARTICLE_ID = sm.SKU_ID GROUP BY sm.SKU_ID, sm.SKU_NAME ORDER BY total_qty DESC LIMIT 10;``Issue: The query execution didn't return results I'm confident about. This could mean:- The da",
+      "response_length": 859,
+      "reward": 0.65,
+      "timestamp": "2025-11-20T15:21:06.036519",
+      "metadata": {
+        "session_id": "a5523997-09b8-459e-8a06-b43cc27bd310",
+        "chat_id": null,
+        "confidence": 0.5,
+        "sql_query": "SELECT sm.SKU_ID, sm.SKU_NAME, SUM(ord.QUANTITY) AS total_qty \nFROM wms_to_wcs_order_line_request_data ord \nJOIN sku_master sm ON ord.ARTICLE_ID = sm.SKU_ID \nGROUP BY sm.SKU_ID, sm.SKU_NAME \nORDER BY total_qty DESC \nLIMIT 10;",
+        "tables_used": [
+          "wms_to_wcs_order_line_request_data",
+          "sku_master"
+        ],
+        "suggested_actions": []
+      }
+    },
+    {
+      "query": "total how many stations are there in this neo setup",
+      "query_keywords": [
+        "total",
+        "many",
+        "stations",
+        "there",
+        "this",
+        "setup"
+      ],
+      "query_length": 10,
+      "response": "**Query:** total how many stations are there in this neo setup\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| total_stations |\n| --- |\n| 12 |\n\n\n**SQL Query:**\n```sql\nSELECT COUNT(*) AS total_stations FROM hw_station_master\n```\n\n*Validation: \u2705 1 results found | \u2705 Result count looks reasonable | \u2705 Results contain meaningful data | \u2705 Column names match question context*",
+      "response_length": 378,
+      "reward": 0.1,
+      "timestamp": "2025-11-20T15:24:12.857764",
+      "metadata": {
+        "sql_query": "SELECT COUNT(*) AS total_stations FROM hw_station_master",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "out of these 12 , how many are the charging station and how many are pick and put station",
+      "query_keywords": [
+        "these",
+        "many",
+        "charging",
+        "station",
+        "many",
+        "pick",
+        "station"
+      ],
+      "query_length": 19,
+      "response": "**Query:** out of these 12 , how many are the charging station and how many are pick and put station\n\n\ud83d\udfe2 **High Confidence** (95%)\n\n**Found 1 result(s):**\n\n| charging_stations | pick_stations | put_stations |\n| --- | --- | --- |\n| 0 | 0 | 0 |\n\n\n**SQL Query:**\n```sql\nSELECT \n  COUNT(CASE WHEN STATION_TYPE = 'CHARGING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PICK_STATION' THEN 1 END) AS pick_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PUT_STATION' THEN 1 END) AS ",
+      "response_length": 683,
+      "reward": 0.1,
+      "timestamp": "2025-11-20T15:24:46.399714",
+      "metadata": {
+        "sql_query": "SELECT \n  COUNT(CASE WHEN STATION_TYPE = 'CHARGING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PICK_STATION' THEN 1 END) AS pick_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PUT_STATION' THEN 1 END) AS put_stations\nFROM hw_station_master;",
+        "confidence": 0.95,
+        "row_count": 1,
+        "strategy": "direct",
+        "attempt": 1,
+        "auto_corrections": null
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "Query: out of these 12 , how many are the charging station and how many are pick and put station\ud83d\udfe2 High Confidence (95%)Found 1 result(s):| charging_stations | pick_stations | put_stations || --- | --- | --- || 0 | 0 | 0 |SQL Query:``sqlSELECT   COUNT(CASE WHEN STATION_TYPE = 'CHARGING_STATION' THEN 1 END) AS charging_stations,  COUNT(CASE WHEN STATION_TYPE = 'PICK_STATION' THEN 1 END) AS pick_stations,  COUNT(CASE WHEN STATION_TYPE = 'PUT_STATION' THEN 1 END) AS put_stationsFROM hw_station_maste",
+      "response_length": 656,
+      "reward": -0.9,
+      "timestamp": "2025-11-20T15:28:26.011703",
+      "metadata": {
+        "session_id": "a5523997-09b8-459e-8a06-b43cc27bd310",
+        "chat_id": null,
+        "confidence": 0.95,
+        "sql_query": "SELECT \n  COUNT(CASE WHEN STATION_TYPE = 'CHARGING_STATION' THEN 1 END) AS charging_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PICK_STATION' THEN 1 END) AS pick_stations,\n  COUNT(CASE WHEN STATION_TYPE = 'PUT_STATION' THEN 1 END) AS put_stations\nFROM hw_station_master;",
+        "tables_used": [
+          "hw_station_master"
+        ],
+        "suggested_actions": []
+      }
     }
   ],
   "knowledge_base": [
@@ -3178,6 +3266,203 @@
           "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
           "ENGINEER-P_922_Commercial Offer.pdf",
           "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "how the bot actually moves in neo",
+      "query_keywords": [
+        "actually",
+        "moves"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe NEO system utilizes autonomous robots, known as NEO Bots, to move products within the warehouse structure. These robots operate in three dimensions, bringing products to and from human or robotic picking operators. The NEO Bots move at a speed of 2 m/s and can carry bins weighing up to 40Kgs.\n\n**Key Points**\n\u2022 **Autonomous Movement**: NEO Bots move autonomously and independently in all three dimensions under the structure.\n\u2022 **Guided Movement**: The movement of the NEO Bots is g",
+      "response_length": 1324,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T17:26:08.772597",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "this is fine, but can you connect this with the code and give me a better exolanation which could be bit technical too.",
+      "query_keywords": [
+        "this",
+        "fine,",
+        "connect",
+        "this",
+        "code",
+        "give",
+        "better",
+        "exolanation",
+        "which",
+        "could"
+      ],
+      "query_length": 23,
+      "response": "**\ud83d\udcc1 File:** NEO Warehouse Management System Code\n\n**\ud83d\udcdd Purpose:** This code is designed to implement the NEO Warehouse Management System, which includes features such as Pick/Put to Light Module, Automatic Barcode Scanners, Hand-Held Barcode Scanners, and NEO Bins. The system aims to provide efficient and automated warehouse management.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Class:** `WarehouseManagementSystem`\n\u2022 **Methods:** `pickItem`, `putItem`, `scanBarcode`, `assignBin`\n\u2022 **Properties:** `warehouseLayou",
+      "response_length": 5187,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T17:27:29.216095",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "ok. what is path planning in neo",
+      "query_keywords": [
+        "what",
+        "path",
+        "planning"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nPath planning in NEO refers to the process of determining the most efficient and optimal route for NEOBots to navigate within the NEO grid to store or retrieve bins, cartons, or trays. This is crucial for ensuring seamless and efficient operations within the warehouse.\n\n**Key Points**\n\u2022 **Navigation within the grid**: NEOBots use lidar and AI software capabilities to navigate within the storage grid, allowing them to move flexibly and store or retrieve totes at predetermined locatio",
+      "response_length": 1753,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T17:28:20.656658",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what this upload document feature is",
+      "query_keywords": [
+        "what",
+        "this",
+        "upload",
+        "document",
+        "feature"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe SKU Master functionality in the NEO Warehouse Management System allows supervisors to upload or update Stock Keeping Unit (SKU) master data for warehouse operations. This feature enables the upload of SKU data in CSV format, providing a convenient and efficient way to manage inventory items.\n\n**Key Points**\n\n\u2022 **CSV Upload**: The SKU Master screen allows users to upload SKU data in CSV format using two methods: clicking the \"Select a CSV File to Upload\" button or using the drag-",
+      "response_length": 2293,
+      "reward": 0.1,
+      "timestamp": "2025-11-19T18:21:21.819111",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "i need ti create a proposal for neo. what should i know before creating this",
+      "query_keywords": [
+        "need",
+        "create",
+        "proposal",
+        "neo.",
+        "what",
+        "should",
+        "know",
+        "before",
+        "creating",
+        "this"
+      ],
+      "query_length": 15,
+      "response": "I'd be happy to help you with creating a proposal for NEO. However, I want to clarify that I can only provide information based on the existing documentation we have available. I won't be able to generate new content.\n\nBefore we dive into the proposal, I want to make sure I understand what you're looking for. Have you taken a look at the documentation we have on NEO automation systems? There are several documents available, and I'd be happy to walk you through them.\n\nIn particular, I noticed tha",
+      "response_length": 1707,
+      "reward": 0.1,
+      "timestamp": "2025-11-20T14:36:44.050706",
+      "metadata": {
+        "query_type": "GENERATIVE",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "give me the different type of product falcon autotech provides",
+      "query_keywords": [
+        "give",
+        "different",
+        "type",
+        "product",
+        "falcon",
+        "autotech",
+        "provides"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nFalcon Autotech provides a range of products and solutions for warehouse automation, including sortation systems, ASRS systems, and other intralogistics automation solutions. Their products are designed to enhance operations and improve efficiency in various industries such as e-commerce, CEP, fashion, food/FMCG, auto, and pharmaceutical.\n\n**Key Points**\n\u2022 **Sortation Systems**: Falcon Autotech provides sortation systems for various applications, including B2C outbound and B2B inbou",
+      "response_length": 1974,
+      "reward": 0.1,
+      "timestamp": "2025-11-20T14:38:40.930461",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1, Document 2, Document 3]",
+      "response_length": 491,
+      "reward": 0.1,
+      "timestamp": "2025-11-22T11:57:26.712700",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "neo can fly or not",
+      "query_keywords": [],
+      "query_length": 5,
+      "response": "No, NEO Bots do not have the capability to fly. They move in all three dimensions under the structure and bring products to and from human or robotic picking operators, but this is achieved through navigation on the ground, not through flight. [Document 1, F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf]",
+      "response_length": 318,
+      "reward": 0.1,
+      "timestamp": "2025-11-22T11:59:10.041538",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
         ]
       }
     }
