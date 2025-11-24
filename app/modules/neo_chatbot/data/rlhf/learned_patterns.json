@@ -3465,6 +3465,30 @@
           "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
         ]
       }
+    },
+    {
+      "query": "how does neo help vendors and e-commerce",
+      "query_keywords": [
+        "does",
+        "help",
+        "vendors",
+        "e-commerce"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nNEO, a cutting-edge Automated Storage and Retrieval System (ASRS), offers numerous benefits to vendors and e-commerce businesses by enhancing productivity, optimizing space, and ensuring fast and accurate retrieval of products. This results in improved order processing, increased storage capacity, and real-time visibility into inventory levels.\n\n**Key Points**\n\n\u2022 **Enhanced Productivity**: NEO enhances operator productivity by 4-5X by eliminating wait time, walk time, and search tim",
+      "response_length": 2694,
+      "reward": 0.1,
+      "timestamp": "2025-11-24T11:28:35.906522",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
     }
   ],
   "diagnostic_support": [
