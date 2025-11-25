@@ -11,3 +11,4 @@ python-dotenv>=1.0.0
 flask>=3.0.0
 requests>=2.31.0
 apscheduler>=3.10.0
+pywin32>=306; sys_platform == 'win32'

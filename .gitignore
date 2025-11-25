@@ -104,3 +104,9 @@ Thumbs.db
 # *.xlsx
 # *.xls
 # data/
+
+# LLM Model files (too large for git)
+*.gguf
+*.bin
+*.safetensors
+app/modules/neo_chatbot/data/models/

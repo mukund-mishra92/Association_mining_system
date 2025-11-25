@@ -1,12 +1,19 @@
-# Association Mining System 🔗# Association Mining System 🔗# Association Rule Mining System
-
-
+# Association Mining System 🔗
 
 A comprehensive data mining platform for analyzing customer purchase patterns and SKU performance. Built with Flask, FastAPI, and MySQL.
 
+## ✨ New Features
 
+� **Windows Service Support** - Run the system as a background Windows service with auto-restart capabilities  
+🔑 **Primary Keys on All Tables** - Enhanced database integrity with proper primary keys on all tables  
+📊 **Scheduler Service** - Automated mining jobs with configurable schedules  
+🔄 **Auto-Recovery** - Automatic process restart on failures  
 
-## 🏗️ Project StructureA comprehensive data mining platform for analyzing customer purchase patterns and SKU performance. Built with Flask, FastAPI, and MySQL.A production-ready association rule mining system with FastAPI backend for analyzing customer purchase patterns and generating item recommendations.
+**📖 See [SERVICE_SETUP.md](SERVICE_SETUP.md) for complete setup instructions**
+
+## 🏗️ Project Structure
+
+A production-ready association rule mining system with FastAPI backend for analyzing customer purchase patterns and generating item recommendations.
 
 
 
