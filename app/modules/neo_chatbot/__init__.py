@@ -19,11 +19,14 @@ from .services.vector_store_service import VectorStoreService
 from .services.knowledge_base_service import KnowledgeBaseService
 from .services.sql_assistant_service import SQLAssistantService
 from .services.diagnostic_service import DiagnosticService
+from .services.agentic_service import AgenticService, get_agentic_service
 
 __all__ = [
     'LLMService',
     'VectorStoreService',
     'KnowledgeBaseService',
     'SQLAssistantService',
-    'DiagnosticService'
+    'DiagnosticService',
+    'AgenticService',
+    'get_agentic_service'
 ]

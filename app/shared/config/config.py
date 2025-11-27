@@ -53,5 +53,9 @@ class Config:
     LOCAL_LLM_MODEL = os.getenv("LOCAL_LLM_MODEL", "phi-2-2.7b")  # Options: tinyllama-1.1b, phi-2-2.7b, mistral-7b-instruct
     LOCAL_LLM_MAX_TOKENS = int(os.getenv("LOCAL_LLM_MAX_TOKENS", "500"))
     LOCAL_LLM_TEMPERATURE = float(os.getenv("LOCAL_LLM_TEMPERATURE", "0.3"))
+    
+    # Agentic AI Configuration (Multi-Agent System with LangGraph)
+    AGENTIC_MODE_ENABLED = os.getenv("AGENTIC_MODE_ENABLED", "true").lower() == "true"
+    AGENTIC_VERIFICATION_THRESHOLD = int(os.getenv("AGENTIC_VERIFICATION_THRESHOLD", "100"))
 
 config = Config()

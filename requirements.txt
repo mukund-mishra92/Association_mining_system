@@ -17,6 +17,14 @@ psutil>=5.9.0
 scipy>=1.11.0
 beautifulsoup4>=4.12.0
 
-# Local LLM support (fallback when Groq API fails)
-llama-cpp-python>=0.2.20
+# Local LLM support (OPTIONAL - requires C++ build tools on Windows)
+# llama-cpp-python>=0.2.20  # Uncomment if you have Visual Studio Build Tools installed
 huggingface-hub>=0.19.0
+
+# LangChain & LangGraph for Agentic AI
+langchain>=0.1.0
+langchain-groq>=0.0.1
+langchain-openai>=0.0.5
+langgraph>=0.0.20
+langchain-community>=0.0.20
+langchain-core>=0.1.0

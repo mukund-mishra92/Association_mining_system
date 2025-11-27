@@ -20,6 +20,8 @@ from ..models.schemas import (
 from ..services.knowledge_base_service import KnowledgeBaseService
 from ..services.sql_assistant_service import SQLAssistantService
 from ..services.diagnostic_service import DiagnosticService
+from ..services.agentic_service import get_agentic_service
+from app.shared.config.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,13 @@ router = APIRouter(prefix="/api/chatbot", tags=["NEO Chatbot"])
 kb_service = KnowledgeBaseService()
 sql_service = SQLAssistantService()
 diagnostic_service = DiagnosticService()
+
+# Initialize agentic service if enabled
+agentic_service = get_agentic_service() if config.AGENTIC_MODE_ENABLED else None
+if agentic_service:
+    logger.info("✅ Agentic AI mode is ENABLED - using multi-agent verification system")
+else:
+    logger.info("ℹ️ Agentic AI mode is DISABLED - using traditional single-agent system")
 
 # Session storage (in production, use Redis or database)
 chat_sessions: Dict[str, list] = {}
@@ -56,7 +65,13 @@ async def chat(request: ChatRequest):
         
         # Route to appropriate service
         if request.chatbot_type == ChatbotType.KNOWLEDGE_BASE:
-            response = kb_service.process_query(request)
+            # Use agentic service if enabled, otherwise fallback to traditional
+            if agentic_service and config.AGENTIC_MODE_ENABLED:
+                logger.info("🤖 Using Agentic AI (multi-agent verification system)")
+                response = agentic_service.process_query(request)
+            else:
+                logger.info("📚 Using traditional Knowledge Base service")
+                response = kb_service.process_query(request)
         elif request.chatbot_type == ChatbotType.SQL_ASSISTANT:
             response = sql_service.process_query(request)
         elif request.chatbot_type == ChatbotType.DIAGNOSTIC:

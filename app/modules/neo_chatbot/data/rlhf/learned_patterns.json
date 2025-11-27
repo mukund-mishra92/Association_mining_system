@@ -3489,6 +3489,1130 @@
           "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
         ]
       }
+    },
+    {
+      "query": "what is a sorter in Falcon Autotech",
+      "query_keywords": [
+        "what",
+        "sorter",
+        "falcon",
+        "autotech"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nA sorter in Falcon Autotech is a crucial component of their automated sortation system, designed to efficiently sort parcels and packages based on various criteria such as destination, weight, and volume. The sorter is equipped with advanced technology modules that enable seamless integration with Warehouse Management Systems (WMS) and provide maximum uptime with reduced dependency on skilled manpower.\n\n**Key Points**\n\u2022 **Functionality**: The sorter is designed to sort parcels and p",
+      "response_length": 1919,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:05:04.342851",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is automation sortation system in neo",
+      "query_keywords": [
+        "what",
+        "automation",
+        "sortation",
+        "system"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe NEO Automation System features an advanced automation sortation system, which is a crucial component of the warehouse management system. This system enables efficient storage, retrieval, and sorting of goods, enhancing overall operational efficiency and accuracy.\n\n**Key Points**\n\u2022 **NEO ASRS (Automated Storage and Retrieval System)**: The NEO ASRS is a key component of the NEO Automation System, designed for storage and order picking. It consists of storage bins or totes, storag",
+      "response_length": 1964,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:05:39.515544",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "no. i am sking about Automated Sortation system in falcon",
+      "query_keywords": [
+        "sking",
+        "about",
+        "automated",
+        "sortation",
+        "system",
+        "falcon"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe Automated Sortation system in Falcon is a cutting-edge technology designed to handle bulk volumes of parcels with maximum uptime, reduced dependency on skilled manpower, and space optimization. The system is equipped with various key technology modules that enable seamless integration with the Warehouse Management System (WMS) and provide life cycle support services.\n\n**Key Points**\n\n\u2022 **Throughput**: The Automated Sortation system in Falcon is designed to handle a high volume o",
+      "response_length": 2354,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:06:18.711938",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you define exactly what it does",
+      "query_keywords": [
+        "define",
+        "exactly",
+        "what",
+        "does"
+      ],
+      "query_length": 7,
+      "response": "**Definition:** The NEO Warehouse Management System is a comprehensive software solution that enables efficient management of warehouse operations, including inventory tracking, order fulfillment, and supply chain management.\n\n**Context:** The NEO system provides a range of features and functionalities, such as advanced filtering and search capabilities, user role management, and detailed information about specific bins and users. This allows administrators to manage access control, ensure accou",
+      "response_length": 743,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:07:15.072238",
+      "metadata": {
+        "query_type": "DEFINITION",
+        "confidence": 0.94,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "no, the sortation system",
+      "query_keywords": [
+        "sortation",
+        "system"
+      ],
+      "query_length": 4,
+      "response": "The sortation system is equipped with automatic barcode scanning, dimensioning, weighing, and image capture capabilities. It is installed on the mezzanine floor and sorts directly to 58 end destinations. The system is designed to handle a volume of 7200 shipments per hour. [Document 3]",
+      "response_length": 286,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:07:43.188947",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why only 58 end destinations",
+      "query_keywords": [
+        "only",
+        "destinations"
+      ],
+      "query_length": 5,
+      "response": "The solution specifications for 58 end destinations are not explicitly mentioned in the provided documents, but it can be inferred that the system is designed for a smaller throughput of 7200 PPH, which might be a limitation for a larger number of end destinations. The system's design and technology modules, such as the Powered Belt Conveyors and Automatic Induct Lines, might be optimized for a lower throughput and fewer end destinations. [Document 1]",
+      "response_length": 455,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:08:16.469427",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.96,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what does it mean to  7200 PPH. can you elaborate",
+      "query_keywords": [
+        "what",
+        "does",
+        "mean",
+        "7200",
+        "pph.",
+        "elaborate"
+      ],
+      "query_length": 10,
+      "response": "**Definition:** 7200 PPH refers to 7,200 shipments per hour, which is a measure of the system's throughput capacity.\n\n**Context:** Throughput capacity is a critical parameter in warehouse management systems, particularly in Automated Storage and Retrieval Systems (ASRS) like NEO. It represents the maximum number of shipments or orders that can be processed within a given time frame, in this case, one hour. A higher throughput capacity indicates a more efficient system, capable of handling a larg",
+      "response_length": 861,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T15:09:05.839760",
+      "metadata": {
+        "query_type": "DEFINITION",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "explain  Powered Belt Conveyors and Automatic Induct Lines in detail",
+      "query_keywords": [
+        "explain",
+        "powered",
+        "belt",
+        "conveyors",
+        "automatic",
+        "induct",
+        "lines",
+        "detail"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe NEO Automation System utilizes various technologies to optimize material handling and processing. Two key components are Powered Belt Conveyors and Automatic Induct Lines, which play crucial roles in sorting, conveying, and processing materials.\n\n**Key Points**\n\n\u2022 **Powered Belt Conveyors**: These conveyors are designed to move materials along a continuous belt, often used for sorting, conveying, and processing. They are typically powered by electric motors or other drives.\n\u2022 **",
+      "response_length": 2357,
+      "reward": 0.1,
+      "timestamp": "2025-11-26T16:05:08.917538",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is swedi",
+      "query_keywords": [
+        "what",
+        "swedi"
+      ],
+      "query_length": 3,
+      "response": "There is no mention of \"swedi\" in the provided documentation.",
+      "response_length": 61,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:11:00.236120",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.77,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is sorter",
+      "query_keywords": [
+        "what",
+        "sorter"
+      ],
+      "query_length": 3,
+      "response": "Sorter Services is responsible for managing sorting logic and directing parcels to appropriate destinations. It is a key component of the NEO system, ensuring efficient parcel sorting and routing. Sorter Services communicate with external systems and ensure data consistency across platforms. [Document 1, Document 4, Document 5]",
+      "response_length": 329,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:12:13.262413",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is conveyer",
+      "query_keywords": [
+        "what",
+        "conveyer"
+      ],
+      "query_length": 3,
+      "response": "A conveyor is a type of material handling system that moves items along a belt or chain, often used in warehouses and factories to transport goods. In the context of NEO, conveyors are used for tasks such as weighing, sorting, and diverting items. [Document 1, Page 40]",
+      "response_length": 269,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:12:41.946564",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.93,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are various sorter types",
+      "query_keywords": [
+        "what",
+        "various",
+        "sorter",
+        "types"
+      ],
+      "query_length": 5,
+      "response": "The documents do not explicitly mention various sorter types, but they do mention a specific type of sorter called \"Loop Cross Belt Sorter\" in [Document 3] and [Document 4]. This type of sorter is equipped with automatic barcode scanning, dimensioning, weighing, and image capture capabilities.",
+      "response_length": 294,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:13:04.859575",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are various cross belt sorter types",
+      "query_keywords": [
+        "what",
+        "various",
+        "cross",
+        "belt",
+        "sorter",
+        "types"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe documentation provides information on various cross belt sorter types used in the NEO Warehouse Management System. The systems are designed for high-throughput parcel sorting and are equipped with advanced technologies such as automatic barcode scanning, dimensioning, weighing, and image capture capabilities. The sorters are integrated with WCS (Warehouse Control System) software and are used in various projects, including airport hubs and fulfillment centers.\n\n**Key Points**\n\u2022 ",
+      "response_length": 2069,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:13:42.022836",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "how to parcel use to be dumped to the sorter in our sortation system",
+      "query_keywords": [
+        "parcel",
+        "dumped",
+        "sorter",
+        "sortation",
+        "system"
+      ],
+      "query_length": 14,
+      "response": "**How to Parcel be Dumped to the Sorter in Our Sortation System:**\n\n1. **Ensure the Parcels Meet the Required Characteristics**: Before dumping parcels to the sorter, ensure they meet the required characteristics as specified in Document 2 and Document 3:\n\t* Max Weight: 20 Kg\n\t* Min length: 270 mm\n\t* Min Width: 220 mm\n\t* Min Height: 160 mm\n\t* Min Weight: 200 gm\n2. **Verify the Parcels are Properly Packaged**: Ensure the parcels are perfectly and safely packaged, with no protrusions or open surfa",
+      "response_length": 2169,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:44:51.058392",
+      "metadata": {
+        "query_type": "PROCEDURAL",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "who will ensure and how ill ensure thisEnsure the Parcels Meet the Required Characteristics: Before dumping parcels to the sorter, ensure they meet the required characteristics as specified in Document 2 and Document 3:  Max Weight: 20 Kg Min length: 270 mm Min Width: 220 mm Min Height: 160 mm",
+      "query_keywords": [
+        "will",
+        "ensure",
+        "ensure",
+        "thisensure",
+        "parcels",
+        "meet",
+        "required",
+        "characteristics:",
+        "before",
+        "dumping"
+      ],
+      "query_length": 50,
+      "response": "**Overview**\nTo ensure that parcels meet the required characteristics before being dumped to the sorter, a quality control process will be implemented to verify the dimensions and weight of each parcel. This process will involve manual or automated checks to ensure compliance with the specified parameters.\n\n**Key Points**\n\n\u2022 **Dimensional Verification**: Parcels will be checked for their minimum length (270 mm), minimum width (220 mm), and minimum height (160 mm) to ensure they meet the required",
+      "response_length": 1902,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:45:33.482908",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "if we need to make our parcel travelling from a point to atleast 100 meters, can you explain how we are going to implement our system with sortation",
+      "query_keywords": [
+        "need",
+        "make",
+        "parcel",
+        "travelling",
+        "from",
+        "point",
+        "atleast",
+        "meters,",
+        "explain",
+        "going"
+      ],
+      "query_length": 28,
+      "response": "**Overview**\nThe implementation of a sortation system to facilitate parcel travel of at least 100 meters involves integrating various technologies and components. The system should be designed to handle a high volume of parcels, ensure efficient sorting, and provide maximum uptime with reduced dependency on skilled manpower.\n\n**Key Points**\n\n1. **Sortation System Design**: The sortation system should be designed to handle a volume of 7200 parcels per hour, as mentioned in Document 1 and Document",
+      "response_length": 2646,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T12:47:49.588551",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "whta is sorter",
+      "query_keywords": [
+        "whta",
+        "sorter"
+      ],
+      "query_length": 3,
+      "response": "The sorter is a key component of the NEO-ASRS system, responsible for managing sorting logic and directing parcels to their appropriate destinations. It is equipped with automatic barcode scanning, dimensioning, weighing, and image capture capabilities. The sorter is typically installed on a mezzanine floor and sorts directly to multiple end destinations. [Document 2]",
+      "response_length": 370,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:07:25.092845",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is conveyer",
+      "query_keywords": [
+        "what",
+        "conveyer"
+      ],
+      "query_length": 3,
+      "response": "A conveyor is a type of mechanical system used to transport materials or products along a continuous path, often used in warehouses and manufacturing facilities. It can be designed to convey, weigh, or sort items, and can be equipped with features such as accumulation rollers or weighing systems. [Document 1, Page 40]",
+      "response_length": 319,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:07:54.811212",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.93,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "how the parcel used to travel from vehicle to the storage in a Falcon sortation system installed",
+      "query_keywords": [
+        "parcel",
+        "used",
+        "travel",
+        "from",
+        "vehicle",
+        "storage",
+        "falcon",
+        "sortation",
+        "system",
+        "installed"
+      ],
+      "query_length": 17,
+      "response": "**Overview**\nThe Falcon sortation system is designed to efficiently handle parcel sorting from vehicle to storage. The system utilizes various technologies and modules to achieve high throughput and accuracy. This response will outline the step-by-step process of how parcels travel from vehicle to storage in a Falcon sortation system.\n\n**Key Points**\n\u2022 **Infeed Conveyors**: Parcels are unloaded from vehicles and fed into the system through infeed conveyors.\n\u2022 **Automatic Label Applicator**: Befo",
+      "response_length": 3067,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:08:46.506030",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is sorter",
+      "query_keywords": [
+        "what",
+        "sorter"
+      ],
+      "query_length": 3,
+      "response": "Sorter Services is responsible for managing sorting logic and directing parcels to appropriate destinations. It is a key component of the NEO system, ensuring efficient and accurate sorting of parcels. Sorter Services communicate with external systems and ensure data consistency across platforms. [Document 4]",
+      "response_length": 310,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:34:27.152550",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different components in sorter",
+      "query_keywords": [
+        "what",
+        "different",
+        "components",
+        "sorter"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe NEO Automation system, as described in the provided documentation, consists of various components that work together to manage sorting logic, direct parcels to appropriate destinations, and ensure smooth data flow for order management and shipment tracking. The system includes the Presentation and Session Layer, Application Layer, and Integration Services.\n\n**Key Points**\n\u2022 **Presentation and Session Layer**: This layer includes the MySQL Database, which stores operational data,",
+      "response_length": 2247,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:35:01.745795",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "different type of sorter service available in our service",
+      "query_keywords": [
+        "different",
+        "type",
+        "sorter",
+        "service",
+        "available",
+        "service"
+      ],
+      "query_length": 9,
+      "response": "**\ud83d\udcc1 File:** neo-documentation (various files)\n\n**\ud83d\udcdd Purpose:** To identify different types of sorter services available in the NEO Warehouse Management System.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Sorter Services:** Responsible for managing sorting logic and directing parcels to appropriate destinations.\n\u2022 **Integration Services:** Handles communication with external systems (e.g., WMS, TMS) and ensures data consistency across platforms.\n\u2022 **Image Services:** Processes and manages images captured during th",
+      "response_length": 2453,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:35:43.583058",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "still the answer is not accurate. what could be the issue",
+      "query_keywords": [
+        "still",
+        "answer",
+        "accurate.",
+        "what",
+        "could",
+        "issue"
+      ],
+      "query_length": 11,
+      "response": "**Overview**\nThe issue with the answer not being accurate may be due to a lack of relevant information or incorrect interpretation of the provided documentation. The documentation includes various manuals and guides for the NEO Warehouse Management System, but it does not provide a clear explanation of the system's functionality or the specific issue at hand.\n\n**Key Points**\n\u2022 **Insufficient Information**: The provided documentation does not contain a comprehensive guide to the NEO system, makin",
+      "response_length": 2201,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:36:51.485141",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.93,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "ok. we will add those documents as well",
+      "query_keywords": [
+        "will",
+        "those",
+        "documents",
+        "well"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\n\nThe provided documentation consists of five techno-commercial offers related to the NEO Warehouse Management System, covering various aspects such as system description, proposed system, and responsibilities. The documents outline the scope of supply, technical requirements, and installation details for the NEO system.\n\n**Key Points**\n\n\u2022 **System Description**: The proposed system description is outlined in Document 4 (Style Union Neo _ Final Techno Commercial Offer (12).pdf), whic",
+      "response_length": 2199,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:37:34.442022",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.85,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what do you understand about conveyer",
+      "query_keywords": [
+        "what",
+        "understand",
+        "about",
+        "conveyer"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe NEO Warehouse Management System utilizes various types of conveyors, including powered roller accumulation conveyors, weighing conveyors, and accumulation roller conveyors, to efficiently manage and process goods within a warehouse or fulfillment center. These conveyors are designed to be energy-efficient, require minimal maintenance, and offer lower operating costs.\n\n**Key Points**\n\n\u2022 **Powered Roller Accumulation Conveyor**: This type of conveyor is highly energy-efficient and",
+      "response_length": 2137,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:38:23.252369",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.91,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different type of sensors we are using in our sorter services",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "sensors",
+        "using",
+        "sorter",
+        "services"
+      ],
+      "query_length": 14,
+      "response": "**Overview**\nThe sorter services in the NEO Warehouse Management System utilize various types of sensors and devices to manage sorting logic and direct parcels to their appropriate destinations. The system communicates with external systems and ensures data consistency across platforms.\n\n**Key Points**\n\u2022 **Sorter PLC Devices**: These devices receive sortation instructions from the WCS and execute the sorting process by directing parcels to the appropriate chute based on the system's real-time da",
+      "response_length": 1773,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:38:57.234243",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what do you understand about telescopic conveyer",
+      "query_keywords": [
+        "what",
+        "understand",
+        "about",
+        "telescopic",
+        "conveyer"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nBased on the provided documentation, it appears that Falcon Autotech offers a variety of conveyor systems, including telescopic conveyors, as part of their NEO Automation System. These conveyors are designed to be energy-efficient, low-maintenance, and scalable to meet evolving business needs.\n\n**Key Points**\n\u2022 **Energy Efficiency**: Telescopic conveyors are designed to be energy-efficient, with features such as automatic shutdown after a predefined period of inactivity.\n\u2022 **Low Mai",
+      "response_length": 2194,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:40:05.751814",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.91,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is induct line in our system",
+      "query_keywords": [
+        "what",
+        "induct",
+        "line",
+        "system"
+      ],
+      "query_length": 7,
+      "response": "**Overview**\nThe induct line in our system refers to a specific process flow within the NEO Warehouse Management System, where boxes or totes are received at the Goods-to-Conveyor (GTC) stations and then put away into the Automated Storage and Retrieval System (ASRS) storage location.\n\n**Key Points**\n\u2022 The induct line process involves preliminary processing (P&A) of boxes or totes before they are received at the GTC stations.\n\u2022 At the GTC stations, operators manage induction and initiate a Put-a",
+      "response_length": 1874,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:40:54.440935",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is a GTC station",
+      "query_keywords": [
+        "what",
+        "station"
+      ],
+      "query_length": 5,
+      "response": "A GTC station is a Goods-to-Conveyor station where operators pick totes for order consolidation. NEO Bots bring bins containing products to the GTC stations, where operators consolidate the products into Order totes placed near the station. [Document 2]",
+      "response_length": 253,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:41:45.035971",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you give me diffeerent terms we are using",
+      "query_keywords": [
+        "give",
+        "diffeerent",
+        "terms",
+        "using"
+      ],
+      "query_length": 9,
+      "response": "**Overview**\nThe provided documentation refers to the NEO Warehouse Management System, a system used for automating warehouse operations. The documents cover various aspects of the system, including its components, layout, process flow, and technical details.\n\n**Key Points**\n\u2022 **NEO**: Refers to the NEO Warehouse Management System, a system used for automating warehouse operations.\n\u2022 **Powered Roller Conveyor**: A system component used in the NEO system for conveying goods.\n\u2022 **Pick/Put to Light",
+      "response_length": 2136,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:43:23.375175",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are sorter",
+      "query_keywords": [
+        "what",
+        "sorter"
+      ],
+      "query_length": 3,
+      "response": "Sorter Services are responsible for managing sorting logic and directing parcels to appropriate destinations. They are a key component of the NEO system, ensuring efficient and accurate sorting of parcels. [Document 1, Document 4, Document 5]",
+      "response_length": 242,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:50:16.425435",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you give me the deatils of all the components in the sorter service",
+      "query_keywords": [
+        "give",
+        "deatils",
+        "components",
+        "sorter",
+        "service"
+      ],
+      "query_length": 14,
+      "response": "**\ud83d\udcc1 File:** F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf\n\n**\ud83d\udcdd Purpose:** This document outlines the key components of the Sorter Service, which is responsible for managing sorting logic and directing parcels to appropriate destinations.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Sorter Service Class:** \n\u2022 **Methods:** \n\u2022 **Properties:** \n\n**\ud83d\udcbb Implementation:**\n```markdown\nSorter Service:\n  - Responsible for managing sorting logic and directing parcels to appropriate destinations.\n  - Interact",
+      "response_length": 2768,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T14:50:45.837919",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1, Document 2, Document 3]",
+      "response_length": 491,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T15:05:37.049444",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is sorter service",
+      "query_keywords": [
+        "what",
+        "sorter",
+        "service"
+      ],
+      "query_length": 4,
+      "response": "**\ud83d\udcc1 File:** N/A (Documentation)\n\n**\ud83d\udcdd Purpose:** To understand the purpose and functionality of Sorter Services in the NEO Warehouse Management System.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Sorter Services:** A component responsible for managing sorting logic and directing parcels to appropriate destinations.\n\n**\ud83d\udcbb Implementation:**\n```markdown\nSorter Services:\n- Responsible for managing sorting logic\n- Directs parcels to appropriate destinations\n```\n\n**\ud83d\udccb Explanation:**\nSorter Services is a critical componen",
+      "response_length": 1465,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T15:05:53.745389",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are different type for conveyers in the sorter service",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "conveyers",
+        "sorter",
+        "service"
+      ],
+      "query_length": 10,
+      "response": "**\ud83d\udcc1 File:** N/A\n\n**\ud83d\udcdd Purpose:** To identify different types of conveyers in the sorter service based on the provided documentation.\n\n**\ud83d\udd27 Key Components:**\n\u2022 **Conveyor Types:** N/A (as it's not explicitly mentioned in the documents)\n\u2022 **Sorter System:** N/A (as it's not explicitly mentioned in the documents)\n\u2022 **Automated Sorting System:** N/A (as it's not explicitly mentioned in the documents)\n\n**\ud83d\udcbb Implementation:**\n```markdown\nBased on the provided documentation, the following types of conveye",
+      "response_length": 2026,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T15:06:35.584577",
+      "metadata": {
+        "query_type": "CODE_QUERY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1, Document 2, Document 3]",
+      "response_length": 491,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T15:54:48.909595",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1, Document 2, Document 3]",
+      "response_length": 491,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:00:42.771680",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is sortation system",
+      "query_keywords": [
+        "what",
+        "sortation",
+        "system"
+      ],
+      "query_length": 4,
+      "response": "The sortation system is a key component of the NEO Automation System, responsible for managing sorting logic and directing parcels to appropriate destinations. It utilizes advanced technologies such as automatic barcode scanning, dimensioning, weighing, and image capabilities to sort parcels efficiently. The system is designed to handle high volumes of parcels and provide maximum uptime with reduced dependency on skilled manpower. [Document 3]",
+      "response_length": 447,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:00:56.040652",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is conveyer system",
+      "query_keywords": [
+        "what",
+        "conveyer",
+        "system"
+      ],
+      "query_length": 4,
+      "response": "A conveyor system is a mechanical system used to transport materials or products along a production line or warehouse. It combines the functions of conveying and weighing into a single process, as seen in the Weighing Conveyor described in the documents. The NEO automation system includes various types of conveyor systems, such as powered roller accumulation conveyor and weighing conveyor. [Document 1, Document 2, Document 3, Document 4, Document 5]",
+      "response_length": 453,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:01:06.492234",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "how many type of conver is there with falcon",
+      "query_keywords": [
+        "many",
+        "type",
+        "conver",
+        "there",
+        "falcon"
+      ],
+      "query_length": 9,
+      "response": "There is only one type of conveyor mentioned with Falcon, which is a conveyor with a kg/m of 50. [Document 2]",
+      "response_length": 109,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:01:22.000165",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different type of conveyer system available, can you explain each one of them in brief",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "conveyer",
+        "system",
+        "available,",
+        "explain",
+        "each",
+        "them",
+        "brief"
+      ],
+      "query_length": 18,
+      "response": "**Overview**\nThe NEO Warehouse Management System utilizes various types of conveyor systems to optimize material flow and increase efficiency. These conveyor systems are designed to cater to different needs and requirements, ensuring a seamless and automated material handling process.\n\n**Key Points**\n\u2022 **Powered Roller Accumulation Conveyor**: A highly energy-efficient conveyor system that requires minimal maintenance, reducing operating costs and increasing cost-effectiveness.\n\u2022 **Weighing Conv",
+      "response_length": 2062,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:01:49.607662",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the differnt components available in a sortation system",
+      "query_keywords": [
+        "what",
+        "differnt",
+        "components",
+        "available",
+        "sortation",
+        "system"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe NEO Warehouse Management System's sortation system is a critical component that ensures efficient and accurate sorting of parcels. It consists of various key components that work together to manage sorting logic, direct parcels to appropriate destinations, and provide real-time monitoring of warehouse operations.\n\n**Key Points**\n\u2022 **Presentation and Session Layer**: This layer is responsible for managing sorting logic and directing parcels to appropriate destinations.\n\u2022 **MySQL ",
+      "response_length": 1843,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:02:31.544819",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are all the places where sensors are required in a sortation system",
+      "query_keywords": [
+        "what",
+        "places",
+        "where",
+        "sensors",
+        "required",
+        "sortation",
+        "system"
+      ],
+      "query_length": 13,
+      "response": "**Overview**\nThis answer will outline the various places where sensors are required in a sortation system based on the provided documentation.\n\n**Key Points**\n\u2022 **Physical Verification**: Sensors are required for physical verification to ensure all functional and non-functional requirements are clearly defined and understood.\n\u2022 **Integration Testing**: Sensors are necessary for integration testing to ensure all components (conveyors, scanners, sorters, control systems, etc.) work together seamle",
+      "response_length": 2298,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:16:46.395728",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the main components of sortation system",
+      "query_keywords": [
+        "what",
+        "main",
+        "components",
+        "sortation",
+        "system"
+      ],
+      "query_length": 8,
+      "response": "**Overview**\n\nThe sortation system is a critical component of the NEO Warehouse Management System, responsible for efficiently sorting and directing parcels to their designated destinations. The main components of the sortation system are designed to ensure smooth data flow, real-time monitoring, and seamless integration with external systems.\n\n**Key Points**\n\n\u2022 **Presentation and Session Layer**: This layer is responsible for managing sorting logic and directing parcels to appropriate destinati",
+      "response_length": 2038,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:17:15.836701",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "list out all the components available in a sortatioon system",
+      "query_keywords": [
+        "list",
+        "components",
+        "available",
+        "sortatioon",
+        "system"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe NEO Warehouse Management System (WMS) involves a sortation system with various components that work together to ensure efficient sorting and delivery of parcels. The system includes a MySQL database, sorter services, a dashboard, and integration services.\n\n**Key Points**\n\u2022 **MySQL Database**: Stores operational data, shipment details, and sortation instructions.\n\u2022 **Sorter Services**: Responsible for managing sorting logic and directing parcels to appropriate destinations.\n\u2022 **D",
+      "response_length": 1873,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:18:06.145009",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "no, this is not correct",
+      "query_keywords": [
+        "this",
+        "correct"
+      ],
+      "query_length": 5,
+      "response": "No, the provided documents do not contain the correct information regarding the NEO ASRS system. [Document 1, Document 2, Document 3, Document 4, Document 5]",
+      "response_length": 157,
+      "reward": 0.1,
+      "timestamp": "2025-11-27T16:18:53.071958",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.88,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "SOP Document NEO ASRS.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
     }
   ],
   "diagnostic_support": [

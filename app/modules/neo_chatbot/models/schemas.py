@@ -59,6 +59,7 @@ class ChatResponse(BaseModel):
     suggested_actions: Optional[List[str]] = []
     sql_query: Optional[str] = None  # For SQL assistant responses
     query_results: Optional[List[Dict[str, Any]]] = None  # For SQL results
+    metadata: Optional[Dict[str, Any]] = None  # Agent metadata (format_decision, etc.)
     timestamp: datetime = Field(default_factory=datetime.now)
 
 
