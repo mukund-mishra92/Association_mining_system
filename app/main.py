@@ -10,6 +10,14 @@ app = FastAPI(
     description=config.API_DESCRIPTION
 )
 
+# Initialize detailed logging so API writes to logs/
+try:
+    from app.shared.utils.logger_config import setup_detailed_logging
+    setup_detailed_logging()
+    logging.getLogger(__name__).info("Detailed logging initialized for FastAPI")
+except Exception as e:
+    logging.getLogger(__name__).warning(f"Failed to initialize detailed logging: {e}")
+
 # Include routers
 app.include_router(router, prefix="/api/v1")
 

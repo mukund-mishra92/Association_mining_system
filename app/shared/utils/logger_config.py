@@ -10,8 +10,11 @@ from logging.handlers import RotatingFileHandler
 def setup_detailed_logging():
     """Setup detailed logging for mining operations"""
     
-    # Create logs directory
-    logs_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
+    # Create logs directory at project root (one level above 'app')
+    # Current file path: app/shared/utils/logger_config.py -> project root is 3 levels up
+    # utils -> shared -> app -> association_mining_system (project root)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+    logs_dir = os.path.join(project_root, 'logs')
     os.makedirs(logs_dir, exist_ok=True)
     
     # Create timestamp for session
@@ -22,7 +25,9 @@ def setup_detailed_logging():
         'mining': os.path.join(logs_dir, f'mining_detailed_{timestamp}.log'),
         'api': os.path.join(logs_dir, f'api_detailed_{timestamp}.log'),
         'database': os.path.join(logs_dir, f'database_detailed_{timestamp}.log'),
-        'performance': os.path.join(logs_dir, f'performance_{timestamp}.log')
+        'performance': os.path.join(logs_dir, f'performance_{timestamp}.log'),
+        # Combined catch-all detailed log to ensure we always capture activity
+        'system': os.path.join(logs_dir, f'system_detailed_{timestamp}.log')
     }
     
     # Configure root logger
@@ -89,6 +94,15 @@ def setup_detailed_logging():
     perf_handler.setLevel(logging.INFO)
     perf_handler.setFormatter(detailed_formatter)
     
+    # System-wide detailed log (catch-all)
+    system_handler = RotatingFileHandler(
+        log_files['system'],
+        maxBytes=50*1024*1024,  # 50MB
+        backupCount=5
+    )
+    system_handler.setLevel(logging.DEBUG)
+    system_handler.setFormatter(detailed_formatter)
+    
     # Configure specific loggers
     mining_logger = logging.getLogger('app.services')
     mining_logger.addHandler(mining_handler)
@@ -105,6 +119,10 @@ def setup_detailed_logging():
     perf_logger = logging.getLogger('performance')
     perf_logger.addHandler(perf_handler)
     perf_logger.setLevel(logging.INFO)
+
+    # Attach the catch-all detailed handler to ROOT so any logger gets captured
+    # This ensures we have at least one detailed log populated even if module logger names differ
+    root_logger.addHandler(system_handler)
     
     # Log the setup
     logging.info("=" * 80)

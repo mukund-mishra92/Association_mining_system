@@ -69,6 +69,14 @@ except Exception as e:
 
 app = Flask(__name__)
 
+# Initialize detailed logging to ensure logs/ has current files
+try:
+    from app.shared.utils.logger_config import setup_detailed_logging
+    LOG_FILES = setup_detailed_logging()
+    print(f"✅ Detailed logging initialized. Writing to: {LOG_FILES}")
+except Exception as e:
+    print(f"⚠️ Failed to initialize detailed logging: {e}")
+
 # Register velocity analysis API if available
 if VELOCITY_ANALYSIS_AVAILABLE:
     register_velocity_api(app)
@@ -77,13 +85,12 @@ if VELOCITY_ANALYSIS_AVAILABLE:
 
 
 # Configure logging
+# BasicConfig is optional now; setup_detailed_logging configures handlers.
+# Keep console stream as a fallback without adding extra file handlers.
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('association_mining.log'),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.StreamHandler()]
 )
 
 # Create logger instance
