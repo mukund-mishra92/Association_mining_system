@@ -17,6 +17,7 @@ router.include_router(scheduler_router, prefix="/scheduler", tags=["scheduler"])
 # Request/Response models
 class DatabaseConfig(BaseModel):
     host: Optional[str] = None
+    port: Optional[int] = None
     user: Optional[str] = None
     password: Optional[str] = None
     database: Optional[str] = None
@@ -115,8 +116,32 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
         task_manager.update_progress(task_id, 0.2, "Fetching order data...")
         df_basket = db.fetch_order_data(days_back=days_back)
         if df_basket is None or df_basket.empty:
-            task_manager.fail_task(task_id, "No data found for mining")
-            return
+            # Retry with lenient criteria before failing
+            original_days = days_back
+            fallback_days = (days_back or 30)
+            # Ensure we look back sufficiently to find signal
+            if fallback_days < 90:
+                fallback_days = 90
+            logger.warning(
+                f"No data found with days_back={original_days}. Retrying with lenient criteria: "
+                f"days_back={fallback_days}, min_item_frequency=1"
+            )
+            task_manager.update_progress(
+                task_id, 0.22, f"No data found, retrying with lenient criteria (last {fallback_days} days)..."
+            )
+            df_basket = db.fetch_order_data(
+                days_back=fallback_days,
+                max_items=config.MAX_ITEMS,  # keep cap for performance
+                min_item_frequency=1         # relax frequency threshold
+            )
+            if df_basket is None or df_basket.empty:
+                msg = (
+                    "No data found for mining even after lenient retry. "
+                    f"Checked last {fallback_days} days with min_item_frequency=1. "
+                    "Verify ORDER_TABLE/SKU_MASTER_TABLE and date ranges."
+                )
+                task_manager.fail_task(task_id, msg)
+                return
         
         # Run mining pipeline with detailed progress tracking
         logger.info(f"Starting mining pipeline for task {task_id}")
@@ -464,12 +489,12 @@ async def mine_rules_fast(
                 "days_back": request.days_back,
                 "mode": "fast",
                 "target_skus": 100,
-                "db_config": request.db_config.dict() if request.db_config else None
+                "db_config": request.db_config.model_dump() if request.db_config else None
             }
         )
         
         # Convert db_config to dict if provided
-        db_config_dict = request.db_config.dict() if request.db_config else None
+        db_config_dict = request.db_config.model_dump() if request.db_config else None
         
         # Add FAST mining task to background
         background_tasks.add_task(

@@ -78,6 +78,9 @@ htmlcov/
 temp/
 tmp/
 
+# Runtime artifacts
+running_service.txt
+
 # Mining output files (optional - uncomment if you don't want to track results)
 # results/
 # output/
