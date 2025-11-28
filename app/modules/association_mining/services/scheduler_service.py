@@ -41,10 +41,12 @@ class SchedulerService:
         )
         
         self.is_running = False
+        self._scheduler_tables_initialized = False
         
     def start(self):
         """Start the scheduler"""
         try:
+            self._ensure_scheduler_tables_exist()
             if not self.is_running:
                 self.scheduler.start()
                 self.is_running = True
@@ -70,6 +72,7 @@ class SchedulerService:
     def create_schedule(self, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new mining schedule"""
         try:
+            self._ensure_scheduler_tables_exist()
             # Validate schedule data
             required_fields = ['job_name', 'schedule_type', 'schedule_time']
             for field in required_fields:
@@ -155,6 +158,7 @@ class SchedulerService:
     def get_schedules(self) -> List[Dict[str, Any]]:
         """Get all schedules from database"""
         try:
+            self._ensure_scheduler_tables_exist()
             self.db_connection.connect()
             
             query = """
@@ -210,6 +214,7 @@ class SchedulerService:
     def update_schedule(self, schedule_id: int, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing schedule"""
         try:
+            self._ensure_scheduler_tables_exist()
             self.db_connection.connect()
             
             # Remove job from scheduler first
@@ -283,6 +288,7 @@ class SchedulerService:
     def delete_schedule(self, schedule_id: int) -> Dict[str, Any]:
         """Delete a schedule"""
         try:
+            self._ensure_scheduler_tables_exist()
             # Remove job from scheduler
             job_id = f"mining_job_{schedule_id}"
             if self.scheduler.get_job(job_id):
@@ -326,6 +332,7 @@ class SchedulerService:
         
         # Create a separate database connection for this background thread
         thread_db_connection = None
+        self._ensure_scheduler_tables_exist()
         
         try:
             # Initialize separate database connection for this thread
@@ -525,6 +532,93 @@ class SchedulerService:
         except Exception as e:
             logger.error(f"Failed to load schedules from database: {str(e)}")
     
+    def _ensure_scheduler_tables_exist(self):
+        """Create scheduler tables with primary keys and relations if they do not exist"""
+        if self._scheduler_tables_initialized:
+            return
+
+        temp_conn = DatabaseConnection(self.db_config)
+        if not temp_conn.connect():
+            raise Exception("Unable to connect to database to ensure scheduler tables exist")
+
+        try:
+            create_schedules_table = """
+            CREATE TABLE IF NOT EXISTS mining_schedules (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                job_name VARCHAR(255) NOT NULL,
+                job_description TEXT,
+                schedule_type ENUM('daily','weekly') NOT NULL,
+                schedule_time TIME NOT NULL,
+                schedule_day_of_week TINYINT NULL,
+                min_support DECIMAL(6,4) NOT NULL DEFAULT 0.3000,
+                min_confidence DECIMAL(6,4) NOT NULL DEFAULT 0.3000,
+                min_lift DECIMAL(6,4) NOT NULL DEFAULT 1.0000,
+                max_recommendations INT NOT NULL DEFAULT 10,
+                decay_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0500,
+                output_table VARCHAR(255) NOT NULL DEFAULT 'sku_recommendations',
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                last_run_at DATETIME,
+                next_run_at DATETIME,
+                created_by VARCHAR(100) NOT NULL DEFAULT 'system',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_job_name (job_name),
+                INDEX idx_is_active (is_active),
+                INDEX idx_next_run_at (next_run_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+
+            create_stats_table = """
+            CREATE TABLE IF NOT EXISTS mining_schedule_stats (
+                schedule_id INT PRIMARY KEY,
+                total_executions INT DEFAULT 0,
+                successful_executions INT DEFAULT 0,
+                failed_executions INT DEFAULT 0,
+                avg_execution_time_seconds DECIMAL(10,2) DEFAULT 0,
+                total_rules_generated INT DEFAULT 0,
+                last_success_at DATETIME,
+                last_failure_at DATETIME,
+                FOREIGN KEY (schedule_id) REFERENCES mining_schedules(id) ON DELETE CASCADE,
+                INDEX idx_schedule_id (schedule_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+
+            create_logs_table = """
+            CREATE TABLE IF NOT EXISTS mining_job_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                schedule_id INT NOT NULL,
+                job_name VARCHAR(255) NOT NULL,
+                started_at DATETIME,
+                completed_at DATETIME,
+                execution_status ENUM('running','success','failed') NOT NULL DEFAULT 'running',
+                rules_generated INT DEFAULT 0,
+                records_processed INT DEFAULT 0,
+                execution_time_seconds INT DEFAULT 0,
+                error_message TEXT,
+                error_details JSON,
+                execution_parameters JSON,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (schedule_id) REFERENCES mining_schedules(id) ON DELETE CASCADE,
+                INDEX idx_schedule_id (schedule_id),
+                INDEX idx_started_at (started_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """
+
+            temp_conn.cursor.execute(create_schedules_table)
+            temp_conn.cursor.execute(create_stats_table)
+            temp_conn.cursor.execute(create_logs_table)
+            temp_conn.connection.commit()
+            self._scheduler_tables_initialized = True
+            logger.info("✓ Scheduler tables verified/created with primary keys and indexes")
+
+        except Exception as e:
+            temp_conn.connection.rollback()
+            logger.error(f"Failed to ensure scheduler tables exist: {str(e)}")
+            raise
+
+        finally:
+            temp_conn.disconnect()
+
     def _add_job_to_scheduler(self, schedule_id: int, schedule_params: Dict[str, Any]):
         """Add a job to the APScheduler"""
         try:
@@ -650,6 +744,7 @@ class SchedulerService:
     def get_job_logs(self, schedule_id: Optional[int] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """Get job execution logs"""
         try:
+            self._ensure_scheduler_tables_exist()
             self.db_connection.connect()
             
             if schedule_id:
