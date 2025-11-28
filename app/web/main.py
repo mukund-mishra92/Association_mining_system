@@ -227,8 +227,8 @@ def save_rules_to_database(user_config, rules_df):
         logger.error(f"Database save error: {e}")
         return False
 
-def generate_rules_top_skus(user_config=None, top_n=20, days_back=60, 
-                           min_support=0.30, min_confidence=0.30, min_lift=1.0, 
+def generate_rules_top_skus(user_config=None, top_n=2000, days_back=60, 
+                           min_support=0.10, min_confidence=0.10, min_lift=1.0, 
                            max_recommendations=10, decay_rate=0.05):
     """
     Ultra-conservative: Top N SKUs only with high support threshold
