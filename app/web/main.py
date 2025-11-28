@@ -571,7 +571,8 @@ def mine_api():
             "start_time": time.time()
         }
         
-        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=30)
+        # No timeout - allow mining to run as long as needed (even 1+ hours)
+        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=None)
         
         if response.status_code == 200:
             response_data = response.json()
@@ -612,8 +613,8 @@ def get_mining_progress():
         (api_mining_status.get("status") in ["running", "starting"] or 
          (api_mining_status.get("status") == "completed" and not api_mining_status.get("rules")))):
         try:
-            # Check task status from API
-            task_response = requests.get(f"{API_BASE}/task/{api_mining_status['task_id']}", timeout=10)
+            # Check task status from API (timeout OK here since it's just checking status)
+            task_response = requests.get(f"{API_BASE}/task/{api_mining_status['task_id']}", timeout=30)
             
             if task_response.status_code == 200:
                 task_data = task_response.json()
@@ -725,7 +726,8 @@ def mine_enhanced():
         }
         
         # Call FastAPI backend directly (same as mine_api)
-        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=10)
+        # No timeout - allow mining to run as long as needed
+        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=None)
         
         if response.status_code == 200:
             result_data = response.json()
@@ -776,7 +778,8 @@ def start_fast_mining():
     
     try:
         # Call FastAPI fast mining endpoint
-        response = requests.post(f"{API_BASE}/mine-rules-fast", json=payload, timeout=10)
+        # No timeout - allow mining to run as long as needed
+        response = requests.post(f"{API_BASE}/mine-rules-fast", json=payload, timeout=None)
         
         if response.status_code == 200:
             result_data = response.json()
