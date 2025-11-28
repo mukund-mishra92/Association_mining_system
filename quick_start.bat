@@ -1,52 +1,40 @@
 @echo off
-REM ========================================
-REM Association Mining System - Quick Start
-REM For systems already set up
-REM ========================================
+TITLE Association Mining System - Unified Starter
 
-echo.
-echo ========================================
-echo  Association Mining System
-echo  Quick Start
-echo ========================================
+:: This script starts the Association Mining System servers using a unified Python script.
+
+:: Get the directory of the batch file
+set "CURRENT_DIR=%~dp0"
+cd /d "%CURRENT_DIR%"
+
+echo ====================================================================
+echo  Starting Association Mining System...
+echo ====================================================================
 echo.
 
-REM Check if virtual environment exists
-if not exist venv\Scripts\activate.bat (
-    echo ERROR: Virtual environment not found!
+:: Activate virtual environment if it exists
+IF EXIST "venv\Scripts\activate.bat" (
+    echo Activating Python virtual environment...
+    call venv\Scripts\activate.bat
     echo.
-    echo This appears to be a new installation.
-    echo Please run setup_and_start.bat instead for first-time setup.
+) ELSE (
+    echo Virtual environment not found. Running with system Python.
+    echo It is recommended to create and use a virtual environment.
     echo.
-    pause
-    exit /b 1
 )
 
-REM Check if .env file exists
-if not exist .env (
-    echo ERROR: Configuration file ^(.env^) not found!
-    echo.
-    echo Please create .env file with your database configuration.
-    echo See setup_and_start.bat for required settings.
-    echo.
-    pause
-    exit /b 1
-)
+:: Run the unified server script
+echo Starting servers via run_servers.py...
+python run_servers.py start
 
-echo Starting servers...
+echo.
+echo ====================================================================
+echo  Startup command issued. Servers are running in the background.
+echo  You can close this window.
+echo ====================================================================
 echo.
 
-REM Start FastAPI
-echo [1/2] Starting FastAPI on port 8080...
-start "Association Mining - FastAPI" cmd /k "cd /d %~dp0 && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload"
-
-timeout /t 3 /nobreak >nul
-
-REM Start Flask UI
-echo [2/2] Starting Flask UI on port 5000...
-start "Association Mining - Flask UI" cmd /k "cd /d %~dp0 && call venv\Scripts\activate.bat && python app\web\main.py"
-
-timeout /t 2 /nobreak >nul
+pause
 
 echo.
 echo ========================================

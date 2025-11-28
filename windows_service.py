@@ -45,10 +45,7 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
         # Get the project directory
         self.project_dir = Path(__file__).parent
         self.python_exe = sys.executable
-        
-        # Process handles
-        self.fastapi_process = None
-        self.flask_process = None
+        self.run_script = self.project_dir / "run_servers.py"
         
     def SvcStop(self):
         """Stop the service"""
@@ -74,66 +71,17 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
     def main(self):
         """Main service logic"""
         try:
-            # Start FastAPI server
-            logger.info("Starting FastAPI server on port 8080...")
-            self.fastapi_process = subprocess.Popen(
-                [
-                    self.python_exe,
-                    "-m",
-                    "uvicorn",
-                    "app.main:app",
-                    "--host", "0.0.0.0",
-                    "--port", "8080",
-                    "--reload"
-                ],
+            # Use the unified server script to start servers
+            logger.info(f"Executing: {self.python_exe} {self.run_script} start")
+            subprocess.Popen(
+                [self.python_exe, str(self.run_script), "start"],
                 cwd=str(self.project_dir),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
                 creationflags=subprocess.CREATE_NO_WINDOW
             )
-            logger.info(f"✓ FastAPI server started (PID: {self.fastapi_process.pid})")
+            logger.info("✓ Server start command issued.")
             
-            # Wait a moment for FastAPI to start
-            time.sleep(3)
-            
-            # Start Flask UI server
-            logger.info("Starting Flask UI server on port 5000...")
-            self.flask_process = subprocess.Popen(
-                [
-                    self.python_exe,
-                    "-m",
-                    "flask",
-                    "--app", "app.web.main:app",
-                    "run",
-                    "--host", "0.0.0.0",
-                    "--port", "5000"
-                ],
-                cwd=str(self.project_dir),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, "FLASK_ENV": "production"},
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            logger.info(f"✓ Flask UI server started (PID: {self.flask_process.pid})")
-            
-            logger.info("="*60)
-            logger.info("All servers started successfully!")
-            logger.info("FastAPI: http://localhost:8080")
-            logger.info("Flask UI: http://localhost:5000")
-            logger.info("="*60)
-            
-            # Keep the service running and monitor processes
+            # Keep the service alive
             while self.running:
-                # Check if processes are still running
-                if self.fastapi_process.poll() is not None:
-                    logger.error("FastAPI process died! Restarting...")
-                    self.start_fastapi()
-                    
-                if self.flask_process.poll() is not None:
-                    logger.error("Flask process died! Restarting...")
-                    self.start_flask()
-                
-                # Wait for stop signal or timeout
                 rc = win32event.WaitForSingleObject(self.stop_event, 5000)
                 if rc == win32event.WAIT_OBJECT_0:
                     break
@@ -144,90 +92,24 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
         finally:
             self.cleanup()
             
-    def start_fastapi(self):
-        """Start or restart FastAPI server"""
-        try:
-            if self.fastapi_process and self.fastapi_process.poll() is None:
-                self.fastapi_process.terminate()
-                self.fastapi_process.wait(timeout=5)
-                
-            self.fastapi_process = subprocess.Popen(
-                [
-                    self.python_exe,
-                    "-m",
-                    "uvicorn",
-                    "app.main:app",
-                    "--host", "0.0.0.0",
-                    "--port", "8080"
-                ],
-                cwd=str(self.project_dir),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            logger.info(f"✓ FastAPI server (re)started (PID: {self.fastapi_process.pid})")
-        except Exception as e:
-            logger.error(f"Failed to start FastAPI: {e}")
-            
-    def start_flask(self):
-        """Start or restart Flask server"""
-        try:
-            if self.flask_process and self.flask_process.poll() is None:
-                self.flask_process.terminate()
-                self.flask_process.wait(timeout=5)
-                
-            self.flask_process = subprocess.Popen(
-                [
-                    self.python_exe,
-                    "-m",
-                    "flask",
-                    "--app", "app.web.main:app",
-                    "run",
-                    "--host", "0.0.0.0",
-                    "--port", "5000"
-                ],
-                cwd=str(self.project_dir),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, "FLASK_ENV": "production"},
-                creationflags=subprocess.CREATE_NO_WINDOW
-            )
-            logger.info(f"✓ Flask server (re)started (PID: {self.flask_process.pid})")
-        except Exception as e:
-            logger.error(f"Failed to start Flask: {e}")
-            
     def cleanup(self):
         """Clean up resources and stop processes"""
         logger.info("Cleaning up service resources...")
-        
-        # Stop FastAPI
-        if self.fastapi_process:
-            try:
-                logger.info("Stopping FastAPI server...")
-                self.fastapi_process.terminate()
-                self.fastapi_process.wait(timeout=10)
-                logger.info("✓ FastAPI server stopped")
-            except Exception as e:
-                logger.error(f"Error stopping FastAPI: {e}")
-                try:
-                    self.fastapi_process.kill()
-                except:
-                    pass
-                    
-        # Stop Flask
-        if self.flask_process:
-            try:
-                logger.info("Stopping Flask server...")
-                self.flask_process.terminate()
-                self.flask_process.wait(timeout=10)
-                logger.info("✓ Flask server stopped")
-            except Exception as e:
-                logger.error(f"Error stopping Flask: {e}")
-                try:
-                    self.flask_process.kill()
-                except:
-                    pass
-                    
+        try:
+            # Use the unified server script to stop servers
+            logger.info(f"Executing: {self.python_exe} {self.run_script} stop")
+            subprocess.run(
+                [self.python_exe, str(self.run_script), "stop"],
+                cwd=str(self.project_dir),
+                check=True,
+                capture_output=True
+            )
+            logger.info("✓ Server stop command issued and completed.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to stop servers: {e.stderr.decode(errors='ignore')}")
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during cleanup: {e}")
+            
         logger.info("Service cleanup complete")
 
 

@@ -1,33 +1,35 @@
 @echo off
-REM ========================================
-REM Association Mining System - Stop Servers
-REM ========================================
+TITLE Association Mining System - Server Stopper
 
-echo.
-echo Stopping Association Mining System servers...
+:: This script stops the Association Mining System servers using the unified Python script.
+
+:: Get the directory of the batch file
+set "CURRENT_DIR=%~dp0"
+cd /d "%CURRENT_DIR%"
+
+echo ====================================================================
+echo  Stopping Association Mining System...
+echo ====================================================================
 echo.
 
-REM Kill FastAPI (uvicorn) processes
-echo [1/2] Stopping FastAPI server...
-taskkill /FI "WindowTitle eq Association Mining - FastAPI*" /T /F >nul 2>&1
-if %errorlevel% equ 0 (
-    echo FastAPI server stopped successfully!
-) else (
-    echo No FastAPI server found running.
+:: Activate virtual environment if it exists
+IF EXIST "venv\Scripts\activate.bat" (
+    echo Activating Python virtual environment...
+    call venv\Scripts\activate.bat
+    echo.
+) ELSE (
+    echo Virtual environment not found. Assuming system Python was used.
+    echo.
 )
 
-REM Kill Flask processes
-echo [2/2] Stopping Flask UI server...
-taskkill /FI "WindowTitle eq Association Mining - Flask UI*" /T /F >nul 2>&1
-if %errorlevel% equ 0 (
-    echo Flask UI server stopped successfully!
-) else (
-    echo No Flask UI server found running.
-)
+:: Run the unified server script to stop servers
+echo Stopping servers via run_servers.py...
+python run_servers.py stop
 
 echo.
-echo ========================================
-echo All servers stopped!
-echo ========================================
+echo ====================================================================
+echo  Shutdown command issued.
+echo ====================================================================
 echo.
+
 pause
