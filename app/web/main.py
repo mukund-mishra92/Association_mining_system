@@ -12,7 +12,69 @@ from mlxtend.frequent_patterns import apriori, association_rules
 import warnings
 warnings.filterwarnings('ignore')
 
+# Add the parent directory to Python path for imports
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(os.path.dirname(current_dir))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+# Import enhanced logging system
+try:
+    from app.utils.mining_logger import mining_logger
+    LOGGING_AVAILABLE = True
+    print("✅ Enhanced logging system loaded")
+except ImportError as e:
+    LOGGING_AVAILABLE = False
+    print(f"⚠️ Enhanced logging system not available: {e}")
+    # Fallback to basic logging
+    mining_logger = None
+
+# Import history tracking and performance monitoring
+try:
+    from app.services.history_service import HistoryService
+    from app.utils.performance_monitor import JobPerformanceTracker
+    HISTORY_TRACKING_AVAILABLE = True
+    print("✅ History tracking and performance monitoring loaded")
+except ImportError as e:
+    HISTORY_TRACKING_AVAILABLE = False
+    print(f"⚠️ History tracking not available: {e}")
+    HistoryService = None
+    JobPerformanceTracker = None
+
+# Import velocity analysis module
+try:
+    from app.modules.velocity_analysis.api.velocity_endpoints import register_velocity_api
+    VELOCITY_ANALYSIS_AVAILABLE = True
+    print("✅ Velocity Analysis module loaded successfully")
+except ImportError as e:
+    VELOCITY_ANALYSIS_AVAILABLE = False
+    print(f"⚠️ Velocity Analysis module not available: {e}")
+except Exception as e:
+    VELOCITY_ANALYSIS_AVAILABLE = False
+    print(f"⚠️ Velocity Analysis module error: {e}")
+
+# Import AI insights module
+try:
+    from app.modules.ai_insights.api.endpoints import register_ai_insights_routes
+    AI_INSIGHTS_AVAILABLE = True
+    print("✅ AI Insights module loaded successfully")
+except ImportError as e:
+    AI_INSIGHTS_AVAILABLE = False
+    print(f"⚠️ AI Insights module not available: {e}")
+except Exception as e:
+    AI_INSIGHTS_AVAILABLE = False
+    print(f"⚠️ AI Insights module error: {e}")
+
 app = Flask(__name__)
+
+# Register velocity analysis API if available
+if VELOCITY_ANALYSIS_AVAILABLE:
+    register_velocity_api(app)
+    print("✅ Velocity Analysis API endpoints registered")
+
+
 
 # Configure logging
 logging.basicConfig(
@@ -23,6 +85,9 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+
+# Create logger instance
+logger = logging.getLogger(__name__)
 
 # Configuration - Updated for port 8080
 BASE_URL = "http://127.0.0.1:8080"
@@ -60,6 +125,14 @@ except Exception as e:
         'sku_master_table': 'sku_master',
         'recommendations_table': 'sku_recommendations'
     }
+
+# Register AI insights API if available (after USER_DB_CONFIG is defined)
+if AI_INSIGHTS_AVAILABLE:
+    try:
+        register_ai_insights_routes(app, USER_DB_CONFIG)
+        print("✅ AI Insights API endpoints registered")
+    except Exception as e:
+        print(f"⚠️ Failed to register AI Insights API: {e}")
 
 def load_config():
     """Load database configuration"""
@@ -304,8 +377,146 @@ def direct_mining(user_config=None, days_back=30):
 
 @app.route('/')
 def index():
-    """Main dashboard page - Complete integrated system"""
-    return render_template('complete_dashboard_enhanced.html')
+    """Main navigation dashboard"""
+    print("🔍 [ROUTE LOG] Main navigation dashboard route called")
+    logger.info("Main navigation dashboard route accessed")
+    return render_template('navigation_dashboard.html')
+
+@app.route('/association-mining')
+def association_mining():
+    """SKU Association Mining page"""
+    print("🔍 [ROUTE LOG] Association mining route called")
+    logger.info("Association mining page accessed")
+    return render_template('association_mining.html')
+
+@app.route('/velocity-analysis')
+def velocity_analysis():
+    """Bin Velocity Analysis page - Enhanced Version"""
+    print("🔍 [ROUTE LOG] Velocity analysis route called")
+    logger.info("Velocity analysis page accessed")
+    
+    try:
+        # Log velocity analysis page access (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="velocity_analysis_page_access",
+                details={"page": "velocity_analysis_enhanced", "status": "success"},
+                user_id="system"
+            )
+        
+        print("✅ [VELOCITY LOG] Rendering enhanced velocity analysis template")
+        logger.info("Rendering enhanced velocity analysis template")
+        
+        # Render the enhanced velocity analysis template
+        return render_template('velocity_analysis_enhanced.html')
+        
+    except Exception as e:
+        print(f"❌ [VELOCITY LOG] Error loading velocity analysis: {e}")
+        logger.error(f"Error loading velocity analysis: {e}")
+        
+        # Log the error (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="velocity_analysis_page_error",
+                details={"page": "velocity_analysis_enhanced", "status": "error", "error": str(e)},
+                user_id="system"
+            )
+        
+        return render_template('error.html', 
+                             error_message=f"Could not load velocity analysis: {str(e)}")
+
+@app.route('/ai-insights')
+def ai_insights_dashboard():
+    """AI Insights Dashboard page"""
+    print("🔍 [ROUTE LOG] AI Insights dashboard route called")
+    logger.info("AI Insights dashboard page accessed")
+    
+    try:
+        # Log AI insights page access (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="ai_insights_page_access",
+                details={"page": "ai_insights_dashboard", "status": "success"},
+                user_id="system"
+            )
+        
+        print("✅ [AI INSIGHTS LOG] Rendering AI insights dashboard template")
+        logger.info("Rendering AI insights dashboard template")
+        
+        # Check if AI insights module is available
+        if AI_INSIGHTS_AVAILABLE:
+            print("✅ [AI INSIGHTS LOG] AI Insights module is available")
+        else:
+            print("⚠️ [AI INSIGHTS LOG] AI Insights module is not available")
+        
+        # Render the AI insights dashboard template
+        return render_template('ai_insights_dashboard.html')
+        
+    except Exception as e:
+        print(f"❌ [AI INSIGHTS LOG] Error loading AI insights dashboard: {e}")
+        logger.error(f"Error loading AI insights dashboard: {e}")
+        
+        # Log the error (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="ai_insights_page_error",
+                details={"page": "ai_insights_dashboard", "status": "error", "error": str(e)},
+                user_id="system"
+            )
+        
+        return render_template('error.html', 
+                             error_message=f"Could not load AI insights dashboard: {str(e)}")
+
+@app.route('/velocity-analysis-legacy')
+def velocity_analysis_legacy():
+    """Bin Velocity Analysis page - Legacy Version"""
+    print("🔍 [ROUTE LOG] Legacy velocity analysis route called")
+    logger.info("Legacy velocity analysis page accessed")
+    
+    # Import velocity analysis UI if available
+    velocity_content = ""
+    if VELOCITY_ANALYSIS_AVAILABLE:
+        try:
+            from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
+            velocity_content = get_velocity_analysis_section()
+            print(f"✅ [VELOCITY LOG] Velocity HTML loaded: {len(velocity_content)} characters")
+            logger.info(f"Velocity HTML content loaded successfully: {len(velocity_content)} characters")
+        except ImportError as e:
+            print(f"❌ [VELOCITY LOG] Failed to import velocity UI: {e}")
+            logger.error(f"Failed to import velocity UI: {e}")
+            velocity_content = ""
+        except Exception as e:
+            print(f"❌ [VELOCITY LOG] Error loading velocity UI: {e}")
+            logger.error(f"Error loading velocity UI: {e}")
+            velocity_content = ""
+    else:
+        print("❌ [VELOCITY LOG] Velocity Analysis not available")
+        logger.warning("Velocity Analysis module not available")
+    
+    print(f"🔍 [VELOCITY LOG] Rendering legacy velocity analysis template with content length: {len(velocity_content)}")
+    return render_template('velocity_analysis.html', velocity_analysis_content=velocity_content)
+
+@app.route('/legacy-dashboard')
+def legacy_dashboard():
+    """Legacy combined dashboard - kept for compatibility"""
+    # Import velocity analysis UI if available
+    velocity_html = ""
+    if VELOCITY_ANALYSIS_AVAILABLE:
+        try:
+            from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
+            velocity_html = get_velocity_analysis_section()
+            print(f"✅ Velocity HTML loaded: {len(velocity_html)} characters")
+        except ImportError as e:
+            print(f"❌ Failed to import velocity UI: {e}")
+            velocity_html = ""
+        except Exception as e:
+            print(f"❌ Error loading velocity UI: {e}")
+            velocity_html = ""
+    else:
+        print("❌ Velocity Analysis not available")
+    
+    print(f"🔍 Rendering template with velocity_html length: {len(velocity_html)}")
+    return render_template('complete_dashboard_enhanced.html', velocity_analysis_section=velocity_html)
 
 @app.route('/db-config')
 def db_config_page():
@@ -398,17 +609,26 @@ def test_db_connection():
     logger = logging.getLogger(__name__)
     
     try:
-        data = request.get_json() if request.get_json() else USER_DB_CONFIG
+        # Safely get JSON data with fallback
+        try:
+            data = request.get_json(silent=True) or {}
+        except Exception as json_error:
+            logger.warning(f"JSON parsing error: {json_error}, using default config")
+            data = {}
         
-        logger.info("Testing database connection")
+        # Use USER_DB_CONFIG as base, update with any provided data
+        config_to_use = USER_DB_CONFIG.copy()
+        config_to_use.update(data)
         
-        # Test database connection - use USER_DB_CONFIG as fallback
+        logger.info(f"Testing database connection with config: {config_to_use['host']}:{config_to_use['port']}/{config_to_use['database']}")
+        
+        # Test database connection
         conn = pymysql.connect(
-            host=data.get('host', USER_DB_CONFIG['host']),
-            port=int(data.get('port', USER_DB_CONFIG['port'])),
-            user=data.get('user', USER_DB_CONFIG['user']),
-            password=data.get('password', USER_DB_CONFIG['password']),
-            database=data.get('database', USER_DB_CONFIG['database']),
+            host=config_to_use['host'],
+            port=int(config_to_use['port']),
+            user=config_to_use['user'],
+            password=config_to_use['password'],
+            database=config_to_use['database'],
             connect_timeout=5,
             charset='utf8mb4'
         )
@@ -420,9 +640,11 @@ def test_db_connection():
         # Test if tables exist - use CURRENT USER CONFIGURATION
         tables_status = {}
         test_tables = {
-            'order': data.get('order_table', 'wms_to_wcs_order_line_request_data'),
-            'sku_master': data.get('sku_master_table', 'sku_master'), 
-            'recommendations': data.get('recommendations_table', 'sku_recommendations')
+            'order': config_to_use.get('order_table', 'wms_to_wcs_order_line_request_data'),
+            'sku_master': config_to_use.get('sku_master_table', 'sku_master'), 
+            'rules': config_to_use.get('rules_table', 'sku_recommendations'),
+            'history': config_to_use.get('history_table', 'mining_history'),
+            'stats': config_to_use.get('stats_table', 'mining_statistics')
         }
         
         logger.info(f"Testing tables: {list(test_tables.keys())}")
@@ -443,6 +665,10 @@ def test_db_connection():
         cursor.close()
         conn.close()
         
+        # Log successful connection
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=True)
+        
         return jsonify({
             "success": True,
             "message": "Database connection successful",
@@ -451,14 +677,122 @@ def test_db_connection():
         })
         
     except pymysql.MySQLError as e:
+        # Log failed connection
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=False, error=str(e))
+        
         return jsonify({
             "success": False,
             "error": f"Database connection failed: {str(e)}"
         })
     except Exception as e:
+        # Log general error
+        if mining_logger:
+            mining_logger.log_database_connection(config_to_use, success=False, error=str(e))
+        
         return jsonify({
             "success": False,
             "error": str(e)
+        })
+
+@app.route('/api/save-db-config', methods=['POST'])
+def save_db_config():
+    """Save user-provided database configuration"""
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Get configuration from request
+        data = request.get_json(silent=True) or {}
+        
+        # Validate required fields
+        required_fields = ['host', 'user', 'database']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    "success": False,
+                    "error": f"Missing required field: {field}"
+                })
+        
+        # Update global USER_DB_CONFIG
+        global USER_DB_CONFIG
+        old_config = USER_DB_CONFIG.copy()  # Save old config for logging
+        
+        USER_DB_CONFIG.update({
+            'host': data.get('host'),
+            'port': int(data.get('port', 3306)),
+            'user': data.get('user'),
+            'password': data.get('password', ''),
+            'database': data.get('database')
+        })
+        
+        # Log configuration change
+        if mining_logger:
+            # Remove passwords from logged configs for security
+            safe_old_config = {k: v for k, v in old_config.items() if k != 'password'}
+            safe_new_config = {k: v for k, v in USER_DB_CONFIG.items() if k != 'password'}
+            mining_logger.log_config_change("database", safe_old_config, safe_new_config)
+        
+        logger.info(f"Updated database configuration: {USER_DB_CONFIG['host']}:{USER_DB_CONFIG['port']}/{USER_DB_CONFIG['database']}")
+        
+        # Test the new configuration immediately
+        try:
+            conn = pymysql.connect(
+                host=USER_DB_CONFIG['host'],
+                port=USER_DB_CONFIG['port'],
+                user=USER_DB_CONFIG['user'],
+                password=USER_DB_CONFIG['password'],
+                database=USER_DB_CONFIG['database'],
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            conn.close()
+            
+            # Log successful save and test
+            if mining_logger:
+                mining_logger.log_operation("Save Database Config", {
+                    "type": "config_save",
+                    "status": "success",
+                    "tested": True,
+                    "config": safe_new_config
+                })
+            
+            return jsonify({
+                "success": True,
+                "message": "Database configuration saved and tested successfully",
+                "config": {
+                    "host": USER_DB_CONFIG['host'],
+                    "port": USER_DB_CONFIG['port'],
+                    "user": USER_DB_CONFIG['user'],
+                    "database": USER_DB_CONFIG['database']
+                }
+            })
+            
+        except pymysql.MySQLError as test_error:
+            # Configuration saved but connection failed
+            if mining_logger:
+                mining_logger.log_operation("Save Database Config", {
+                    "type": "config_save",
+                    "status": "partial_success",
+                    "tested": False,
+                    "error": str(test_error),
+                    "config": safe_new_config
+                })
+            
+            return jsonify({
+                "success": True,
+                "message": f"Configuration saved but connection test failed: {str(test_error)}",
+                "config": {
+                    "host": USER_DB_CONFIG['host'],
+                    "port": USER_DB_CONFIG['port'],
+                    "user": USER_DB_CONFIG['user'],
+                    "database": USER_DB_CONFIG['database']
+                }
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to save configuration: {str(e)}"
         })
 
 @app.route('/api/test-connection')
@@ -506,7 +840,54 @@ def mine_direct():
         'decay_rate': data.get('decay_rate', 0.05)
     }
     
+    # Generate unique job ID
+    job_id = f"direct_mining_{int(time.time())}"
+    user_ip = request.remote_addr
+    
+    # Initialize history tracking and performance monitoring
+    history_service = None
+    performance_tracker = None
+    
+    if HISTORY_TRACKING_AVAILABLE:
+        try:
+            history_service = HistoryService(USER_DB_CONFIG)
+            history_service.create_history_tables()  # Ensure tables exist
+            
+            # Start job tracking
+            history_service.start_job(
+                job_id=job_id,
+                job_name=f"Direct Mining - Top {top_skus} SKUs",
+                mining_method="direct",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                },
+                user_ip=user_ip
+            )
+            
+            # Start performance tracking
+            performance_tracker = JobPerformanceTracker(job_id)
+            performance_tracker.start()
+            
+        except Exception as e:
+            print(f"History tracking initialization failed: {e}")
+    
     try:
+        processing_start_time = time.time()
+        
+        # Log mining operation start
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                }
+            )
+        
         # Use user-defined database configuration with algorithm parameters
         stats, rules = generate_rules_top_skus(
             USER_DB_CONFIG, 
@@ -516,17 +897,94 @@ def mine_direct():
         )
         
         if 'error' in stats:
+            # Log mining failure
+            if mining_logger:
+                mining_logger.log_mining_operation(
+                    mining_type="direct",
+                    parameters={
+                        "job_id": job_id,
+                        "days_back": days_back,
+                        "top_skus": top_skus,
+                        "algorithm_params": algorithm_params
+                    },
+                    success=False,
+                    error=stats['error']
+                )
+            
+            # Finish job tracking with failure
+            if history_service:
+                history_service.finish_job(job_id, status='failed', error_message=stats['error'])
+            
             return jsonify({"success": False, "error": stats['error']})
+        
+        # Record processing metrics
+        if performance_tracker:
+            performance_tracker.record_processing_metrics(processing_start_time)
+            
+            # Convert rules to DataFrame for analysis
+            if rules:
+                rules_df = pd.DataFrame(rules)
+                performance_tracker.record_mining_results(rules_df)
+        
+        # Get final performance metrics
+        performance_metrics = {}
+        if performance_tracker:
+            performance_metrics = performance_tracker.finish()
+            
+        # Log performance metrics to history
+        if history_service and performance_metrics:
+            history_service.log_performance_metrics(job_id, performance_metrics)
+        
+        # Finish job tracking with success
+        if history_service:
+            history_service.finish_job(job_id, status='completed', results_count=len(rules))
+        
+        # Log successful mining
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                },
+                results={
+                    "rules_count": len(rules),
+                    "stats": stats,
+                    "performance_metrics": performance_metrics
+                },
+                success=True
+            )
         
         return jsonify({
             "success": True,
+            "job_id": job_id,
             "stats": stats,
             "rules": rules[:100],  # Limit to first 100 rules for display
-            "algorithm_params": algorithm_params  # Include params in response for reference
+            "algorithm_params": algorithm_params,  # Include params in response for reference
+            "performance_metrics": performance_metrics if performance_metrics else None
         })
     
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        # Finish job tracking with error
+        if history_service:
+            history_service.finish_job(job_id, status='failed', error_message=str(e))
+        
+        # Log mining exception
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="direct",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "algorithm_params": algorithm_params
+                },
+                success=False,
+                error=str(e)
+            )
+        return jsonify({"success": False, "error": str(e), "job_id": job_id})
 
 # Global variable to track API mining status
 api_mining_status = {
@@ -539,73 +997,252 @@ api_mining_status = {
 
 @app.route('/api/mine-api', methods=['POST'])
 def mine_api():
-    """Mine using the API server with progress tracking"""
+    """Enhanced API-based mining with progress tracking and temporal algorithms"""
     global api_mining_status
     
     data = request.get_json()
     
-    # Extract algorithm parameters
+    # Extract parameters
+    days_back = data.get('days_back', 60)
+    top_skus = data.get('top_skus', 20)
+    enhanced = data.get('enhanced', False)
+    time_method = data.get('time_method', 'exponential_decay')
+    
+    # Extract algorithm parameters with enhanced defaults for API mining
     algorithm_params = {
-        'min_support': data.get('min_support', 0.30),
+        'min_support': data.get('min_support', 0.01),  # Lower default for more rules
         'min_confidence': data.get('min_confidence', 0.30),
         'min_lift': data.get('min_lift', 1.0),
         'max_recommendations': data.get('max_recommendations', 10),
         'decay_rate': data.get('decay_rate', 0.05)
     }
     
-    payload = {
-        "days_back": data.get('days_back', 30),
-        "use_enhanced_mining": data.get('use_enhanced_mining', False),
-        "time_weighting_method": data.get('time_weighting_method', 'exponential_decay'),
-        "db_config": USER_DB_CONFIG,  # Include database configuration
-        **algorithm_params  # Include algorithm parameters
-    }
+    # Enhanced decay rates based on time method
+    if enhanced:
+        decay_mapping = {
+            'linear': 0.03,
+            'exponential_decay': 0.05,
+            'logarithmic': 0.08
+        }
+        algorithm_params['decay_rate'] = decay_mapping.get(time_method, 0.05)
+    
+    # Get database configuration
+    config_to_use = USER_DB_CONFIG.copy()
+    if data.get('custom_db_config'):
+        config_to_use.update(data['custom_db_config'])
+    
+    # Generate unique job ID
+    job_id = f"api_mining_{int(time.time())}"
+    user_ip = request.remote_addr
+    
+    # Initialize history tracking and performance monitoring
+    history_service = None
+    performance_tracker = None
+    
+    if HISTORY_TRACKING_AVAILABLE:
+        try:
+            history_service = HistoryService(config_to_use)
+            history_service.create_history_tables()  # Ensure tables exist
+            
+            # Start job tracking
+            history_service.start_job(
+                job_id=job_id,
+                job_name=f"API Mining - Enhanced: {enhanced}, Method: {time_method}",
+                mining_method="api",
+                parameters={
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                },
+                user_ip=user_ip
+            )
+            
+            # Start performance tracking
+            performance_tracker = JobPerformanceTracker(job_id)
+            performance_tracker.start()
+            
+        except Exception as e:
+            print(f"History tracking initialization failed: {e}")
     
     try:
-        # Start mining request
+        processing_start_time = time.time()
+        
+        # Initialize progress tracking
         api_mining_status = {
             "status": "starting",
-            "task_id": None,
+            "task_id": job_id,
             "progress": 0,
-            "message": "Sending request to API server...",
+            "message": "Initializing enhanced mining...",
             "start_time": time.time()
         }
         
-        # No timeout - allow mining to run as long as needed (even 1+ hours)
-        response = requests.post(f"{API_BASE}/mine-rules", json=payload, timeout=None)
+        # Update progress: Starting
+        api_mining_status.update({
+            "status": "running",
+            "progress": 10,
+            "message": "Analyzing database and top SKUs..."
+        })
         
-        if response.status_code == 200:
-            response_data = response.json()
-            api_mining_status.update({
-                "status": "running",
-                "task_id": response_data.get('task_id'),
-                "progress": 10,
-                "message": "Mining request accepted by API server"
-            })
-            
-            return jsonify({
-                "success": True, 
-                "data": response_data,
-                "task_id": response_data.get('task_id'),
-                "message": "Mining started successfully"
-            })
-        else:
+        # Log mining operation start
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                }
+            )
+        
+        # Update progress: Database processing
+        api_mining_status.update({
+            "progress": 30,
+            "message": "Processing order data with temporal weighting..."
+        })
+        
+        # Run enhanced mining using the same function as direct but with enhanced parameters
+        stats, rules = generate_rules_top_skus(
+            config_to_use, 
+            top_n=top_skus, 
+            days_back=days_back,
+            **algorithm_params
+        )
+        
+        # Update progress: Rules generation
+        api_mining_status.update({
+            "progress": 70,
+            "message": "Generating association rules..."
+        })
+        
+        if 'error' in stats:
             api_mining_status.update({
                 "status": "failed",
-                "message": f"API error: {response.text}"
+                "message": f"Mining failed: {stats['error']}"
             })
-            return jsonify({"success": False, "error": f"API server error: {response.text}"})
             
+            # Finish job tracking with failure
+            if history_service:
+                history_service.finish_job(job_id, status='failed', error_message=stats['error'])
+            
+            # Log mining failure
+            if mining_logger:
+                mining_logger.log_mining_operation(
+                    mining_type="api_enhanced",
+                    parameters={
+                        "job_id": job_id,
+                        "days_back": days_back,
+                        "top_skus": top_skus,
+                        "enhanced": enhanced,
+                        "time_method": time_method,
+                        "algorithm_params": algorithm_params
+                    },
+                    success=False,
+                    error=stats['error']
+                )
+            
+            return jsonify({"success": False, "error": stats['error'], "job_id": job_id})
+        
+        # Record processing metrics
+        if performance_tracker:
+            performance_tracker.record_processing_metrics(processing_start_time)
+            
+            # Convert rules to DataFrame for analysis
+            if rules:
+                rules_df = pd.DataFrame(rules)
+                performance_tracker.record_mining_results(rules_df)
+        
+        # Get final performance metrics
+        performance_metrics = {}
+        if performance_tracker:
+            performance_metrics = performance_tracker.finish()
+            
+        # Log performance metrics to history
+        if history_service and performance_metrics:
+            history_service.log_performance_metrics(job_id, performance_metrics)
+        
+        # Update progress: Completed
+        api_mining_status.update({
+            "status": "completed",
+            "progress": 100,
+            "message": f"Mining completed! Found {len(rules)} association rules."
+        })
+        
+        # Finish job tracking with success
+        if history_service:
+            history_service.finish_job(job_id, status='completed', results_count=len(rules))
+        
+        # Log successful mining
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                },
+                results={
+                    "rules_count": len(rules),
+                    "stats": stats,
+                    "performance_metrics": performance_metrics
+                },
+                success=True
+            )
+        
+        return jsonify({
+            "success": True,
+            "job_id": job_id,
+            "stats": stats,
+            "rules": rules[:100],  # Limit to first 100 rules for display
+            "task_id": api_mining_status["task_id"],
+            "algorithm_params": algorithm_params,
+            "enhanced_features": {
+                "temporal_weighting": enhanced,
+                "time_method": time_method if enhanced else "none",
+                "decay_rate": algorithm_params['decay_rate']
+            },
+            "performance_metrics": performance_metrics if performance_metrics else None,
+            "message": f"Enhanced mining completed successfully with {len(rules)} rules found"
+        })
+    
     except Exception as e:
         api_mining_status.update({
             "status": "failed",
-            "message": f"Connection error: {str(e)}"
+            "message": f"Mining error: {str(e)}"
         })
-        return jsonify({"success": False, "error": str(e)})
+        
+        # Finish job tracking with error
+        if history_service:
+            history_service.finish_job(job_id, status='failed', error_message=str(e))
+        
+        # Log mining exception
+        if mining_logger:
+            mining_logger.log_mining_operation(
+                mining_type="api_enhanced",
+                parameters={
+                    "job_id": job_id,
+                    "days_back": days_back,
+                    "top_skus": top_skus,
+                    "enhanced": enhanced,
+                    "time_method": time_method,
+                    "algorithm_params": algorithm_params
+                },
+                success=False,
+                error=str(e)
+            )
+        
+        return jsonify({"success": False, "error": str(e), "job_id": job_id})
 
 @app.route('/api/mining-progress')
 def get_mining_progress():
-    """Get current mining progress"""
+    """Get current mining progress for API-based mining"""
     global api_mining_status
     
     # If we have a task_id and haven't gotten the final results yet, check the API server
@@ -970,14 +1607,26 @@ def get_live_logs():
 def get_scheduler_status():
     """Get scheduler service status"""
     try:
-        response = requests.get(f"{API_BASE}/scheduler/scheduler/status")
-        return jsonify({
-            'success': True,
-            'data': response.json()
-        })
+        response = requests.get(f"{API_BASE}/scheduler/status")
+        if response.status_code == 200:
+            data = response.json()
+            # Convert the boolean scheduler_running to a string status
+            status = "running" if data.get("scheduler_running", False) else "stopped"
+            return jsonify({
+                'success': True,
+                'status': status,
+                'data': data
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'status': 'error',
+                'error': f"FastAPI error: {response.status_code}"
+            })
     except Exception as e:
         return jsonify({
             'success': False,
+            'status': 'unknown',
             'error': str(e)
         })
 
@@ -985,7 +1634,7 @@ def get_scheduler_status():
 def start_scheduler():
     """Start the scheduler service"""
     try:
-        response = requests.post(f"{API_BASE}/scheduler/scheduler/start")
+        response = requests.post(f"{API_BASE}/scheduler/start")
         return jsonify({
             'success': True,
             'data': response.json()
@@ -1000,7 +1649,7 @@ def start_scheduler():
 def stop_scheduler():
     """Stop the scheduler service"""
     try:
-        response = requests.post(f"{API_BASE}/scheduler/scheduler/stop")
+        response = requests.post(f"{API_BASE}/scheduler/stop")
         return jsonify({
             'success': True,
             'data': response.json()
@@ -1016,13 +1665,22 @@ def get_schedules():
     """Get all schedules"""
     try:
         response = requests.get(f"{API_BASE}/scheduler/schedules")
-        return jsonify({
-            'success': True,
-            'data': response.json()
-        })
+        if response.status_code == 200:
+            schedules_data = response.json()
+            return jsonify({
+                'success': True,
+                'schedules': schedules_data  # JavaScript expects 'schedules' key
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'schedules': [],
+                'error': f"FastAPI error: {response.status_code}"
+            })
     except Exception as e:
         return jsonify({
             'success': False,
+            'schedules': [],
             'error': str(e)
         })
 
@@ -1031,7 +1689,30 @@ def create_schedule():
     """Create a new schedule"""
     try:
         schedule_data = request.json
-        print(f"DEBUG: Received schedule data: {schedule_data}")
+        # Write debug info to file for inspection
+        with open('debug_schedule_params.txt', 'a', encoding='utf-8') as f:
+            from datetime import datetime
+            f.write(f"\n=== {datetime.now()} ===\n")
+            f.write(f"🔍 Received schedule data from UI: {schedule_data}\n")
+            
+            if schedule_data:
+                f.write(f"🎯 Mining parameters from UI:\n")
+                f.write(f"   min_support: {schedule_data.get('min_support', 'NOT PROVIDED')}\n")
+                f.write(f"   min_confidence: {schedule_data.get('min_confidence', 'NOT PROVIDED')}\n")
+                f.write(f"   min_lift: {schedule_data.get('min_lift', 'NOT PROVIDED')}\n")
+                f.write(f"   max_recommendations: {schedule_data.get('max_recommendations', 'NOT PROVIDED')}\n")
+                f.write(f"   decay_rate: {schedule_data.get('decay_rate', 'NOT PROVIDED')}\n")
+        
+        print(f"🔍 DEBUG: Received schedule data from UI: {schedule_data}")
+        
+        # Log specific mining parameters
+        if schedule_data:
+            print(f"🎯 Mining parameters from UI:")
+            print(f"   min_support: {schedule_data.get('min_support', 'NOT PROVIDED')}")
+            print(f"   min_confidence: {schedule_data.get('min_confidence', 'NOT PROVIDED')}")
+            print(f"   min_lift: {schedule_data.get('min_lift', 'NOT PROVIDED')}")
+            print(f"   max_recommendations: {schedule_data.get('max_recommendations', 'NOT PROVIDED')}")
+            print(f"   decay_rate: {schedule_data.get('decay_rate', 'NOT PROVIDED')}")
         
         response = requests.post(
             f"{API_BASE}/scheduler/schedules",
@@ -1142,6 +1823,389 @@ def get_schedule_logs(schedule_id):
             'success': False,
             'error': str(e)
         })
+
+@app.route('/api/job-logs')
+def get_job_logs():
+    """Get all recent job execution logs"""
+    try:
+        limit = request.args.get('limit', 10)
+        response = requests.get(f"{API_BASE}/scheduler/logs?limit={limit}")
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'logs': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'logs': [],
+                'error': f"FastAPI error: {response.status_code}"
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'logs': [],
+            'error': str(e)
+        })
+
+# ==================== LOGGING API ENDPOINTS ====================
+
+@app.route('/api/logs/recent')
+def get_recent_logs():
+    """Get recent system logs"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        limit = int(request.args.get('limit', 100))
+        operation_type = request.args.get('type', None)
+        
+        logs = mining_logger.get_recent_logs(limit=limit, operation_type=operation_type)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/logs/statistics')
+def get_log_statistics():
+    """Get logging statistics"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        stats = mining_logger.get_log_statistics()
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/logs/by-date')
+def get_logs_by_date():
+    """Get logs for a specific date"""
+    try:
+        if not mining_logger:
+            return jsonify({
+                'success': False,
+                'error': 'Logging system not available'
+            })
+        
+        date_str = request.args.get('date')
+        if not date_str:
+            return jsonify({
+                'success': False,
+                'error': 'Date parameter required (YYYY-MM-DD format)'
+            })
+        
+        logs = mining_logger.get_logs_by_date(date_str)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs),
+            'date': date_str
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/logs')
+def logs_viewer():
+    """Logs viewer page"""
+    return render_template('logs_viewer.html')
+
+# Fallback velocity API endpoints (if module import failed)
+if not VELOCITY_ANALYSIS_AVAILABLE:
+    print("🔧 Adding fallback velocity API endpoints...")
+    
+    @app.route('/api/velocity/test-connection', methods=['POST'])
+    def fallback_velocity_test_connection():
+        """Fallback velocity database connection test"""
+        try:
+            import pymysql
+            from datetime import datetime
+            
+            # Use main app's database configuration
+            db_config = {
+                'host': USER_DB_CONFIG.get('host', 'localhost'),
+                'user': USER_DB_CONFIG.get('user', 'root'),
+                'password': USER_DB_CONFIG.get('password', ''),
+                'database': USER_DB_CONFIG.get('database', 'neo'),
+                'port': USER_DB_CONFIG.get('port', 3306)
+            }
+            
+            # Test connection
+            conn = pymysql.connect(
+                host=db_config['host'],
+                port=db_config['port'],
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['database'],
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            
+            # Check velocity tables
+            cursor = conn.cursor()
+            velocity_tables = [
+                'sku_master',
+                'sku_velocity_history', 
+                'bin_velocity_scores',
+                'velocity_calculation_config',
+                'velocity_calculation_jobs',
+                'bin_configuration',
+                'wms_to_wcs_order_line_request_data'
+            ]
+            
+            tables_status = {}
+            for table in velocity_tables:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                    count = cursor.fetchone()[0]
+                    tables_status[table] = True
+                except:
+                    tables_status[table] = False
+            
+            cursor.close()
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Database connection successful using shared configuration",
+                "tables_status": tables_status,
+                "timestamp": datetime.now().isoformat(),
+                "database_config": {
+                    'host': db_config['host'],
+                    'port': db_config['port'],
+                    'database': db_config['database'],
+                    'user': db_config['user']
+                }
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Connection test error: {str(e)}"
+            }), 500
+    
+    @app.route('/api/velocity/test-connection-custom', methods=['POST'])
+    def fallback_velocity_test_connection_custom():
+        """Fallback custom velocity database connection test"""
+        try:
+            import pymysql
+            from datetime import datetime
+            
+            db_config = request.get_json()
+            if not db_config:
+                return jsonify({
+                    "success": False,
+                    "message": "Database configuration required"
+                }), 400
+            
+            # Test connection
+            conn = pymysql.connect(
+                host=db_config.get('host', 'localhost'),
+                port=db_config.get('port', 3306),
+                user=db_config.get('user', 'root'),
+                password=db_config.get('password', ''),
+                database=db_config.get('database', 'neo'),
+                connect_timeout=5,
+                charset='utf8mb4'
+            )
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Custom database connection successful",
+                "timestamp": datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "message": f"Custom connection test error: {str(e)}"
+            }), 500
+
+# Historical Analysis API Endpoints
+@app.route('/api/history/jobs', methods=['GET'])
+def get_job_history():
+    """Get job history with optional filtering"""
+    if not HISTORY_TRACKING_AVAILABLE:
+        return jsonify({"success": False, "error": "History tracking not available"})
+    
+    try:
+        # Get query parameters
+        limit = min(int(request.args.get('limit', 100)), 1000)  # Max 1000 records
+        offset = max(int(request.args.get('offset', 0)), 0)
+        status = request.args.get('status')  # completed, failed, running, cancelled
+        days = int(request.args.get('days', 30)) if request.args.get('days') else None
+        
+        # Get database configuration (try user config first, then default)
+        config_to_use = USER_DB_CONFIG.copy()
+        
+        history_service = HistoryService(config_to_use)
+        jobs = history_service.get_job_history(limit=limit, offset=offset, status=status, days=days)
+        
+        return jsonify({
+            "success": True,
+            "jobs": jobs,
+            "pagination": {
+                "limit": limit,
+                "offset": offset,
+                "count": len(jobs)
+            },
+            "filters": {
+                "status": status,
+                "days": days
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/history/analytics', methods=['GET'])
+def get_performance_analytics():
+    """Get performance analytics for specified period"""
+    if not HISTORY_TRACKING_AVAILABLE:
+        return jsonify({"success": False, "error": "History tracking not available"})
+    
+    try:
+        days = min(int(request.args.get('days', 30)), 365)  # Max 1 year
+        
+        config_to_use = USER_DB_CONFIG.copy()
+        history_service = HistoryService(config_to_use)
+        analytics = history_service.get_performance_analytics(days=days)
+        
+        return jsonify({
+            "success": True,
+            "analytics": analytics
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/history/job/<job_id>', methods=['GET'])
+def get_job_details(job_id):
+    """Get detailed information about a specific job"""
+    if not HISTORY_TRACKING_AVAILABLE:
+        return jsonify({"success": False, "error": "History tracking not available"})
+    
+    try:
+        config_to_use = USER_DB_CONFIG.copy()
+        history_service = HistoryService(config_to_use)
+        job_details = history_service.get_job_details(job_id)
+        
+        if not job_details:
+            return jsonify({"success": False, "error": "Job not found"})
+        
+        return jsonify({
+            "success": True,
+            "job_details": job_details
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/history/cleanup', methods=['POST'])
+def cleanup_history():
+    """Cleanup old history records"""
+    if not HISTORY_TRACKING_AVAILABLE:
+        return jsonify({"success": False, "error": "History tracking not available"})
+    
+    try:
+        data = request.get_json() or {}
+        days = min(int(data.get('days', 90)), 365)  # Max 1 year
+        
+        config_to_use = USER_DB_CONFIG.copy()
+        history_service = HistoryService(config_to_use)
+        success = history_service.cleanup_old_records(days=days)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Successfully cleaned up records older than {days} days"
+            })
+        else:
+            return jsonify({"success": False, "error": "Cleanup failed"})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/history/status')
+def get_history_status():
+    """Get history tracking system status"""
+    status = {
+        "history_tracking_available": HISTORY_TRACKING_AVAILABLE,
+        "performance_monitoring_available": HISTORY_TRACKING_AVAILABLE,
+        "database_config": "configured" if USER_DB_CONFIG else "not_configured"
+    }
+    
+    if HISTORY_TRACKING_AVAILABLE:
+        try:
+            config_to_use = USER_DB_CONFIG.copy()
+            history_service = HistoryService(config_to_use)
+            
+            # Test database connection and table creation
+            tables_created = history_service.create_history_tables()
+            status["tables_status"] = "ready" if tables_created else "error"
+            
+        except Exception as e:
+            status["tables_status"] = f"error: {str(e)}"
+    
+    return jsonify(status)
+
+@app.route('/history')
+def history_dashboard():
+    """Serve the history and analytics dashboard"""
+    return render_template('history_dashboard.html')
+
+@app.route('/api/history/init', methods=['POST'])
+def initialize_history_tables():
+    """Initialize history tracking tables"""
+    if not HISTORY_TRACKING_AVAILABLE:
+        return jsonify({"success": False, "error": "History tracking not available"})
+    
+    try:
+        data = request.get_json() or {}
+        config_to_use = USER_DB_CONFIG.copy()
+        
+        # Allow custom database config for initialization
+        if data.get('custom_db_config'):
+            config_to_use.update(data['custom_db_config'])
+        
+        history_service = HistoryService(config_to_use)
+        success = history_service.create_history_tables()
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": "History tracking tables initialized successfully"
+            })
+        else:
+            return jsonify({"success": False, "error": "Failed to initialize tables"})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == '__main__':
     # Create templates directory if it doesn't exist

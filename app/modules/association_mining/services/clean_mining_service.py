@@ -27,12 +27,13 @@ class CleanAssociationMiningService:
         self.max_recommendations = self.algorithm_params.get('max_recommendations', config.MAX_RECOMMENDATIONS)
         self.decay_rate = self.algorithm_params.get('decay_rate', config.DECAY_RATE)
         
-        logger.info(f"Mining service initialized with parameters:")
-        logger.info(f"  min_support: {self.min_support}")
-        logger.info(f"  min_confidence: {self.min_confidence}")
-        logger.info(f"  min_lift: {self.min_lift}")
-        logger.info(f"  max_recommendations: {self.max_recommendations}")
-        logger.info(f"  decay_rate: {self.decay_rate}")
+        logger.info(f"🎯 Mining service initialized with parameters:")
+        logger.info(f"   📊 min_support: {self.min_support} {'(CUSTOM)' if self.algorithm_params and 'min_support' in self.algorithm_params else '(DEFAULT)'}")
+        logger.info(f"   📊 min_confidence: {self.min_confidence} {'(CUSTOM)' if self.algorithm_params and 'min_confidence' in self.algorithm_params else '(DEFAULT)'}")
+        logger.info(f"   📊 min_lift: {self.min_lift} {'(CUSTOM)' if self.algorithm_params and 'min_lift' in self.algorithm_params else '(DEFAULT)'}")
+        logger.info(f"   📊 max_recommendations: {self.max_recommendations} {'(CUSTOM)' if self.algorithm_params and 'max_recommendations' in self.algorithm_params else '(DEFAULT)'}")
+        logger.info(f"   📊 decay_rate: {self.decay_rate} {'(CUSTOM)' if self.algorithm_params and 'decay_rate' in self.algorithm_params else '(DEFAULT)'}")
+        logger.info(f"   🔧 algorithm_params source: {self.algorithm_params}")
     
     def _update_progress(self, progress, message):
         """Update progress if task manager is available"""
@@ -42,18 +43,29 @@ class CleanAssociationMiningService:
     
     def _calculate_adaptive_support(self, num_items, num_transactions, original_support):
         """Calculate adaptive support based on dataset size"""
+        # Check if this is a custom/scheduled job with specific parameters
+        is_custom_params = (hasattr(self, 'algorithm_params') and 
+                           self.algorithm_params and 
+                           'min_support' in self.algorithm_params)
+        
+        if is_custom_params:
+            # User provided custom parameters - respect their choice
+            logger.info(f"Using CUSTOM min_support={original_support:.3f} (user-specified, no adaptation)")
+            return original_support
+        
+        # Default behavior for regular mining (adapt based on dataset size)
         if num_items > 800:
             # For large item sets (shouldn't happen with filtering), use higher support
             adaptive_support = max(0.02, 15 / num_transactions)
-            logger.warning(f"LARGE DATASET: {num_items} items - using support {adaptive_support:.3f}")
+            logger.warning(f"LARGE DATASET: {num_items} items - using adaptive support {adaptive_support:.3f}")
         elif num_items > 500:
             # Medium item sets - moderate support
             adaptive_support = max(0.01, 8 / num_transactions)
-            logger.info(f"Medium dataset: {num_items} items - using support {adaptive_support:.3f}")
+            logger.info(f"Medium dataset: {num_items} items - using adaptive support {adaptive_support:.3f}")
         else:
             # Optimal range (<=500 items) - use original support
             adaptive_support = original_support
-            logger.info(f"Optimal dataset size: {num_items} items - using support {adaptive_support:.3f}")
+            logger.info(f"Optimal dataset size: {num_items} items - using original support {adaptive_support:.3f}")
         
         return adaptive_support
     
@@ -228,11 +240,11 @@ class CleanAssociationMiningService:
             logger.info(f"Found {len(freq_itemsets)} frequent itemsets")
             
             # Generate association rules
-            logger.info("Generating association rules")
+            logger.info(f"Generating association rules with min_lift={self.min_lift}")
             rules = association_rules(
                 freq_itemsets, 
                 metric="lift", 
-                min_threshold=config.MIN_LIFT
+                min_threshold=self.min_lift
             )
             
             if rules.empty:
@@ -243,7 +255,15 @@ class CleanAssociationMiningService:
             initial_count = len(rules)
             rules = rules[rules['confidence'] >= self.min_confidence]
             
-            logger.info(f"Filtered rules: {initial_count} -> {len(rules)} (confidence >= {self.min_confidence})")
+            logger.info(f"🎯 CONFIDENCE FILTER: {initial_count} -> {len(rules)} rules (confidence >= {self.min_confidence})")
+            
+            if len(rules) > 0:
+                logger.info(f"🎯 FINAL RULES SUMMARY:")
+                logger.info(f"   📈 Support range: {rules['support'].min():.3f} - {rules['support'].max():.3f}")
+                logger.info(f"   📈 Confidence range: {rules['confidence'].min():.3f} - {rules['confidence'].max():.3f}")
+                logger.info(f"   📈 Lift range: {rules['lift'].min():.3f} - {rules['lift'].max():.3f}")
+            else:
+                logger.warning(f"❌ NO RULES passed confidence filter of {self.min_confidence}!")
             
             return rules
             
@@ -295,8 +315,9 @@ class CleanAssociationMiningService:
             .astype(int)
         )
         
-        # Keep only top recommendations per item
-        rec_df = rec_df[rec_df['recommendation_rank'] <= config.MAX_RECOMMENDATIONS]
+        # Keep only top recommendations per item (use custom parameter)
+        rec_df = rec_df[rec_df['recommendation_rank'] <= self.max_recommendations]
         
-        logger.info(f"Created {len(rec_df)} recommendations for {rec_df['main_item'].nunique()} items")
+        logger.info(f"🎯 RECOMMENDATIONS FILTER: Using max_recommendations={self.max_recommendations} (per item)")
+        logger.info(f"🎯 Created {len(rec_df)} total recommendations for {rec_df['main_item'].nunique()} items")
         return rec_df

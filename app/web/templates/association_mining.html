@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Association Mining System - Enhanced</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-banner {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .db-config-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            border: 3px solid #007bff;
+            margin-bottom: 30px;
+        }
+        .mining-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #28a745;
+            margin-bottom: 30px;
+        }
+        .results-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+            min-height: 400px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-connected { background-color: #28a745; }
+        .status-disconnected { background-color: #dc3545; }
+        .rule-card {
+            border-left: 4px solid #007bff;
+            margin-bottom: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .score-badge {
+            font-size: 0.9em;
+            padding: 4px 8px;
+        }
+        .progress-container {
+            display: none;
+            margin-top: 15px;
+        }
+        .progress-bar-animated {
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+        .api-options-card {
+            background: #e3f2fd;
+            border: 2px solid #1976d2;
+        }
+        
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1050;
+            max-width: 400px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+        }
+        
+        .notification.warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand text-white" href="/">
+                <i class="fas fa-warehouse me-2"></i>
+                Warehouse Optimization System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="/">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link text-white active" href="/association-mining">
+                    <i class="fas fa-project-diagram me-1"></i>Association Mining
+                </a>
+                <a class="nav-link text-white" href="/velocity-analysis">
+                    <i class="fas fa-tachometer-alt me-1"></i>Velocity Analysis
+                </a>
+                <a class="nav-link text-white" href="/history">
+                    <i class="fas fa-chart-line me-1"></i>History & Analytics
+                </a>
+                <a class="nav-link text-white" href="/logs">
+                    <i class="fas fa-file-alt me-1"></i>System Logs
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="header-banner">
+            <i class="fas fa-chart-network me-3"></i>
+            Association Mining System - Enhanced
+            <br><small>Configure Database → Run Mining → View Results</small>
+        </div>
+        
+        <!-- Database Configuration Section -->
+        <div class="db-config-section">
+            <h2 class="mb-4">
+                <i class="fas fa-database me-2"></i> Step 1: Database Configuration
+            </h2>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Shared Configuration:</strong> Using the same database configuration as the main system for consistency.
+                <button class="btn btn-sm btn-outline-primary ms-2" onclick="toggleCustomConfig()">
+                    <i class="fas fa-cog me-1"></i>Use Custom Configuration
+                </button>
+            </div>
+
+            <!-- Custom Database Configuration (Hidden by default) -->
+            <div id="customDbConfig" class="card mb-4" style="display: none; border: 2px solid #fd7e14;">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Custom Database Configuration
+                        <small class="ms-2">Override the shared database settings for mining only</small>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="customDbForm">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Database Host</label>
+                                    <input type="text" class="form-control" id="customDbHost" value="localhost" placeholder="localhost">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="mb-3">
+                                    <label class="form-label">Port</label>
+                                    <input type="number" class="form-control" id="customDbPort" value="3306" min="1" max="65535">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="customDbUser" value="root" placeholder="username">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="customDbPassword" placeholder="password">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Database Name</label>
+                                    <input type="text" class="form-control" id="customDbName" value="neo" placeholder="database">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Order Table</label>
+                                    <input type="text" class="form-control" id="customOrderTable" value="wms_to_wcs_order_line_request_data" placeholder="order_table">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">SKU Master Table</label>
+                                    <input type="text" class="form-control" id="customSkuTable" value="sku_master" placeholder="sku_table">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Output Tables Configuration -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-save me-2"></i>Output/Destination Tables
+                                    <small class="text-muted ms-2">Where to save mining results</small>
+                                </h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Association Rules Table</label>
+                                    <input type="text" class="form-control" id="customRulesTable" value="sku_recommendations" 
+                                           placeholder="association_rules">
+                                    <small class="form-text text-muted">Table to store discovered association rules</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Mining History Table</label>
+                                    <input type="text" class="form-control" id="customHistoryTable" value="mining_history" 
+                                           placeholder="mining_history">
+                                    <small class="form-text text-muted">Table to track mining job history</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Mining Statistics Table</label>
+                                    <input type="text" class="form-control" id="customStatsTable" value="mining_statistics" 
+                                           placeholder="mining_stats">
+                                    <small class="form-text text-muted">Table to store performance metrics</small>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-server me-2"></i>Database Status</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="dbStatus" class="mb-3">
+                                <span class="status-indicator status-disconnected"></span>
+                                <span>Not tested yet</span>
+                            </div>
+                            <button class="btn btn-primary" onclick="testDatabaseConnection()">
+                                <i class="fas fa-plug me-2"></i>Test Database Connection
+                            </button>
+                            <button class="btn btn-outline-secondary ms-2" onclick="saveCustomConfig()" id="saveConfigBtn" style="display: none;">
+                                <i class="fas fa-save me-2"></i>Save Configuration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-table me-2"></i>Table Information</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="tableInfo">
+                                <small class="text-muted">Test connection to see table details</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mining Section -->
+        <div class="mining-section">
+            <h2 class="mb-4">
+                <i class="fas fa-pickaxe me-2"></i> Step 2: Run Association Mining
+            </h2>
+            
+            <!-- Mining Method Selection -->
+            <div class="mb-4">
+                <label class="form-label fw-bold">Mining Method</label>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="miningMethod" id="directMining" value="direct">
+                    <label class="form-check-label" for="directMining">
+                        <strong>Direct Mining</strong> <span class="badge bg-success">✅ Fast & Reliable</span>
+                        <small class="d-block text-muted">Direct database connection with optimized algorithms</small>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="miningMethod" id="apiMining" value="api" checked>
+                    <label class="form-check-label" for="apiMining">
+                        <strong>API-based Mining</strong> <span class="badge bg-primary">🚀 Enhanced Features</span>
+                        <small class="d-block text-muted">Enhanced temporal mining with real-time progress tracking</small>
+                    </label>
+                </div>
+                
+                <!-- Enhanced Features Info -->
+                <div class="alert alert-primary mt-3" id="enhancedFeaturesInfo">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-magic me-2"></i>
+                        <div>
+                            <strong>🎯 Enhanced API Mining Features:</strong> Temporal weighting algorithms, 
+                            real-time progress tracking, advanced parameter optimization, and custom database support.
+                            Perfect for finding nuanced patterns with your parameters!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mining Parameters -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Days Back</label>
+                        <input type="number" class="form-control" id="daysBack" value="60" min="1" max="365">
+                        <small class="text-muted">How many days of data to analyze</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Top SKUs</label>
+                        <input type="number" class="form-control" id="topSkus" value="20" min="5" max="100">
+                        <small class="text-muted">Number of top SKUs to analyze</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div id="miningStatus" class="form-control-plaintext">
+                            <span class="status-indicator status-disconnected"></span>
+                            <span>Ready to start mining</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Algorithm Parameters -->
+            <div class="card mb-4" style="border: 2px solid #6f42c1;">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-primary">
+                        <i class="fas fa-sliders-h me-2"></i>Algorithm Parameters
+                        <small class="text-muted">- Fine-tune the association rule mining algorithm</small>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Support</label>
+                                <input type="number" class="form-control" id="minSupport" value="0.30" min="0.01" max="1.0" step="0.01">
+                                <small class="text-muted">Items must appear in at least this % of transactions (0.01-1.0)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Confidence</label>
+                                <input type="number" class="form-control" id="minConfidence" value="0.30" min="0.01" max="1.0" step="0.01">
+                                <small class="text-muted">Rule strength threshold (0.01-1.0)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Lift</label>
+                                <input type="number" class="form-control" id="minLift" value="1.0" min="0.1" max="10.0" step="0.1">
+                                <small class="text-muted">Association strength (>1.0 = positive correlation)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Max Recommendations</label>
+                                <input type="number" class="form-control" id="maxRecommendations" value="10" min="1" max="100">
+                                <small class="text-muted">Maximum rules to generate per item</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Decay Rate</label>
+                                <input type="number" class="form-control" id="decayRate" value="0.05" min="0.01" max="0.5" step="0.01">
+                                <small class="text-muted">Time decay factor for temporal weighting (0.01-0.5)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="mb-3">
+                                <label class="form-label">Preset</label>
+                                <select class="form-select" id="algorithmPreset" onchange="applyPreset()">
+                                    <option value="custom">Custom Settings</option>
+                                    <option value="conservative">Conservative (High Quality)</option>
+                                    <option value="balanced">Balanced (Recommended)</option>
+                                    <option value="aggressive">Aggressive (More Rules)</option>
+                                    <option value="exploratory">Exploratory (Discovery Mode)</option>
+                                </select>
+                                <small class="text-muted">Quick parameter presets</small>
+                            </div>
+                        </div>
+                        <div class="col-md-12 col-lg-6">
+                            <div class="alert alert-info mb-0" style="font-size: 0.85em;">
+                                <strong>Tips:</strong>
+                                <ul class="mb-0 mt-1" style="font-size: 0.9em;">
+                                    <li><strong>Lower support/confidence</strong> = More rules, potentially weaker</li>
+                                    <li><strong>Higher support/confidence</strong> = Fewer rules, stronger associations</li>
+                                    <li><strong>Lift > 1.0</strong> = Items bought together more than by chance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- API-specific Enhanced Options -->
+            <div id="apiOptions" style="display: none;">
+                <div class="card api-options-card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Enhanced Mining Options</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="useEnhanced">
+                            <label class="form-check-label fw-bold" for="useEnhanced">
+                                Use Enhanced Temporal Mining
+                                <small class="d-block text-muted">Advanced algorithms that consider time patterns and seasonality</small>
+                            </label>
+                        </div>
+                        <div id="methodSection" style="display: none;">
+                            <label for="timeMethod" class="form-label">Time Weighting Method</label>
+                            <select class="form-select mb-3" id="timeMethod">
+                                <option value="exponential_decay">Exponential Decay - Recent orders weighted more</option>
+                                <option value="seasonal_patterns">Seasonal Patterns - Account for seasonal trends</option>
+                                <option value="trend_adaptive">Trend Adaptive - Adapt to changing patterns</option>
+                                <option value="recency_frequency">Recency Frequency - Balance recent vs frequent</option>
+                            </select>
+                            <small class="text-muted">Choose how to weight historical data for better predictions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2 d-md-flex">
+                <button type="button" class="btn btn-success btn-lg" onclick="startMining()" id="miningBtn">
+                    <i class="fas fa-play me-2"></i> Start Mining
+                </button>
+                <button type="button" class="btn btn-warning" onclick="cancelMining()" id="cancelBtn" style="display: none;">
+                    <i class="fas fa-stop me-2"></i> Cancel Mining
+                </button>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div id="miningProgress" class="progress-container">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Mining Progress</span>
+                    <span class="text-muted" id="progressPercentage">0%</span>
+                </div>
+                <div class="progress mb-2">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div class="text-center">
+                    <small class="text-muted" id="progressMessage">Initializing...</small>
+                </div>
+            </div>
+
+            <div id="miningLog" class="mt-3"></div>
+        </div>
+
+        <!-- Scheduler Section -->
+        <div class="results-section" style="border: 2px solid #6f42c1;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i> Step 2.5: Mining Scheduler
+                </h2>
+                <div>
+                    <span class="badge bg-secondary" id="schedulerStatus">Stopped</span>
+                </div>
+            </div>
+
+            <div class="alert alert-purple" style="background: #f8f0ff; border: 1px solid #6f42c1;">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Automated Mining:</strong> Schedule regular association mining jobs to keep recommendations up-to-date.
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Scheduler Control</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="startScheduler()" id="startSchedulerBtn">
+                                    <i class="fas fa-play me-2"></i>Start Scheduler
+                                </button>
+                                <button class="btn btn-danger" onclick="stopScheduler()" id="stopSchedulerBtn" style="display: none;">
+                                    <i class="fas fa-stop me-2"></i>Stop Scheduler
+                                </button>
+                                <button class="btn btn-outline-info" onclick="checkSchedulerStatus()">
+                                    <i class="fas fa-sync me-2"></i>Check Status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-plus me-2"></i>Create Schedule</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="scheduleForm">
+                                <!-- Basic Schedule Info -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Job Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="jobName" placeholder="Enter schedule name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Description</label>
+                                            <input type="text" class="form-control" id="jobDescription" placeholder="Optional description">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Schedule Type</label>
+                                            <select class="form-select" id="scheduleType">
+                                                <option value="daily">Daily</option>
+                                                <option value="weekly">Weekly</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Time</label>
+                                            <input type="time" class="form-control" id="scheduleTime" value="02:00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Output Table</label>
+                                            <input type="text" class="form-control" id="outputTable" value="sku_recommendations" placeholder="Table name">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mining Parameters -->
+                                <hr class="my-4">
+                                <h6 class="mb-3"><i class="fas fa-cogs me-2"></i>Mining Parameters</h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Min Support</label>
+                                            <input type="number" class="form-control" id="scheduleMinSupport" value="0.300" step="0.001" min="0.001" max="1.0">
+                                            <div class="form-text">Minimum frequency threshold (0.001 - 1.0)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Min Confidence</label>
+                                            <input type="number" class="form-control" id="scheduleMinConfidence" value="0.300" step="0.001" min="0.001" max="1.0">
+                                            <div class="form-text">Minimum confidence threshold (0.001 - 1.0)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Min Lift</label>
+                                            <input type="number" class="form-control" id="scheduleMinLift" value="1.0" step="0.1" min="0.1" max="10.0">
+                                            <div class="form-text">Minimum lift threshold (0.1 - 10.0)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">Decay Rate</label>
+                                            <input type="number" class="form-control" id="scheduleDecayRate" value="0.050" step="0.001" min="0.001" max="1.0">
+                                            <div class="form-text">Temporal decay rate (0.001 - 1.0)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Max Recommendations</label>
+                                            <input type="number" class="form-control" id="scheduleMaxRecommendations" value="10" min="1" max="100">
+                                            <div class="form-text">Maximum recommendations to generate (1 - 100)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Schedule Status</label>
+                                            <select class="form-select" id="isActive">
+                                                <option value="true">Active</option>
+                                                <option value="false">Inactive</option>
+                                            </select>
+                                            <div class="form-text">Whether the schedule should run automatically</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="text-center">
+                                    <button type="button" class="btn btn-primary me-2" onclick="createSchedule()">
+                                        <i class="fas fa-calendar-plus me-2"></i>Create Schedule
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetScheduleForm()">
+                                        <i class="fas fa-undo me-2"></i>Reset
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Schedules -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-list me-2"></i>Active Schedules</h6>
+                </div>
+                <div class="card-body">
+                    <div id="scheduleList">
+                        <p class="text-muted text-center">No active schedules. Create one above.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Job Execution History -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="fas fa-history me-2"></i>Recent Job Executions</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadJobLogs()">
+                        <i class="fas fa-sync me-1"></i>Refresh
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="jobLogsList">
+                        <p class="text-muted text-center">No job executions yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i> Step 3: Mining Results
+                </h2>
+                <div>
+                    <button class="btn btn-outline-success btn-sm me-2" onclick="exportResults()" id="exportBtn" style="display: none;">
+                        <i class="fas fa-download me-1"></i> Export CSV
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshResults()" id="refreshBtn" style="display: none;">
+                        <i class="fas fa-sync me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Statistics -->
+            <div id="resultsStats" style="display: none;">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary" id="totalRules">0</h5>
+                                <p class="card-text text-muted">Total Rules</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <h5 class="card-title text-success" id="totalSkus">0</h5>
+                                <p class="card-text text-muted">SKUs Analyzed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <h5 class="card-title text-info" id="totalOrders">0</h5>
+                                <p class="card-text text-muted">Orders Processed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-warning">
+                            <div class="card-body">
+                                <h5 class="card-title text-warning" id="miningDuration">0s</h5>
+                                <p class="card-text text-muted">Processing Time</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter and Sort Controls -->
+            <div id="filterControls" style="display: none;">
+                <div class="card border-light mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filter & Sort Results</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Minimum Support</label>
+                                <input type="number" class="form-control" id="filterMinSupport" step="0.01" min="0" max="1" value="0.01" onchange="filterResults()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Minimum Confidence</label>
+                                <input type="number" class="form-control" id="filterMinConfidence" step="0.01" min="0" max="1" value="0.1" onchange="filterResults()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sort By</label>
+                                <select class="form-select" id="sortBy" onchange="sortResults()">
+                                    <option value="score">Score (Descending)</option>
+                                    <option value="support">Support (Descending)</option>
+                                    <option value="confidence">Confidence (Descending)</option>
+                                    <option value="lift">Lift (Descending)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Show Top</label>
+                                <select class="form-select" id="showTop" onchange="limitResults()">
+                                    <option value="10">Top 10</option>
+                                    <option value="20">Top 20</option>
+                                    <option value="50">Top 50</option>
+                                    <option value="100">Top 100</option>
+                                    <option value="-1">All Results</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="resultsContainer">
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-line fa-4x mb-3"></i>
+                    <h4>No mining results yet</h4>
+                    <p>Configure your database and start mining to see results here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentResults = [];
+        let miningInProgress = false;
+        let useCustomConfig = false;
+
+        function toggleCustomConfig() {
+            const customSection = document.getElementById('customDbConfig');
+            const saveBtn = document.getElementById('saveConfigBtn');
+            
+            if (customSection.style.display === 'none') {
+                customSection.style.display = 'block';
+                saveBtn.style.display = 'inline-block';
+                useCustomConfig = true;
+                showWarningNotification('Custom database configuration enabled. Test connection before mining.');
+            } else {
+                customSection.style.display = 'none';
+                saveBtn.style.display = 'none';
+                useCustomConfig = false;
+                showSuccessNotification('Switched back to shared database configuration.');
+            }
+        }
+
+        function saveCustomConfig() {
+            const config = {
+                host: document.getElementById('customDbHost').value,
+                port: parseInt(document.getElementById('customDbPort').value),
+                user: document.getElementById('customDbUser').value,
+                password: document.getElementById('customDbPassword').value,
+                database: document.getElementById('customDbName').value,
+                order_table: document.getElementById('customOrderTable').value,
+                sku_table: document.getElementById('customSkuTable').value,
+                rules_table: document.getElementById('customRulesTable').value,
+                history_table: document.getElementById('customHistoryTable').value,
+                stats_table: document.getElementById('customStatsTable').value
+            };
+            
+            // Save to localStorage for persistence
+            localStorage.setItem('customDbConfig', JSON.stringify(config));
+            showSuccessNotification('Custom database configuration saved!');
+        }
+
+        function loadCustomConfig() {
+            const saved = localStorage.getItem('customDbConfig');
+            if (saved) {
+                const config = JSON.parse(saved);
+                document.getElementById('customDbHost').value = config.host || 'localhost';
+                document.getElementById('customDbPort').value = config.port || 3306;
+                document.getElementById('customDbUser').value = config.user || 'root';
+                document.getElementById('customDbPassword').value = config.password || '';
+                document.getElementById('customDbName').value = config.database || 'neo';
+                document.getElementById('customOrderTable').value = config.order_table || 'wms_to_wcs_order_line_request_data';
+                document.getElementById('customSkuTable').value = config.sku_table || 'sku_master';
+                document.getElementById('customRulesTable').value = config.rules_table || 'sku_recommendations';
+                document.getElementById('customHistoryTable').value = config.history_table || 'mining_history';
+                document.getElementById('customStatsTable').value = config.stats_table || 'mining_statistics';
+            }
+        }
+
+        function testDatabaseConnection() {
+            const statusElement = document.getElementById('dbStatus');
+            const tableInfoElement = document.getElementById('tableInfo');
+            
+            statusElement.innerHTML = '<span class="status-indicator status-warning"></span><span>Testing...</span>';
+            
+            let endpoint = '/api/test-connection';
+            let requestData = {};
+            
+            if (useCustomConfig) {
+                endpoint = '/api/test-db-connection';
+                requestData = {
+                    host: document.getElementById('customDbHost').value,
+                    port: parseInt(document.getElementById('customDbPort').value),
+                    user: document.getElementById('customDbUser').value,
+                    password: document.getElementById('customDbPassword').value,
+                    database: document.getElementById('customDbName').value,
+                    order_table: document.getElementById('customOrderTable').value,
+                    sku_master_table: document.getElementById('customSkuTable').value,
+                    rules_table: document.getElementById('customRulesTable').value,
+                    history_table: document.getElementById('customHistoryTable').value,
+                    stats_table: document.getElementById('customStatsTable').value
+                };
+            }
+            
+            const requestOptions = useCustomConfig ? {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            } : {};
+            
+            fetch(endpoint, requestOptions)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusElement.innerHTML = '<span class="status-indicator status-connected"></span><span>Connected</span>';
+                    
+                    // Show table information if available
+                    if (data.tables) {
+                        let tableHtml = '<div class="small">';
+                        for (const [table, info] of Object.entries(data.tables)) {
+                            if (info.exists) {
+                                tableHtml += `<div><strong>${table}:</strong> ${info.count.toLocaleString()} records</div>`;
+                            } else {
+                                tableHtml += `<div class="text-warning"><strong>${table}:</strong> Table not found</div>`;
+                            }
+                        }
+                        tableHtml += '</div>';
+                        tableInfoElement.innerHTML = tableHtml;
+                    } else {
+                        tableInfoElement.innerHTML = '<small class="text-success">Database connected successfully</small>';
+                    }
+                    
+                    showSuccessNotification('Database connection successful! Ready to start mining.');
+                } else {
+                    statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span><span>Connection failed</span>';
+                    tableInfoElement.innerHTML = '<small class="text-danger">Connection failed</small>';
+                    showErrorNotification('Database connection failed. Please check your configuration.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span><span>Error</span>';
+                tableInfoElement.innerHTML = '<small class="text-danger">Connection error</small>';
+                showErrorNotification('Error testing database connection: ' + error.message);
+            });
+        }
+
+        function applyPreset() {
+            const preset = document.getElementById('algorithmPreset').value;
+            const presets = {
+                conservative: { support: 0.5, confidence: 0.7, lift: 1.5, max_rec: 5, decay: 0.02 },
+                balanced: { support: 0.3, confidence: 0.5, lift: 1.2, max_rec: 10, decay: 0.05 },
+                aggressive: { support: 0.1, confidence: 0.3, lift: 1.0, max_rec: 20, decay: 0.1 },
+                exploratory: { support: 0.05, confidence: 0.2, lift: 0.8, max_rec: 30, decay: 0.15 }
+            };
+            
+            if (preset !== 'custom' && presets[preset]) {
+                const config = presets[preset];
+                document.getElementById('minSupport').value = config.support;
+                document.getElementById('minConfidence').value = config.confidence;
+                document.getElementById('minLift').value = config.lift;
+                document.getElementById('maxRecommendations').value = config.max_rec;
+                document.getElementById('decayRate').value = config.decay;
+            }
+        }
+
+        function startMining() {
+            if (miningInProgress) return;
+            
+            miningInProgress = true;
+            const miningBtn = document.getElementById('miningBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const progressContainer = document.getElementById('miningProgress');
+            const statusElement = document.getElementById('miningStatus');
+            
+            // Update UI
+            miningBtn.style.display = 'none';
+            cancelBtn.style.display = 'inline-block';
+            progressContainer.style.display = 'block';
+            statusElement.innerHTML = '<span class="status-indicator status-warning"></span><span>Mining in progress...</span>';
+            
+            // Get mining method
+            const miningMethod = document.querySelector('input[name="miningMethod"]:checked').value;
+            
+            // Get parameters
+            let miningData = {
+                days_back: parseInt(document.getElementById('daysBack').value) || 60,
+                top_skus: parseInt(document.getElementById('topSkus').value) || 20,
+                min_support: parseFloat(document.getElementById('minSupport').value) || 0.30,
+                min_confidence: parseFloat(document.getElementById('minConfidence').value) || 0.30,
+                min_lift: parseFloat(document.getElementById('minLift').value) || 1.0,
+                max_recommendations: parseInt(document.getElementById('maxRecommendations').value) || 10,
+                decay_rate: parseFloat(document.getElementById('decayRate').value) || 0.05
+            };
+            
+            // Add custom database config if enabled
+            if (useCustomConfig) {
+                miningData.custom_db_config = {
+                    host: document.getElementById('customDbHost').value,
+                    port: parseInt(document.getElementById('customDbPort').value),
+                    user: document.getElementById('customDbUser').value,
+                    password: document.getElementById('customDbPassword').value,
+                    database: document.getElementById('customDbName').value,
+                    order_table: document.getElementById('customOrderTable').value,
+                    sku_master_table: document.getElementById('customSkuTable').value,
+                    rules_table: document.getElementById('customRulesTable').value
+                };
+            }
+            
+            // Add enhanced options for API mining
+            if (miningMethod === 'api') {
+                miningData.enhanced = document.getElementById('useEnhanced').checked;
+                if (miningData.enhanced) {
+                    miningData.time_method = document.getElementById('timeMethod').value;
+                }
+            }
+            
+            // Choose endpoint based on mining method
+            const endpoint = miningMethod === 'api' ? '/api/mine-api' : '/api/mine-direct';
+            
+            // Start progress simulation
+            if (miningMethod === 'direct') {
+                simulateProgress();
+            } else {
+                trackApiProgress();
+            }
+            
+            // Call the mining API
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(miningData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusElement.innerHTML = '<span class="status-indicator status-connected"></span><span>Mining completed</span>';
+                    displayResults(data);
+                    
+                    // Show a nice completion message with statistics
+                    const stats = data.stats || {};
+                    const rulesCount = stats.total_rules || data.rules?.length || 0;
+                    const skusCount = stats.top_n_skus || 0;
+                    const processingTime = stats.mining_duration || '0s';
+                    
+                    if (rulesCount > 0) {
+                        showSuccessNotification(
+                            `Mining Complete! Found ${rulesCount} association rules from ${skusCount} SKUs in ${processingTime}`
+                        );
+                    } else {
+                        showWarningNotification(
+                            'Mining completed but no association rules found. Try adjusting parameters for better results.'
+                        );
+                    }
+                } else {
+                    statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span><span>Mining failed</span>';
+                    showErrorNotification('Association mining failed: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span><span>Mining error</span>';
+                showErrorNotification('Error running association mining: ' + error.message);
+            })
+            .finally(() => {
+                miningInProgress = false;
+                miningBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'none';
+                progressContainer.style.display = 'none';
+            });
+        }
+
+        function trackApiProgress() {
+            // For API mining with real progress tracking
+            const interval = setInterval(() => {
+                if (!miningInProgress) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                fetch('/api/mining-progress')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'running') {
+                        const progress = data.progress || 0;
+                        document.getElementById('progressBar').style.width = progress + '%';
+                        document.getElementById('progressPercentage').textContent = Math.round(progress) + '%';
+                        document.getElementById('progressMessage').textContent = data.message || 'Processing...';
+                    } else if (data.status === 'completed') {
+                        clearInterval(interval);
+                    }
+                })
+                .catch(error => {
+                    console.error('Progress tracking error:', error);
+                });
+            }, 2000);
+        }
+
+        // Scheduler Functions
+        function startScheduler() {
+            fetch('/api/start-scheduler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('schedulerStatus').textContent = 'Running';
+                    document.getElementById('schedulerStatus').className = 'badge bg-success';
+                    document.getElementById('startSchedulerBtn').style.display = 'none';
+                    document.getElementById('stopSchedulerBtn').style.display = 'block';
+                    showSuccessNotification('Scheduler started successfully!');
+                } else {
+                    showErrorNotification('Failed to start scheduler: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                showErrorNotification('Error starting scheduler: ' + error.message);
+            });
+        }
+
+        function stopScheduler() {
+            fetch('/api/stop-scheduler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('schedulerStatus').textContent = 'Stopped';
+                    document.getElementById('schedulerStatus').className = 'badge bg-secondary';
+                    document.getElementById('startSchedulerBtn').style.display = 'block';
+                    document.getElementById('stopSchedulerBtn').style.display = 'none';
+                    showSuccessNotification('Scheduler stopped successfully!');
+                } else {
+                    showErrorNotification('Failed to stop scheduler: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                showErrorNotification('Error stopping scheduler: ' + error.message);
+            });
+        }
+
+        function checkSchedulerStatus() {
+            fetch('/api/scheduler-status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Scheduler status response:', data);
+                const status = data.status || 'unknown';
+                const statusBadge = document.getElementById('schedulerStatus');
+                
+                // Update status display
+                statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                statusBadge.className = status === 'running' ? 'badge bg-success' : 
+                                      status === 'stopped' ? 'badge bg-secondary' :
+                                      'badge bg-warning';
+                
+                // Update button visibility
+                const startBtn = document.getElementById('startSchedulerBtn');
+                const stopBtn = document.getElementById('stopSchedulerBtn');
+                
+                if (status === 'running') {
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'block';
+                } else {
+                    startBtn.style.display = 'block';
+                    stopBtn.style.display = 'none';
+                }
+                
+                // Update additional info if available
+                if (data.data) {
+                    const scheduleInfo = data.data;
+                    console.log('Scheduler details:', {
+                        running: scheduleInfo.scheduler_running,
+                        totalSchedules: scheduleInfo.total_schedules,
+                        activeSchedules: scheduleInfo.active_schedules,
+                        scheduledJobs: scheduleInfo.scheduled_jobs
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking scheduler status:', error);
+                const statusBadge = document.getElementById('schedulerStatus');
+                statusBadge.textContent = 'Error';
+                statusBadge.className = 'badge bg-danger';
+            });
+        }
+
+        function createSchedule() {
+            const jobName = document.getElementById('jobName').value.trim();
+            if (!jobName) {
+                showErrorNotification('Please enter a job name');
+                return;
+            }
+            
+            // Collect all form data including mining parameters
+            const scheduleData = {
+                // Basic schedule info
+                job_name: jobName,
+                job_description: document.getElementById('jobDescription').value.trim() || '',
+                schedule_type: document.getElementById('scheduleType').value,
+                schedule_time: document.getElementById('scheduleTime').value,
+                is_active: document.getElementById('isActive').value === 'true',
+                
+                // Mining parameters
+                min_support: parseFloat(document.getElementById('scheduleMinSupport').value),
+                min_confidence: parseFloat(document.getElementById('scheduleMinConfidence').value),
+                min_lift: parseFloat(document.getElementById('scheduleMinLift').value),
+                max_recommendations: parseInt(document.getElementById('scheduleMaxRecommendations').value),
+                decay_rate: parseFloat(document.getElementById('scheduleDecayRate').value),
+                output_table: document.getElementById('outputTable').value.trim() || 'sku_recommendations'
+            };
+            
+            console.log('Creating schedule with parameters:', scheduleData);
+            
+            fetch('/api/create-schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(scheduleData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification('Schedule created successfully with custom mining parameters!');
+                    resetScheduleForm();
+                    loadSchedules();
+                } else {
+                    showErrorNotification('Failed to create schedule: ' + (data.error || data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                showErrorNotification('Error creating schedule: ' + error.message);
+            });
+        }
+
+        function resetScheduleForm() {
+            // Reset basic fields
+            document.getElementById('jobName').value = '';
+            document.getElementById('jobDescription').value = '';
+            document.getElementById('scheduleType').value = 'daily';
+            document.getElementById('scheduleTime').value = '02:00';
+            document.getElementById('outputTable').value = 'sku_recommendations';
+            document.getElementById('isActive').value = 'true';
+            
+            // Reset mining parameters to defaults
+            document.getElementById('scheduleMinSupport').value = '0.300';
+            document.getElementById('scheduleMinConfidence').value = '0.300';
+            document.getElementById('scheduleMinLift').value = '1.0';
+            document.getElementById('scheduleMaxRecommendations').value = '10';
+            document.getElementById('scheduleDecayRate').value = '0.050';
+            
+            showSuccessNotification('Schedule form reset to default values');
+        }
+
+        function toggleScheduleDetails(elementId) {
+            const element = document.getElementById(elementId);
+            if (element.classList.contains('show')) {
+                element.classList.remove('show');
+            } else {
+                element.classList.add('show');
+            }
+        }
+
+        function loadSchedules() {
+            fetch('/api/schedules')
+            .then(response => response.json())
+            .then(data => {
+                const scheduleList = document.getElementById('scheduleList');
+                
+                if (data.schedules && data.schedules.length > 0) {
+                    let html = '<div class="list-group list-group-flush">';
+                    data.schedules.forEach(schedule => {
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <strong>${schedule.job_name}</strong>
+                                                <small class="text-muted d-block">${schedule.schedule_type.charAt(0).toUpperCase() + schedule.schedule_type.slice(1)} at ${schedule.schedule_time}</small>
+                                                <small class="text-muted d-block">Next run: ${schedule.next_run_at || 'Calculating...'}</small>
+                                                ${schedule.job_description ? `<small class="text-info d-block">${schedule.job_description}</small>` : ''}
+                                            </div>
+                                            <div>
+                                                <span class="badge bg-${schedule.is_active ? 'success' : 'secondary'} me-2">
+                                                    ${schedule.is_active ? 'Active' : 'Disabled'}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-info me-1" onclick="toggleScheduleDetails('details-${schedule.id}')" title="View Parameters">
+                                                    <i class="fas fa-cogs"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSchedule(${schedule.id})" title="Delete Schedule">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="details-${schedule.id}" class="collapse">
+                                            <div class="row g-2 mt-2 p-3 bg-light rounded">
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Min Support:</small>
+                                                    <div class="fw-bold">${schedule.min_support || 'N/A'}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Min Confidence:</small>
+                                                    <div class="fw-bold">${schedule.min_confidence || 'N/A'}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Min Lift:</small>
+                                                    <div class="fw-bold">${schedule.min_lift || 'N/A'}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted">Max Recommendations:</small>
+                                                    <div class="fw-bold">${schedule.max_recommendations || 'N/A'}</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">Decay Rate:</small>
+                                                    <div class="fw-bold">${schedule.decay_rate || 'N/A'}</div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted">Output Table:</small>
+                                                    <div class="fw-bold">${schedule.output_table || 'sku_recommendations'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    scheduleList.innerHTML = html;
+                } else {
+                    scheduleList.innerHTML = '<p class="text-muted text-center">No active schedules. Create one above.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading schedules:', error);
+            });
+        }
+
+        function loadJobLogs() {
+            fetch('/api/job-logs?limit=10')
+            .then(response => response.json())
+            .then(data => {
+                const jobLogsList = document.getElementById('jobLogsList');
+                
+                if (data.logs && data.logs.length > 0) {
+                    let html = '<div class="list-group list-group-flush">';
+                    data.logs.forEach(log => {
+                        const statusColor = log.execution_status === 'completed' ? 'success' : 
+                                           log.execution_status === 'running' ? 'primary' :
+                                           log.execution_status === 'failed' ? 'danger' : 'secondary';
+                        
+                        const executionTime = log.execution_time_seconds ? 
+                            `${log.execution_time_seconds}s` : 'N/A';
+                        
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">${log.job_name}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Started: ${log.started_at ? new Date(log.started_at).toLocaleString() : 'N/A'}
+                                            ${log.completed_at ? ` • Completed: ${new Date(log.completed_at).toLocaleString()}` : ''}
+                                        </p>
+                                        <small class="text-muted">
+                                            Rules: ${log.rules_generated || 0} • 
+                                            Records: ${log.records_processed || 0} • 
+                                            Time: ${executionTime}
+                                        </small>
+                                        ${log.error_message ? `<div class="text-danger small mt-1"><i class="fas fa-exclamation-triangle me-1"></i>${log.error_message}</div>` : ''}
+                                    </div>
+                                    <span class="badge bg-${statusColor}">
+                                        ${log.execution_status.charAt(0).toUpperCase() + log.execution_status.slice(1)}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    jobLogsList.innerHTML = html;
+                } else {
+                    jobLogsList.innerHTML = '<p class="text-muted text-center">No job executions yet.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading job logs:', error);
+                document.getElementById('jobLogsList').innerHTML = '<p class="text-danger text-center">Error loading job logs.</p>';
+            });
+        }
+
+        function deleteSchedule(scheduleId) {
+            console.log('Deleting schedule ID:', scheduleId);
+            if (confirm('Are you sure you want to delete this schedule?')) {
+                const deleteUrl = `/api/delete-schedule/${scheduleId}`;
+                console.log('Delete URL:', deleteUrl);
+                
+                fetch(deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    console.log('Delete response status:', response.status);
+                    console.log('Delete response headers:', response.headers.get('content-type'));
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP ${response.status}: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Delete response data:', data);
+                    if (data.success) {
+                        showSuccessNotification('Schedule deleted successfully!');
+                        loadSchedules();
+                    } else {
+                        showErrorNotification('Failed to delete schedule: ' + (data.error || data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Delete schedule error:', error);
+                    showErrorNotification('Error deleting schedule: ' + error.message);
+                });
+            }
+        }
+
+        // Results Management Functions
+        let allResults = [];
+
+        function displayResults(data) {
+            if (!data.rules || data.rules.length === 0) {
+                document.getElementById('resultsContainer').innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3"></i>
+                        <h4>No Association Rules Found</h4>
+                        <p>No rules met the specified criteria. Try adjusting your parameters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            allResults = data.rules;
+            currentResults = [...allResults];
+            
+            // Update statistics
+            updateResultsStats(data);
+            
+            // Show controls
+            document.getElementById('resultsStats').style.display = 'block';
+            document.getElementById('filterControls').style.display = 'block';
+            document.getElementById('exportBtn').style.display = 'inline-block';
+            document.getElementById('refreshBtn').style.display = 'inline-block';
+            
+            // Display results table
+            renderResultsTable();
+        }
+
+        function updateResultsStats(data) {
+            const stats = data.stats || {};
+            document.getElementById('totalRules').textContent = stats.total_rules || data.rules.length;
+            document.getElementById('totalSkus').textContent = stats.top_n_skus || 'N/A';
+            document.getElementById('totalOrders').textContent = stats.total_orders || 'N/A';
+            document.getElementById('miningDuration').textContent = stats.mining_duration || '0s';
+        }
+
+        function renderResultsTable() {
+            const container = document.getElementById('resultsContainer');
+            
+            if (currentResults.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-filter fa-4x mb-3"></i>
+                        <h4>No Rules Match Current Filters</h4>
+                        <p>Try adjusting your filter criteria to see more results.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i>#</th>
+                                <th><i class="fas fa-arrow-right me-1"></i>Antecedent (If)</th>
+                                <th><i class="fas fa-arrow-right me-1"></i>Consequent (Then)</th>
+                                <th><i class="fas fa-percentage me-1"></i>Support</th>
+                                <th><i class="fas fa-chart-line me-1"></i>Confidence</th>
+                                <th><i class="fas fa-arrow-up me-1"></i>Lift</th>
+                                <th><i class="fas fa-star me-1"></i>Score</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            currentResults.forEach((rule, index) => {
+                const confidenceClass = rule.confidence >= 0.8 ? 'text-success' : rule.confidence >= 0.5 ? 'text-warning' : 'text-danger';
+                const liftClass = rule.lift >= 2 ? 'text-success' : rule.lift >= 1.5 ? 'text-warning' : 'text-danger';
+                
+                tableHtml += `
+                    <tr>
+                        <td><strong>${index + 1}</strong></td>
+                        <td>
+                            <span class="badge bg-primary">${rule.sku1 || rule.antecedents}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success">${rule.sku2 || rule.consequents}</span>
+                        </td>
+                        <td><span class="badge bg-info">${(rule.support * 100).toFixed(2)}%</span></td>
+                        <td><span class="badge bg-warning ${confidenceClass}">${(rule.confidence * 100).toFixed(2)}%</span></td>
+                        <td><span class="badge bg-secondary ${liftClass}">${rule.lift.toFixed(2)}</span></td>
+                        <td><span class="badge bg-dark">${rule.score ? rule.score.toFixed(3) : 'N/A'}</span></td>
+                        <td>
+                            <button class="btn btn-outline-info btn-sm" onclick="showRuleDetails(${index})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = tableHtml;
+        }
+
+        function filterResults() {
+            const minSupport = parseFloat(document.getElementById('filterMinSupport').value) || 0;
+            const minConfidence = parseFloat(document.getElementById('filterMinConfidence').value) || 0;
+            
+            currentResults = allResults.filter(rule => 
+                rule.support >= minSupport && rule.confidence >= minConfidence
+            );
+            
+            // Apply current sort
+            sortResults();
+        }
+
+        function sortResults() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            currentResults.sort((a, b) => {
+                switch(sortBy) {
+                    case 'support': return b.support - a.support;
+                    case 'confidence': return b.confidence - a.confidence;
+                    case 'lift': return b.lift - a.lift;
+                    case 'score': return (b.score || 0) - (a.score || 0);
+                    default: return (b.score || 0) - (a.score || 0);
+                }
+            });
+            
+            // Apply current limit
+            limitResults();
+        }
+
+        function limitResults() {
+            const showTop = parseInt(document.getElementById('showTop').value);
+            const filteredResults = showTop === -1 ? [...currentResults] : currentResults.slice(0, showTop);
+            currentResults = filteredResults;
+            renderResultsTable();
+        }
+
+        function showRuleDetails(index) {
+            const rule = currentResults[index];
+            if (!rule) return;
+            
+            const modalHtml = `
+                <div class="modal fade" id="ruleDetailsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-info-circle me-2"></i>Rule Details
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Antecedent (If)</h6>
+                                        <p class="badge bg-primary fs-6">${rule.sku1 || rule.antecedents}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Consequent (Then)</h6>
+                                        <p class="badge bg-success fs-6">${rule.sku2 || rule.consequents}</p>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <h6>Support</h6>
+                                        <p>${(rule.support * 100).toFixed(2)}%</p>
+                                        <small class="text-muted">Frequency of itemset</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Confidence</h6>
+                                        <p>${(rule.confidence * 100).toFixed(2)}%</p>
+                                        <small class="text-muted">P(Consequent|Antecedent)</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Lift</h6>
+                                        <p>${rule.lift.toFixed(2)}</p>
+                                        <small class="text-muted">Strength of association</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Score</h6>
+                                        <p>${rule.score ? rule.score.toFixed(3) : 'N/A'}</p>
+                                        <small class="text-muted">Combined metric</small>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-lightbulb me-2"></i>Interpretation</h6>
+                                    <p class="mb-0">
+                                        When customers buy <strong>${rule.sku1 || rule.antecedents}</strong>, 
+                                        there's a <strong>${(rule.confidence * 100).toFixed(1)}%</strong> chance 
+                                        they will also buy <strong>${rule.sku2 || rule.consequents}</strong>.
+                                        This association is <strong>${rule.lift >= 2 ? 'very strong' : rule.lift >= 1.5 ? 'strong' : 'moderate'}</strong>
+                                        (lift = ${rule.lift.toFixed(2)}).
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('ruleDetailsModal');
+            if (existingModal) existingModal.remove();
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('ruleDetailsModal'));
+            modal.show();
+        }
+
+        function exportResults(format = 'csv') {
+            if (!currentResults || currentResults.length === 0) {
+                showWarningNotification('No results to export!');
+                return;
+            }
+            
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = `association_rules_${timestamp}.csv`;
+            
+            let csvContent = 'Antecedent,Consequent,Support,Confidence,Lift,Score\n';
+            
+            currentResults.forEach(rule => {
+                csvContent += `"${rule.sku1 || rule.antecedents}","${rule.sku2 || rule.consequents}",${rule.support},${rule.confidence},${rule.lift},${rule.score || ''}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showSuccessNotification(`Exported ${currentResults.length} rules to ${filename}`);
+        }
+
+        function refreshResults() {
+            if (!allResults || allResults.length === 0) {
+                showWarningNotification('No results to refresh!');
+                return;
+            }
+            
+            // Reset filters
+            document.getElementById('filterMinSupport').value = 0.01;
+            document.getElementById('filterMinConfidence').value = 0.1;
+            document.getElementById('sortBy').value = 'score';
+            document.getElementById('showTop').value = '20';
+            
+            // Reset current results
+            currentResults = [...allResults];
+            sortResults();
+            
+            showSuccessNotification('Results refreshed with default filters');
+        }
+
+        // Mining method toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCustomConfig();
+            loadSchedules();
+            loadJobLogs();
+            checkSchedulerStatus();
+            
+            // Toggle API options when mining method changes
+            const miningMethods = document.querySelectorAll('input[name="miningMethod"]');
+            miningMethods.forEach(method => {
+                method.addEventListener('change', function() {
+                    const apiOptions = document.getElementById('apiOptions');
+                    if (this.value === 'api') {
+                        apiOptions.style.display = 'block';
+                    } else {
+                        apiOptions.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Toggle enhanced method options
+            document.getElementById('useEnhanced').addEventListener('change', function() {
+                const methodSection = document.getElementById('methodSection');
+                methodSection.style.display = this.checked ? 'block' : 'none';
+            });
+
+            // Auto-refresh job logs and schedules every 30 seconds
+            setInterval(() => {
+                loadJobLogs();
+                checkSchedulerStatus();
+            }, 30000);
+        });
+
+        function simulateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressPercentage = document.getElementById('progressPercentage');
+            const progressMessage = document.getElementById('progressMessage');
+            
+            let progress = 0;
+            const messages = [
+                'Initializing mining process...',
+                'Loading transaction data...',
+                'Processing SKU relationships...',
+                'Calculating support values...',
+                'Generating association rules...',
+                'Filtering and ranking results...',
+                'Finalizing recommendations...'
+            ];
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 95) progress = 95;
+                
+                progressBar.style.width = progress + '%';
+                progressPercentage.textContent = Math.round(progress) + '%';
+                progressMessage.textContent = messages[Math.floor(progress / 15)] || 'Processing...';
+                
+                if (!miningInProgress || progress >= 95) {
+                    clearInterval(interval);
+                    progressBar.style.width = '100%';
+                    progressPercentage.textContent = '100%';
+                    progressMessage.textContent = 'Complete!';
+                }
+            }, 1000);
+        }
+
+        function cancelMining() {
+            miningInProgress = false;
+            const miningBtn = document.getElementById('miningBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const progressContainer = document.getElementById('miningProgress');
+            const statusElement = document.getElementById('miningStatus');
+            
+            miningBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'none';
+            progressContainer.style.display = 'none';
+            statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span><span>Mining cancelled</span>';
+        }
+
+        function displayResults(data) {
+            // Show statistics
+            const statsDiv = document.getElementById('resultsStats');
+            const filterDiv = document.getElementById('filterControls');
+            const exportBtn = document.getElementById('exportBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            
+            statsDiv.style.display = 'block';
+            filterDiv.style.display = 'block';
+            exportBtn.style.display = 'inline-block';
+            refreshBtn.style.display = 'inline-block';
+            
+            // Update statistics using the correct field names from the API
+            const stats = data.stats || {};
+            document.getElementById('totalRules').textContent = stats.total_rules || data.rules?.length || 0;
+            document.getElementById('totalSkus').textContent = stats.top_n_skus || 0;
+            document.getElementById('totalOrders').textContent = stats.total_orders || 0;
+            document.getElementById('miningDuration').textContent = stats.mining_duration || '0s';
+            
+            // Store results for filtering
+            currentResults = data.rules || [];
+            
+            // Display rules
+            displayRules(currentResults);
+        }
+
+        function displayRules(rules) {
+            const container = document.getElementById('resultsContainer');
+            
+            if (!rules || rules.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-exclamation-triangle fa-4x mb-3"></i>
+                        <h4>No association rules found</h4>
+                        <p>Try adjusting your parameters to find more associations.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="row">';
+            rules.forEach((rule, index) => {
+                // Use the correct field names from the API response
+                const antecedents = rule.sku1 || rule.antecedents || 'Unknown';
+                const consequents = rule.sku2 || rule.consequents || 'Unknown';
+                const support = rule.support || 0;
+                const confidence = rule.confidence || 0;
+                const lift = rule.lift || 0;
+                
+                const confidenceColor = confidence > 0.7 ? 'success' : confidence > 0.4 ? 'warning' : 'secondary';
+                const liftColor = lift > 1.5 ? 'success' : lift > 1.0 ? 'info' : 'secondary';
+                
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="rule-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">${antecedents} → ${consequents}</h6>
+                                <span class="badge bg-primary">#${index + 1}</span>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Support</small>
+                                    <div class="fw-bold">${(support * 100).toFixed(1)}%</div>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Confidence</small>
+                                    <div class="fw-bold text-${confidenceColor}">${(confidence * 100).toFixed(1)}%</div>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Lift</small>
+                                    <div class="fw-bold text-${liftColor}">${lift.toFixed(2)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function filterResults() {
+            const minSupport = parseFloat(document.getElementById('filterMinSupport').value) || 0;
+            const minConfidence = parseFloat(document.getElementById('filterMinConfidence').value) || 0;
+            
+            const filtered = currentResults.filter(rule => 
+                rule.support >= minSupport && rule.confidence >= minConfidence
+            );
+            
+            displayRules(filtered);
+        }
+
+        function sortResults() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            const sorted = [...currentResults].sort((a, b) => {
+                switch(sortBy) {
+                    case 'support': return b.support - a.support;
+                    case 'confidence': return b.confidence - a.confidence;
+                    case 'lift': return b.lift - a.lift;
+                    default: return (b.score || 0) - (a.score || 0);
+                }
+            });
+            
+            displayRules(sorted);
+        }
+
+        function limitResults() {
+            const limit = parseInt(document.getElementById('showTop').value);
+            const limited = limit === -1 ? currentResults : currentResults.slice(0, limit);
+            displayRules(limited);
+        }
+
+        function exportResults() {
+            if (currentResults.length === 0) {
+                showWarningNotification('No results to export. Run association mining first.');
+                return;
+            }
+            
+            try {
+                // Create CSV content using the correct field names
+                const headers = ['Antecedents', 'Consequents', 'Support', 'Confidence', 'Lift'];
+                const csvContent = [
+                    headers.join(','),
+                    ...currentResults.map(rule => [
+                        `"${rule.sku1 || rule.antecedents || 'Unknown'}"`,
+                        `"${rule.sku2 || rule.consequents || 'Unknown'}"`,
+                        (rule.support || 0).toFixed(4),
+                        (rule.confidence || 0).toFixed(4),
+                        (rule.lift || 0).toFixed(4)
+                    ].join(','))
+                ].join('\n');
+                
+                // Download CSV
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `association_rules_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showSuccessNotification(`Successfully exported ${currentResults.length} association rules to CSV file.`);
+            } catch (error) {
+                showErrorNotification('Failed to export results: ' + error.message);
+            }
+        }
+
+        function refreshResults() {
+            // Refresh by re-running the last mining operation
+            if (currentResults.length > 0) {
+                startMining();
+            }
+        }
+
+        // Enhanced Notification System
+        function showNotification(message, type = 'success', duration = 5000) {
+            // Remove any existing notifications
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+            
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="me-3">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'exclamation-triangle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideOut 0.3s ease-in';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, duration);
+        }
+
+        function showSuccessNotification(message, duration = 5000) {
+            showNotification(message, 'success', duration);
+        }
+
+        function showErrorNotification(message, duration = 7000) {
+            showNotification(message, 'error', duration);
+        }
+
+        function showWarningNotification(message, duration = 6000) {
+            showNotification(message, 'warning', duration);
+        }
+    </script>
+</body>
+</html>

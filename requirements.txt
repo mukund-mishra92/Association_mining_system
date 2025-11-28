@@ -12,3 +12,7 @@ flask>=3.0.0
 requests>=2.31.0
 apscheduler>=3.10.0
 pywin32>=306; sys_platform == 'win32'
+schedule>=1.2.0
+mysql-connector-python>=8.2.0
+psutil>=5.9.0
+scipy>=1.11.0

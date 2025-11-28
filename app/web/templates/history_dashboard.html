@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mining History & Analytics Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        .header-banner {
+            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-card.success { border-left-color: #00b894; }
+        .stats-card.info { border-left-color: #0984e3; }
+        .stats-card.warning { border-left-color: #fdcb6e; }
+        .stats-card.danger { border-left-color: #e17055; }
+        
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+            height: 400px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-completed { background: #d4edda; color: #155724; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .status-running { background: #d1ecf1; color: #0c5460; }
+        
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .performance-metric {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3436;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            color: #636e72;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            z-index: 1000;
+        }
+        
+        .job-details-modal .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .json-viewer {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="header-banner">
+            <i class="fas fa-chart-line me-2"></i>
+            Mining History & Performance Analytics Dashboard
+        </div>
+        
+        <!-- Navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="/" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Mining
+                        </a>
+                        <a href="/velocity-analysis" class="btn btn-outline-success me-2">
+                            <i class="fas fa-tachometer-alt me-1"></i>Velocity Analysis
+                        </a>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-warning me-2" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="showCleanupModal()">
+                            <i class="fas fa-trash me-1"></i>Cleanup Old Records
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info d-flex align-items-center" id="systemStatus">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span>Loading system status...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h5><i class="fas fa-filter me-2"></i>Filters & Controls</h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="periodSelect" class="form-label">Time Period</label>
+                    <select id="periodSelect" class="form-select" onchange="applyFilters()">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label">Job Status</label>
+                    <select id="statusFilter" class="form-select" onchange="applyFilters()">
+                        <option value="">All Statuses</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="running">Running</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="limitSelect" class="form-label">Records Limit</label>
+                    <select id="limitSelect" class="form-select" onchange="applyFilters()">
+                        <option value="50">50 records</option>
+                        <option value="100" selected>100 records</option>
+                        <option value="250">250 records</option>
+                        <option value="500">500 records</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" onclick="initializeHistoryTables()">
+                        <i class="fas fa-database me-1"></i>Initialize Tables
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="row" id="statsCards">
+            <!-- Stats cards will be populated here -->
+        </div>
+        
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="loading-overlay" id="jobTrendsLoading">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <h5><i class="fas fa-chart-line me-2"></i>Job Trends</h5>
+                    <canvas id="jobTrendsChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="loading-overlay" id="performanceLoading">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <h5><i class="fas fa-chart-bar me-2"></i>Performance Metrics</h5>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Job History Table -->
+        <div class="table-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5><i class="fas fa-history me-2"></i>Job History</h5>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">Page:</span>
+                    <button class="btn btn-sm btn-outline-secondary me-1" onclick="previousPage()" id="prevBtn">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="px-3" id="pageInfo">1</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="nextPage()" id="nextBtn">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Job ID</th>
+                            <th>Name</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Rules</th>
+                            <th>Started</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobHistoryTable">
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="mt-2">Loading job history...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Job Details Modal -->
+    <div class="modal fade job-details-modal" id="jobDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>Job Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="jobDetailsContent">
+                    <!-- Job details will be populated here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cleanup Modal -->
+    <div class="modal fade" id="cleanupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trash me-2"></i>Cleanup Old Records
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Remove job history records older than the specified number of days.</p>
+                    <div class="mb-3">
+                        <label for="cleanupDays" class="form-label">Days to keep:</label>
+                        <select id="cleanupDays" class="form-select">
+                            <option value="30">30 days</option>
+                            <option value="90" selected>90 days</option>
+                            <option value="180">180 days</option>
+                            <option value="365">365 days</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        This action cannot be undone. All related performance metrics and statistics will also be removed.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="performCleanup()">
+                        <i class="fas fa-trash me-1"></i>Delete Old Records
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentPage = 0;
+        let currentFilters = {
+            days: 30,
+            status: '',
+            limit: 100,
+            offset: 0
+        };
+        let jobTrendsChart = null;
+        let performanceChart = null;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemStatus();
+            loadDashboard();
+        });
+        
+        function checkSystemStatus() {
+            fetch('/api/history/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusElement = document.getElementById('systemStatus');
+                    
+                    if (data.history_tracking_available) {
+                        if (data.tables_status === 'ready') {
+                            statusElement.className = 'alert alert-success d-flex align-items-center';
+                            statusElement.innerHTML = `
+                                <i class="fas fa-check-circle me-2"></i>
+                                History tracking system is ready and operational
+                            `;
+                        } else {
+                            statusElement.className = 'alert alert-warning d-flex align-items-center';
+                            statusElement.innerHTML = `
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                History tracking available but tables need initialization: ${data.tables_status}
+                            `;
+                        }
+                    } else {
+                        statusElement.className = 'alert alert-danger d-flex align-items-center';
+                        statusElement.innerHTML = `
+                            <i class="fas fa-times-circle me-2"></i>
+                            History tracking system is not available
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking system status:', error);
+                    const statusElement = document.getElementById('systemStatus');
+                    statusElement.className = 'alert alert-danger d-flex align-items-center';
+                    statusElement.innerHTML = `
+                        <i class="fas fa-times-circle me-2"></i>
+                        Error checking system status: ${error.message}
+                    `;
+                });
+        }
+        
+        function loadDashboard() {
+            loadAnalytics();
+            loadJobHistory();
+        }
+        
+        function loadAnalytics() {
+            fetch(`/api/history/analytics?days=${currentFilters.days}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStatsCards(data.analytics);
+                        updateCharts(data.analytics);
+                    } else {
+                        showError('Failed to load analytics: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading analytics:', error);
+                    showError('Error loading analytics: ' + error.message);
+                });
+        }
+        
+        function updateStatsCards(analytics) {
+            const stats = analytics.job_statistics || {};
+            const cardsHtml = `
+                <div class="col-md-3">
+                    <div class="stats-card success">
+                        <div class="stats-number text-success">${stats.total_jobs || 0}</div>
+                        <div class="stats-label">Total Jobs</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card info">
+                        <div class="stats-number text-info">${stats.completed_jobs || 0}</div>
+                        <div class="stats-label">Completed Jobs</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card warning">
+                        <div class="stats-number text-warning">${Math.round((stats.avg_duration || 0) / 60)}s</div>
+                        <div class="stats-label">Avg Duration</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card danger">
+                        <div class="stats-number text-danger">${stats.total_rules_generated || 0}</div>
+                        <div class="stats-label">Total Rules Generated</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('statsCards').innerHTML = cardsHtml;
+        }
+        
+        function updateCharts(analytics) {
+            updateJobTrendsChart(analytics.daily_trends || []);
+            updatePerformanceChart(analytics.performance_metrics || {});
+        }
+        
+        function updateJobTrendsChart(dailyTrends) {
+            const ctx = document.getElementById('jobTrendsChart').getContext('2d');
+            
+            // Destroy existing chart
+            if (jobTrendsChart) {
+                jobTrendsChart.destroy();
+            }
+            
+            const labels = dailyTrends.map(day => day.job_date);
+            const totalJobs = dailyTrends.map(day => day.job_count);
+            const completedJobs = dailyTrends.map(day => day.completed_count);
+            
+            jobTrendsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Jobs',
+                        data: totalJobs,
+                        borderColor: '#0984e3',
+                        backgroundColor: 'rgba(9, 132, 227, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Completed Jobs',
+                        data: completedJobs,
+                        borderColor: '#00b894',
+                        backgroundColor: 'rgba(0, 184, 148, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('jobTrendsLoading').style.display = 'none';
+        }
+        
+        function updatePerformanceChart(performanceMetrics) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            // Destroy existing chart
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            
+            performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Avg CPU (%)', 'Avg Memory (MB)', 'Avg Confidence', 'Avg Support', 'Avg Lift'],
+                    datasets: [{
+                        label: 'Performance Metrics',
+                        data: [
+                            performanceMetrics.avg_cpu || 0,
+                            (performanceMetrics.avg_memory || 0) / 1000, // Convert to GB for display
+                            (performanceMetrics.avg_confidence || 0) * 100, // Convert to percentage
+                            (performanceMetrics.avg_support || 0) * 100, // Convert to percentage
+                            performanceMetrics.avg_lift || 0
+                        ],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.8)',
+                            'rgba(54, 162, 235, 0.8)',
+                            'rgba(255, 205, 86, 0.8)',
+                            'rgba(75, 192, 192, 0.8)',
+                            'rgba(153, 102, 255, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            document.getElementById('performanceLoading').style.display = 'none';
+        }
+        
+        function loadJobHistory() {
+            const params = new URLSearchParams({
+                limit: currentFilters.limit,
+                offset: currentFilters.offset,
+                days: currentFilters.days
+            });
+            
+            if (currentFilters.status) {
+                params.append('status', currentFilters.status);
+            }
+            
+            fetch(`/api/history/jobs?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateJobHistoryTable(data.jobs);
+                        updatePagination(data.pagination);
+                    } else {
+                        showError('Failed to load job history: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading job history:', error);
+                    showError('Error loading job history: ' + error.message);
+                });
+        }
+        
+        function updateJobHistoryTable(jobs) {
+            const tableBody = document.getElementById('jobHistoryTable');
+            
+            if (jobs.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x mb-2 text-muted"></i>
+                            <div>No jobs found for the selected criteria</div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            const rowsHtml = jobs.map(job => `
+                <tr>
+                    <td>
+                        <small class="font-monospace">${job.job_id}</small>
+                    </td>
+                    <td>${job.job_name || 'N/A'}</td>
+                    <td>
+                        <span class="badge bg-primary">${job.mining_method}</span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${job.status}">${job.status}</span>
+                    </td>
+                    <td>${formatDuration(job.duration_seconds)}</td>
+                    <td>${job.results_count || 0}</td>
+                    <td>${formatDate(job.start_time)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" onclick="showJobDetails('${job.job_id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            tableBody.innerHTML = rowsHtml;
+        }
+        
+        function showJobDetails(jobId) {
+            fetch(`/api/history/job/${jobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayJobDetails(data.job_details);
+                    } else {
+                        showError('Failed to load job details: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading job details:', error);
+                    showError('Error loading job details: ' + error.message);
+                });
+        }
+        
+        function displayJobDetails(jobDetails) {
+            const modal = new bootstrap.Modal(document.getElementById('jobDetailsModal'));
+            const content = document.getElementById('jobDetailsContent');
+            
+            const job = jobDetails.job_info || {};
+            const performance = jobDetails.performance_metrics || [];
+            const statistics = jobDetails.statistics || [];
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle me-2"></i>Job Information</h6>
+                        <table class="table table-sm">
+                            <tr><th>Job ID:</th><td class="font-monospace">${job.job_id}</td></tr>
+                            <tr><th>Name:</th><td>${job.job_name || 'N/A'}</td></tr>
+                            <tr><th>Method:</th><td>${job.mining_method}</td></tr>
+                            <tr><th>Status:</th><td><span class="status-badge status-${job.status}">${job.status}</span></td></tr>
+                            <tr><th>Started:</th><td>${formatDate(job.start_time)}</td></tr>
+                            <tr><th>Ended:</th><td>${job.end_time ? formatDate(job.end_time) : 'N/A'}</td></tr>
+                            <tr><th>Duration:</th><td>${formatDuration(job.duration_seconds)}</td></tr>
+                            <tr><th>Results:</th><td>${job.results_count || 0} rules</td></tr>
+                            <tr><th>User IP:</th><td>${job.user_ip || 'N/A'}</td></tr>
+                            <tr><th>Database:</th><td>${job.database_used || 'N/A'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chart-bar me-2"></i>Performance Metrics</h6>
+                        ${performance.length > 0 ? `
+                            <div class="row">
+                                ${performance.map(p => `
+                                    <div class="col-6 mb-2">
+                                        <div class="performance-metric">
+                                            <div class="metric-value">${p.cpu_usage_percent ? p.cpu_usage_percent.toFixed(1) + '%' : 'N/A'}</div>
+                                            <div class="metric-label">CPU Usage</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="performance-metric">
+                                            <div class="metric-value">${p.memory_usage_mb ? (p.memory_usage_mb/1024).toFixed(1) + 'GB' : 'N/A'}</div>
+                                            <div class="metric-label">Memory</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="performance-metric">
+                                            <div class="metric-value">${p.processing_time_ms ? p.processing_time_ms.toFixed(0) + 'ms' : 'N/A'}</div>
+                                            <div class="metric-label">Processing Time</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-2">
+                                        <div class="performance-metric">
+                                            <div class="metric-value">${p.rules_generated || 'N/A'}</div>
+                                            <div class="metric-label">Rules Generated</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="text-muted">No performance metrics available</p>'}
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6><i class="fas fa-cog me-2"></i>Job Parameters</h6>
+                        <div class="json-viewer">
+                            <pre>${JSON.stringify(job.parameters || {}, null, 2)}</pre>
+                        </div>
+                    </div>
+                </div>
+                
+                ${job.error_message ? `
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error Message</h6>
+                            <div class="alert alert-danger">
+                                ${job.error_message}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            modal.show();
+        }
+        
+        function applyFilters() {
+            currentFilters.days = parseInt(document.getElementById('periodSelect').value);
+            currentFilters.status = document.getElementById('statusFilter').value;
+            currentFilters.limit = parseInt(document.getElementById('limitSelect').value);
+            currentFilters.offset = 0;
+            currentPage = 0;
+            
+            loadDashboard();
+        }
+        
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                currentFilters.offset = currentPage * currentFilters.limit;
+                loadJobHistory();
+            }
+        }
+        
+        function nextPage() {
+            currentPage++;
+            currentFilters.offset = currentPage * currentFilters.limit;
+            loadJobHistory();
+        }
+        
+        function updatePagination(pagination) {
+            document.getElementById('pageInfo').textContent = currentPage + 1;
+            document.getElementById('prevBtn').disabled = currentPage === 0;
+            document.getElementById('nextBtn').disabled = pagination.count < currentFilters.limit;
+        }
+        
+        function refreshDashboard() {
+            loadDashboard();
+        }
+        
+        function initializeHistoryTables() {
+            fetch('/api/history/init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess('History tables initialized successfully!');
+                    checkSystemStatus();
+                } else {
+                    showError('Failed to initialize tables: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error initializing tables:', error);
+                showError('Error initializing tables: ' + error.message);
+            });
+        }
+        
+        function showCleanupModal() {
+            const modal = new bootstrap.Modal(document.getElementById('cleanupModal'));
+            modal.show();
+        }
+        
+        function performCleanup() {
+            const days = parseInt(document.getElementById('cleanupDays').value);
+            
+            fetch('/api/history/cleanup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days: days })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccess(data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('cleanupModal')).hide();
+                    loadDashboard();
+                } else {
+                    showError('Cleanup failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error during cleanup:', error);
+                showError('Error during cleanup: ' + error.message);
+            });
+        }
+        
+        function formatDuration(seconds) {
+            if (!seconds) return 'N/A';
+            if (seconds < 60) return `${seconds}s`;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}m ${remainingSeconds}s`;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+        
+        function showError(message) {
+            console.error(message);
+            // Could implement a toast notification system here
+            alert('Error: ' + message);
+        }
+        
+        function showSuccess(message) {
+            console.log(message);
+            // Could implement a toast notification system here
+            alert('Success: ' + message);
+        }
+    </script>
+</body>
+</html>
