@@ -29,6 +29,7 @@ if exist "venv\Scripts\activate.bat" (
 
 REM Uninstall the service
 echo.
+
 echo Uninstalling service...
 python windows_service.py remove
 
