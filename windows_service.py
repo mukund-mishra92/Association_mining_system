@@ -19,13 +19,15 @@ from pathlib import Path
 log_file = Path(__file__).parent / "logs" / "service.log"
 log_file.parent.mkdir(exist_ok=True)
 
+# Configure handlers with proper encoding
+file_handler = logging.FileHandler(log_file, encoding='utf-8')
+stream_handler = logging.StreamHandler()
+stream_handler.setStream(open(os.devnull, 'w'))  # Suppress console output for service
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, stream_handler]
 )
 logger = logging.getLogger(__name__)
 
@@ -42,9 +44,10 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
         self.stop_event = win32event.CreateEvent(None, 0, 0, None)
         self.running = True
         
-        # Get the project directory
+        # Get the project directory and Python executable
         self.project_dir = Path(__file__).parent
         self.python_exe = sys.executable
+        # Unified runner that starts/stops both servers identically for service and local
         self.run_script = self.project_dir / "run_servers.py"
         
     def SvcStop(self):
@@ -59,6 +62,9 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
         logger.info("="*60)
         logger.info("Association Mining Service Starting")
         logger.info("="*60)
+        
+        # Report that service is running IMMEDIATELY to avoid timeout
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         
         servicemanager.LogMsg(
             servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -109,11 +115,15 @@ class AssociationMiningService(win32serviceutil.ServiceFramework):
             logger.error(f"Failed to stop servers: {e.stderr.decode(errors='ignore')}")
         except Exception as e:
             logger.error(f"An unexpected error occurred during cleanup: {e}")
-            
         logger.info("Service cleanup complete")
 
 
 if __name__ == '__main__':
+    # Set Python path to use venv explicitly
+    venv_python = Path(__file__).parent / "venv" / "Scripts" / "python.exe"
+    if venv_python.exists():
+        sys.executable = str(venv_python)
+    
     if len(sys.argv) == 1:
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(AssociationMiningService)

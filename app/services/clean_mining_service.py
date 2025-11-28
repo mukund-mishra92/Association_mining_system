@@ -50,11 +50,12 @@ class CleanAssociationMiningService:
         
         return adaptive_support
     
-    def run_mining_pipeline(self, df_basket, timeout_minutes=20):
-        """Run the complete mining pipeline with timeout protection (default 20 minutes for batch processing)"""
+    def run_mining_pipeline(self, df_basket, timeout_minutes=None):
+        """Run the complete mining pipeline without timeout - will run until completion or error"""
         try:
             start_time = time.time()
-            timeout_seconds = timeout_minutes * 60
+            # No timeout limit - let the process run as long as needed
+            timeout_seconds = None if timeout_minutes is None else timeout_minutes * 60
             
             logger.info(f"Starting clean mining pipeline")
             logger.info(f"Input data shape: {df_basket.shape}")
@@ -82,9 +83,10 @@ class CleanAssociationMiningService:
                 logger.error("No transactions created")
                 return pd.DataFrame()
             
-            # Step 3: Mine association rules (NO TIMEOUT - runs until completion or error)
+            # Step 3: Mine association rules - runs until completion or error (no timeout)
             self._update_progress(60, "Mining association rules")
-            rules = self._mine_rules_with_timeout(transactions, timeout_seconds - (time.time() - start_time))
+            remaining_time = None if timeout_seconds is None else (timeout_seconds - (time.time() - start_time))
+            rules = self._mine_rules_with_timeout(transactions, remaining_time)
             
             if rules.empty:
                 logger.warning("No rules found")
