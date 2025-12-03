@@ -9,6 +9,7 @@ import os
 import time
 import logging
 from mlxtend.frequent_patterns import apriori, association_rules
+from app.shared.database.connection import DatabaseConnection
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -161,70 +162,37 @@ def test_server_connection():
         return False, str(e)
 
 def save_rules_to_database(user_config, rules_df):
-    """Save association rules to database"""
+    """Save association rules to database using DatabaseConnection class with filtering and decay"""
     try:
         logger = logging.getLogger(__name__)
         logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
         
-        # Connect to database
-        connection = pymysql.connect(
-            host=user_config['host'],
-            port=user_config.get('port', 3306),
-            user=user_config['user'],
-            password=user_config['password'],
-            database=user_config['database'],
-            charset='utf8mb4'
-        )
-        cursor = connection.cursor()
+        # Convert rules_df to the format expected by DatabaseConnection.save_recommendations
+        # Expected columns: main_item, recommended_item, composite_score
+        recommendations_df = pd.DataFrame({
+            'main_item': rules_df['sku1'],
+            'recommended_item': rules_df['sku2'],
+            'composite_score': rules_df['association_composite_score']
+        })
         
-        # First ensure the table exists with correct schema
-        table_name = user_config['recommendations_table']
+        # Use DatabaseConnection class which has filtering and decay logic
+        db = DatabaseConnection(custom_config=user_config)
+        db.connect()
         
-        # Create table if it doesn't exist (preserving existing data)
-        create_query = f"""
-        CREATE TABLE IF NOT EXISTS {table_name} (
-            SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
-            PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
-            CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
-            PROXIMITY_SCORE DECIMAL(10,3) NULL,
-            PRIMARY KEY (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID),
-            KEY SCORE_ID_INDEX (SCORE_ID)
-        )
-        """
-        cursor.execute(create_query)
-        logger.info(f"Table {table_name} ready")
+        # This will apply:
+        # 1. Filter invalid rules (MIN_SEGMENT_SIZE=1, food/non-food mix)
+        # 2. Upsert with GREATEST (keep best scores)
+        # 3. Apply decay to rules not in current generation
+        # Returns summary statistics dictionary
+        summary_stats = db.save_recommendations(recommendations_df)
         
-        # Prepare rules data for insertion
-        recommendations_data = []
-        for _, rule in rules_df.iterrows():
-            recommendations_data.append((
-                rule['sku1'],  # PARENT_ARTICLE_ID
-                rule['sku2'],  # CHILD_ARTICLE_ID
-                float(rule['association_composite_score'])  # PROXIMITY_SCORE
-            ))
+        db.disconnect()
         
-        # Upsert recommendations - insert new or update with higher score
-        insert_query = f"""
-        INSERT INTO {table_name} 
-        (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
-        VALUES (%s, %s, %s)
-        ON DUPLICATE KEY UPDATE
-            PROXIMITY_SCORE = GREATEST(VALUES(PROXIMITY_SCORE), PROXIMITY_SCORE)
-        """
-        
-        cursor.executemany(insert_query, recommendations_data)
-        connection.commit()
-        
-        logger.info(f"Successfully saved {len(recommendations_data)} recommendations to {table_name}")
-        
-        cursor.close()
-        connection.close()
-        
-        return True
+        return summary_stats
         
     except Exception as e:
         logger.error(f"Database save error: {e}")
-        return False
+        return None
 
 def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60, 
                            min_support=0.10, min_confidence=0.10, min_lift=1.0, 
@@ -365,9 +333,9 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
                     final_rules = final_rules.sort_values('association_composite_score', ascending=False)
                 
                 # Save to database
-                database_saved = False
+                db_save_summary = None
                 try:
-                    database_saved = save_rules_to_database(user_config, final_rules)
+                    db_save_summary = save_rules_to_database(user_config, final_rules)
                 except Exception as db_error:
                     print(f"Database save failed: {db_error}")
                 
@@ -384,7 +352,8 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
                     "top_n_skus": len(popular_sku_list),
                     "total_orders": df['ORDER_ID'].nunique(),
                     "csv_filename": csv_filename,
-                    "database_saved": database_saved,
+                    "database_saved": db_save_summary is not None,
+                    "database_summary": db_save_summary,  # Include detailed summary
                     "mining_duration": mining_duration,
                     "score_range": {
                         "min": float(final_rules['association_composite_score'].min()),
@@ -2584,9 +2553,37 @@ if __name__ == '__main__':
             // Show status
             const statusDiv = document.getElementById('mining-status');
             statusDiv.style.display = 'block';
-            statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Starting mining operation...</div>';
+            statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Updating configuration...</div>';
 
-            if (miningMethod === 'direct') {
+            // First, update the server's database configuration with the current UI values
+            const configUpdate = {
+                host: document.getElementById('customDbHost').value,
+                port: parseInt(document.getElementById('customDbPort').value),
+                user: document.getElementById('customDbUser').value,
+                password: document.getElementById('customDbPassword').value,
+                database: document.getElementById('customDbName').value,
+                order_table: document.getElementById('customOrderTable').value,
+                sku_master_table: document.getElementById('customSkuTable').value,
+                recommendations_table: document.getElementById('customRulesTable').value
+            };
+
+            // Update server config first, then start mining
+            fetch('/api/db-config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(configUpdate)
+            })
+            .then(response => response.json())
+            .then(configResult => {
+                if (!configResult.success) {
+                    statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error updating config: ' + configResult.error + '</div>';
+                    return;
+                }
+                
+                // Config updated successfully, now start mining
+                statusDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>Starting mining operation...</div>';
+                
+                if (miningMethod === 'direct') {
                 // Direct mining
                 fetch('/api/mine-direct', {
                     method: 'POST',
@@ -2600,7 +2597,27 @@ if __name__ == '__main__':
                 .then(data => {
                     if (data.success) {
                         displayResults(data.stats, data.rules);
-                        statusDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check me-2"></i>Mining completed successfully!</div>';
+                        
+                        // Build success message with database summary
+                        let successMessage = '<div class="alert alert-success"><i class="fas fa-check me-2"></i><strong>Mining completed successfully!</strong><br><br>';
+                        
+                        if (data.stats && data.stats.database_summary) {
+                            const summary = data.stats.database_summary;
+                            successMessage += '<div style="font-family: monospace; background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 10px;">';
+                            successMessage += '<strong>RULE GENERATION SUMMARY:</strong><br>';
+                            successMessage += `  Total Rules Generated: ${summary.total_generated}<br>`;
+                            successMessage += `  Valid Rules (after filtering): ${summary.valid_after_filtering}<br>`;
+                            successMessage += `  Rules Written to Database: ${summary.total_written}<br>`;
+                            successMessage += `    - New Inserts: ${summary.new_inserts}<br>`;
+                            successMessage += `    - Updated Existing: ${summary.updated_existing}<br>`;
+                            successMessage += `    - Skipped (existing score was higher): ${summary.skipped_existing_higher}<br>`;
+                            successMessage += `  Rules Decayed (not in current generation): ${summary.decayed_not_in_current}<br>`;
+                            successMessage += `  Target Table: ${summary.target_table}`;
+                            successMessage += '</div>';
+                        }
+                        
+                        successMessage += '</div>';
+                        statusDiv.innerHTML = successMessage;
                     } else {
                         statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ' + data.error + '</div>';
                     }
@@ -2653,6 +2670,11 @@ if __name__ == '__main__':
                     statusDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error: ' + error + '</div>';
                 });
             }
+        })
+        .catch(error => {
+            hideProgressBar();
+            alert('Failed to update database configuration: ' + error);
+        });
         }
 
         function showProgressBar() {
