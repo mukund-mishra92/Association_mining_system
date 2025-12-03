@@ -180,13 +180,9 @@ def save_rules_to_database(user_config, rules_df):
         # First ensure the table exists with correct schema
         table_name = user_config['recommendations_table']
         
-        # Drop and recreate table to ensure correct schema
-        drop_query = f"DROP TABLE IF EXISTS {table_name}"
-        cursor.execute(drop_query)
-        logger.info(f"Recreated table: {table_name}")
-        
+        # Create table if it doesn't exist (preserving existing data)
         create_query = f"""
-        CREATE TABLE {table_name} (
+        CREATE TABLE IF NOT EXISTS {table_name} (
             SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
             PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
             CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
@@ -196,6 +192,7 @@ def save_rules_to_database(user_config, rules_df):
         )
         """
         cursor.execute(create_query)
+        logger.info(f"Table {table_name} ready")
         
         # Prepare rules data for insertion
         recommendations_data = []
@@ -206,11 +203,13 @@ def save_rules_to_database(user_config, rules_df):
                 float(rule['association_composite_score'])  # PROXIMITY_SCORE
             ))
         
-        # Insert recommendations
+        # Upsert recommendations - insert new or update with higher score
         insert_query = f"""
         INSERT INTO {table_name} 
         (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
         VALUES (%s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            PROXIMITY_SCORE = GREATEST(VALUES(PROXIMITY_SCORE), PROXIMITY_SCORE)
         """
         
         cursor.executemany(insert_query, recommendations_data)
@@ -227,7 +226,7 @@ def save_rules_to_database(user_config, rules_df):
         logger.error(f"Database save error: {e}")
         return False
 
-def generate_rules_top_skus(user_config=None, top_n=2000, days_back=60, 
+def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60, 
                            min_support=0.10, min_confidence=0.10, min_lift=1.0, 
                            max_recommendations=10, decay_rate=0.05):
     """
@@ -251,27 +250,49 @@ def generate_rules_top_skus(user_config=None, top_n=2000, days_back=60,
             charset='utf8mb4'
         )
         
-        # Get top N most popular SKUs
-        popularity_query = f"""
-        SELECT 
-            s.SKU_NAME,
-            COUNT(DISTINCT o.ORDER_ID) as order_count
-        FROM {user_config['order_table']} o
-        JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
-        WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
-        AND s.SKU_NAME IS NOT NULL
-        GROUP BY s.SKU_NAME
-        HAVING order_count >= 10
-        ORDER BY order_count DESC
-        LIMIT {top_n}
-        """
+        
+        # Get ALL unique SKUs (no top N limit) or popular ones based on top_n parameter
+        if top_n >= 10000:  # Use this as a signal to include ALL SKUs
+            popularity_query = f"""
+            SELECT DISTINCT
+                s.SKU_NAME,
+                COUNT(DISTINCT o.ORDER_ID) as order_count
+            FROM {user_config['order_table']} o
+            JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
+            WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
+            AND s.SKU_NAME IS NOT NULL
+            GROUP BY s.SKU_NAME
+            HAVING order_count >= 1
+            ORDER BY order_count DESC
+            """
+        else:
+            # Original behavior: limit to top N popular SKUs
+            popularity_query = f"""
+            SELECT 
+                s.SKU_NAME,
+                COUNT(DISTINCT o.ORDER_ID) as order_count
+            FROM {user_config['order_table']} o
+            JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
+            WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
+            AND s.SKU_NAME IS NOT NULL
+            GROUP BY s.SKU_NAME
+            HAVING order_count >= 5
+            ORDER BY order_count DESC
+            LIMIT {top_n}
+            """
         
         popular_skus_df = pd.read_sql(popularity_query, conn)
         popular_sku_list = popular_skus_df['SKU_NAME'].tolist()
         
         if not popular_sku_list:
             conn.close()
-            return {"error": "No popular SKUs found"}, None
+            return {"error": "No SKUs found with orders in the specified time period"}, None
+        
+        # Log the SKU selection approach
+        if top_n >= 10000:
+            print(f"ℹ️ Using ALL {len(popular_sku_list)} unique SKUs from {user_config['order_table']} (no top-N limit)")
+        else:
+            print(f"ℹ️ Using top {len(popular_sku_list)} SKUs out of {top_n} requested from {user_config['order_table']}")
         
         # Load data for these SKUs using parameterized query
         placeholders = ','.join(['%s'] * len(popular_sku_list))
@@ -379,8 +400,8 @@ def generate_rules_top_skus(user_config=None, top_n=2000, days_back=60,
         return {"error": str(e)}, None
 
 def direct_mining(user_config=None, days_back=30):
-    """Direct mining without API - updated to use user configuration"""
-    return generate_rules_top_skus(user_config, top_n=20, days_back=days_back)
+    """Direct mining without API - updated to use user configuration and all available SKUs"""
+    return generate_rules_top_skus(user_config, top_n=10000, days_back=days_back)
 
 @app.route('/')
 def index():
@@ -836,7 +857,7 @@ def mine_direct():
     """Direct mining endpoint using user-defined database configuration"""
     data = request.get_json()
     days_back = data.get('days_back', 60)
-    top_skus = data.get('top_skus', 20)
+    top_skus = data.get('top_skus', 10000)  # Default to all SKUs
     
     # Extract algorithm parameters
     algorithm_params = {
@@ -1011,7 +1032,7 @@ def mine_api():
     
     # Extract parameters
     days_back = data.get('days_back', 60)
-    top_skus = data.get('top_skus', 20)
+    top_skus = data.get('top_skus', 10000)  # Default to all SKUs
     enhanced = data.get('enhanced', False)
     time_method = data.get('time_method', 'exponential_decay')
     
@@ -2337,8 +2358,16 @@ if __name__ == '__main__':
                                 <input type="number" class="form-control" id="daysBack" value="60" min="1" max="365">
                             </div>
                             <div class="col-md-6">
-                                <label for="topSkus" class="form-label">Top SKUs</label>
-                                <input type="number" class="form-control" id="topSkus" value="20" min="5" max="100">
+                                <label for="topSkus" class="form-label">SKU Selection</label>
+                                <select class="form-select" id="topSkus" onchange="toggleSkuInput()">
+                                    <option value="20">Top 20 SKUs</option>
+                                    <option value="50">Top 50 SKUs</option>
+                                    <option value="100">Top 100 SKUs</option>
+                                    <option value="500">Top 500 SKUs</option>
+                                    <option value="10000" selected>All Available SKUs</option>
+                                    <option value="custom">Custom Number</option>
+                                </select>
+                                <input type="number" class="form-control mt-2" id="customSkuCount" value="20" min="5" max="10000" style="display: none;">
                             </div>
                         </div>
 
@@ -2528,10 +2557,29 @@ if __name__ == '__main__':
                 });
         }
 
+        function toggleSkuInput() {
+            const topSkusSelect = document.getElementById('topSkus');
+            const customSkuInput = document.getElementById('customSkuCount');
+            
+            if (topSkusSelect.value === 'custom') {
+                customSkuInput.style.display = 'block';
+            } else {
+                customSkuInput.style.display = 'none';
+            }
+        }
+
         function startMining() {
             const miningMethod = document.querySelector('input[name="miningMethod"]:checked').value;
             const daysBack = parseInt(document.getElementById('daysBack').value);
-            const topSkus = parseInt(document.getElementById('topSkus').value);
+            
+            // Get SKU count from dropdown or custom input
+            const topSkusSelect = document.getElementById('topSkus');
+            let topSkus;
+            if (topSkusSelect.value === 'custom') {
+                topSkus = parseInt(document.getElementById('customSkuCount').value);
+            } else {
+                topSkus = parseInt(topSkusSelect.value);
+            }
             
             // Show status
             const statusDiv = document.getElementById('mining-status');

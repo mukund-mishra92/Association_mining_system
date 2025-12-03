@@ -77,28 +77,48 @@ class DatabaseConnection:
             max_items = max_items or config.MAX_ITEMS
             min_item_frequency = min_item_frequency or config.MIN_ITEM_FREQUENCY
             
-            # Step 1: Find top N most frequent items
-            logger.info(f"Finding top {max_items} items with minimum {min_item_frequency} orders...")
-            
-            freq_query = f"""
-            SELECT 
-                o.ARTICLE_ID,
-                COUNT(DISTINCT o.ORDER_ID) as order_count,
-                COUNT(*) as total_quantity
-            FROM {self.order_table} o
-            JOIN {self.sku_master_table} s ON o.ARTICLE_ID = s.SKU_ID
-            WHERE s.SKU_NAME IS NOT NULL
-            """
-            
-            if days_back:
-                freq_query += f" AND o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)"
-            
-            freq_query += f"""
-            GROUP BY o.ARTICLE_ID
-            HAVING order_count >= {min_item_frequency}
-            ORDER BY order_count DESC, total_quantity DESC
-            LIMIT {max_items}
-            """
+            # Step 1: Find items - all unique SKUs if max_items >= 10000, otherwise top N
+            if max_items >= 10000:
+                logger.info(f"Including ALL unique SKUs with minimum {min_item_frequency} orders (no limit)...")
+                freq_query = f"""
+                SELECT DISTINCT
+                    o.ARTICLE_ID,
+                    COUNT(DISTINCT o.ORDER_ID) as order_count,
+                    COUNT(*) as total_quantity
+                FROM {self.order_table} o
+                JOIN {self.sku_master_table} s ON o.ARTICLE_ID = s.SKU_ID
+                WHERE s.SKU_NAME IS NOT NULL
+                """
+                
+                if days_back:
+                    freq_query += f" AND o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)"
+                
+                freq_query += f"""
+                GROUP BY o.ARTICLE_ID
+                HAVING order_count >= {min_item_frequency}
+                ORDER BY order_count DESC, total_quantity DESC
+                """
+            else:
+                logger.info(f"Finding top {max_items} items with minimum {min_item_frequency} orders...")
+                freq_query = f"""
+                SELECT 
+                    o.ARTICLE_ID,
+                    COUNT(DISTINCT o.ORDER_ID) as order_count,
+                    COUNT(*) as total_quantity
+                FROM {self.order_table} o
+                JOIN {self.sku_master_table} s ON o.ARTICLE_ID = s.SKU_ID
+                WHERE s.SKU_NAME IS NOT NULL
+                """
+                
+                if days_back:
+                    freq_query += f" AND o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)"
+                
+                freq_query += f"""
+                GROUP BY o.ARTICLE_ID
+                HAVING order_count >= {min_item_frequency}
+                ORDER BY order_count DESC, total_quantity DESC
+                LIMIT {max_items}
+                """
             
             # Get top items
             top_items_df = pd.read_sql(freq_query, self.connection)
@@ -159,9 +179,8 @@ class DatabaseConnection:
             # Ensure the recommendations table exists
             self._ensure_recommendations_table_exists()
             
-            # Clear existing recommendations
-            self.cursor.execute(f"DELETE FROM {self.recommendations_table}")
-            logger.info("Cleared existing recommendations")
+            # No longer clearing existing recommendations - using upsert instead
+            # This preserves existing rules and only updates when we get better scores
             
             # Sort recommendations by composite_score descending (highest scores first)
             recommendations_df_sorted = recommendations_df.sort_values('composite_score', ascending=False).reset_index(drop=True)
@@ -181,14 +200,17 @@ class DatabaseConnection:
                 normalized_scores = (0.001 + (scores - min_score) / (max_score - min_score) * 0.998).tolist()
                 logger.info(f"Normalized scores: {min_score:.3f}-{max_score:.3f} to 0.001-0.999")
             
-            # Insert new recommendations using your simplified schema with duplicate handling
+            # Upsert recommendations - insert new or update existing with higher score
             insert_query = f"""
-            INSERT IGNORE INTO {self.recommendations_table} 
+            INSERT INTO {self.recommendations_table} 
             (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
             VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                PROXIMITY_SCORE = GREATEST(VALUES(PROXIMITY_SCORE), PROXIMITY_SCORE)
             """
             
             inserted_count = 0
+            updated_count = 0
             for idx, (_, row) in enumerate(recommendations_df_sorted.iterrows()):
                 try:
                     self.cursor.execute(insert_query, (
@@ -196,14 +218,20 @@ class DatabaseConnection:
                         row['recommended_item'],       # CHILD_ARTICLE_ID - now using SKU ID instead of name
                         float(normalized_scores[idx])  # NORMALIZED PROXIMITY_SCORE (0.001-0.999)
                     ))
-                    if self.cursor.rowcount > 0:  # Only count actual insertions
+                    # rowcount is 1 for insert, 2 for update with change, 0 for no change
+                    if self.cursor.rowcount == 1:
                         inserted_count += 1
+                    elif self.cursor.rowcount == 2:
+                        updated_count += 1
                 except Exception as e:
                     logger.error(f"Error inserting row: {e}")
                     continue
             
             self.connection.commit()
-            logger.info(f"Successfully saved {inserted_count} recommendations to database")
+            logger.info(
+                f"Successfully processed {len(recommendations_df_sorted)} recommendations"
+                f" (inserted={inserted_count}, updated={updated_count}, skipped={len(recommendations_df_sorted) - inserted_count - updated_count})"
+            )
             return True
             
         except pymysql.MySQLError as e:
@@ -245,14 +273,9 @@ class DatabaseConnection:
         try:
             logger.info(f"Creating/ensuring recommendations table exists: {self.recommendations_table}")
             
-            # Drop existing table to ensure correct schema
-            drop_table_query = f"DROP TABLE IF EXISTS {self.recommendations_table}"
-            self.cursor.execute(drop_table_query)
-            logger.info(f"Dropped existing table {self.recommendations_table}")
-            
-            # Create table with SKU ID schema
+            # Create table with SKU ID schema if it doesn't exist
             create_table_query = f"""
-            CREATE TABLE {self.recommendations_table} (
+            CREATE TABLE IF NOT EXISTS {self.recommendations_table} (
                 SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
                 PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
                 CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
@@ -262,7 +285,7 @@ class DatabaseConnection:
             )
             """
             self.cursor.execute(create_table_query)
-            logger.info(f"Created table {self.recommendations_table} with SKU ID schema")
+            logger.info(f"Table {self.recommendations_table} ready with SKU ID schema")
         except pymysql.MySQLError as e:
             logger.error(f"Error creating recommendations table: {e}")
             raise

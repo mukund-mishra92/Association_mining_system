@@ -85,7 +85,7 @@ running_service.txt
 # results/
 # output/
 # recommendations/
-# *.csv
+*.csv
 # *.json
 
 # OS generated files
