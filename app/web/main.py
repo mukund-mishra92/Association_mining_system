@@ -165,6 +165,15 @@ def save_rules_to_database(user_config, rules_df):
     """Save association rules to database using DatabaseConnection class with filtering and decay"""
     try:
         logger = logging.getLogger(__name__)
+        
+        # Debug logging - track what config is received
+        logger.info("=" * 80)
+        logger.info("SAVE_RULES_TO_DATABASE - Config Debugging:")
+        logger.info(f"  User config keys: {list(user_config.keys())}")
+        logger.info(f"  Recommendations table from config: {user_config.get('recommendations_table', 'KEY_NOT_FOUND')}")
+        logger.info(f"  Full user_config: {user_config}")
+        logger.info("=" * 80)
+        
         logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
         
         # Convert rules_df to the format expected by DatabaseConnection.save_recommendations
@@ -176,6 +185,7 @@ def save_rules_to_database(user_config, rules_df):
         })
         
         # Use DatabaseConnection class which has filtering and decay logic
+        logger.info(f"Creating DatabaseConnection with custom_config (recommendations_table={user_config.get('recommendations_table')})")
         db = DatabaseConnection(custom_config=user_config)
         db.connect()
         
@@ -574,6 +584,14 @@ def handle_db_config():
         try:
             data = request.get_json()
             
+            # Debug logging - track incoming config update
+            logger.info("=" * 80)
+            logger.info("DB CONFIG UPDATE REQUEST:")
+            logger.info(f"  Incoming data: {data}")
+            logger.info(f"  Recommendations table in request: {data.get('recommendations_table', 'NOT_PROVIDED')}")
+            logger.info(f"  Current USER_DB_CONFIG before update: {USER_DB_CONFIG.get('recommendations_table', 'NOT_SET')}")
+            logger.info("=" * 80)
+            
             # Update global configuration
             USER_DB_CONFIG.update({
                 'host': data.get('host', 'localhost'),
@@ -586,7 +604,11 @@ def handle_db_config():
                 'recommendations_table': data.get('recommendations_table', 'sku_recommendations')
             })
             
-            logger.info(f"Database configuration updated - recommendations table: {USER_DB_CONFIG['recommendations_table']}")
+            logger.info("=" * 80)
+            logger.info("DB CONFIG AFTER UPDATE:")
+            logger.info(f"  USER_DB_CONFIG recommendations_table: {USER_DB_CONFIG['recommendations_table']}")
+            logger.info(f"  Full USER_DB_CONFIG: {USER_DB_CONFIG}")
+            logger.info("=" * 80)
             
             return jsonify({
                 "success": True,
@@ -824,6 +846,7 @@ def test_connection():
 @app.route('/api/mine-direct', methods=['POST'])
 def mine_direct():
     """Direct mining endpoint using user-defined database configuration"""
+    logger = logging.getLogger(__name__)
     data = request.get_json()
     days_back = data.get('days_back', 60)
     top_skus = data.get('top_skus', 10000)  # Default to all SKUs
@@ -836,6 +859,13 @@ def mine_direct():
         'max_recommendations': data.get('max_recommendations', 10),
         'decay_rate': data.get('decay_rate', 0.05)
     }
+    
+    # Debug logging - track what config is being used for mining
+    logger.info("=" * 80)
+    logger.info("DIRECT MINING STARTED:")
+    logger.info(f"  USER_DB_CONFIG recommendations_table: {USER_DB_CONFIG.get('recommendations_table', 'NOT_SET')}")
+    logger.info(f"  Mining parameters: days_back={days_back}, top_skus={top_skus}")
+    logger.info("=" * 80)
     
     # Generate unique job ID
     job_id = f"direct_mining_{int(time.time())}"

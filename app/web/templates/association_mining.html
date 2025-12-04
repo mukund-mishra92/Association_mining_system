@@ -801,8 +801,8 @@
                 password: document.getElementById('customDbPassword').value,
                 database: document.getElementById('customDbName').value,
                 order_table: document.getElementById('customOrderTable').value,
-                sku_table: document.getElementById('customSkuTable').value,
-                rules_table: document.getElementById('customRulesTable').value,
+                sku_master_table: document.getElementById('customSkuTable').value,
+                recommendations_table: document.getElementById('customRulesTable').value,
                 history_table: document.getElementById('customHistoryTable').value,
                 stats_table: document.getElementById('customStatsTable').value
             };
@@ -822,8 +822,8 @@
                 document.getElementById('customDbPassword').value = config.password || '';
                 document.getElementById('customDbName').value = config.database || 'neo';
                 document.getElementById('customOrderTable').value = config.order_table || 'wms_to_wcs_order_line_request_data';
-                document.getElementById('customSkuTable').value = config.sku_table || 'sku_master';
-                document.getElementById('customRulesTable').value = config.rules_table || 'sku_recommendations';
+                document.getElementById('customSkuTable').value = config.sku_master_table || 'sku_master';
+                document.getElementById('customRulesTable').value = config.recommendations_table || 'sku_recommendations';
                 document.getElementById('customHistoryTable').value = config.history_table || 'mining_history';
                 document.getElementById('customStatsTable').value = config.stats_table || 'mining_statistics';
             }
@@ -848,7 +848,7 @@
                     database: document.getElementById('customDbName').value,
                     order_table: document.getElementById('customOrderTable').value,
                     sku_master_table: document.getElementById('customSkuTable').value,
-                    rules_table: document.getElementById('customRulesTable').value,
+                    recommendations_table: document.getElementById('customRulesTable').value,
                     history_table: document.getElementById('customHistoryTable').value,
                     stats_table: document.getElementById('customStatsTable').value
                 };
@@ -955,7 +955,7 @@
                     database: document.getElementById('customDbName').value,
                     order_table: document.getElementById('customOrderTable').value,
                     sku_master_table: document.getElementById('customSkuTable').value,
-                    rules_table: document.getElementById('customRulesTable').value
+                    recommendations_table: document.getElementById('customRulesTable').value
                 };
             }
             
