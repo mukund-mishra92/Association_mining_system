@@ -233,13 +233,13 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
         if top_n >= 10000:  # Use this as a signal to include ALL SKUs
             popularity_query = f"""
             SELECT DISTINCT
-                s.SKU_NAME,
+                s.SKU_ID,
                 COUNT(DISTINCT o.ORDER_ID) as order_count
             FROM {user_config['order_table']} o
             JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
             WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
-            AND s.SKU_NAME IS NOT NULL
-            GROUP BY s.SKU_NAME
+            AND s.SKU_ID IS NOT NULL
+            GROUP BY s.SKU_ID
             HAVING order_count >= 1
             ORDER BY order_count DESC
             """
@@ -247,20 +247,20 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
             # Original behavior: limit to top N popular SKUs
             popularity_query = f"""
             SELECT 
-                s.SKU_NAME,
+                s.SKU_ID,
                 COUNT(DISTINCT o.ORDER_ID) as order_count
             FROM {user_config['order_table']} o
             JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
             WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
-            AND s.SKU_NAME IS NOT NULL
-            GROUP BY s.SKU_NAME
+            AND s.SKU_ID IS NOT NULL
+            GROUP BY s.SKU_ID
             HAVING order_count >= 5
             ORDER BY order_count DESC
             LIMIT {top_n}
             """
         
         popular_skus_df = pd.read_sql(popularity_query, conn)
-        popular_sku_list = popular_skus_df['SKU_NAME'].tolist()
+        popular_sku_list = popular_skus_df['SKU_ID'].tolist()
         
         if not popular_sku_list:
             conn.close()
@@ -277,12 +277,12 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
         main_query = f"""
         SELECT 
             o.ORDER_ID,
-            s.SKU_NAME,
+            s.SKU_ID,
             DATEDIFF(CURDATE(), DATE(o.INSERTED_TIMESTAMP)) as days_ago
         FROM {user_config['order_table']} o
         JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
         WHERE o.INSERTED_TIMESTAMP >= DATE_SUB(CURDATE(), INTERVAL {days_back} DAY)
-        AND s.SKU_NAME IN ({placeholders})
+        AND s.SKU_ID IN ({placeholders})
         """
         
         df = pd.read_sql(main_query, conn, params=popular_sku_list)
@@ -295,10 +295,10 @@ def generate_rules_top_skus(user_config=None, top_n=10000, days_back=60,
         df['weight'] = np.exp(-df['days_ago'] / (30 / decay_rate))
         
         # Create market basket (simple binary)
-        basket = df.groupby(['ORDER_ID', 'SKU_NAME'])['weight'].sum().reset_index()
+        basket = df.groupby(['ORDER_ID', 'SKU_ID'])['weight'].sum().reset_index()
         basket_matrix = basket.pivot_table(
             index='ORDER_ID', 
-            columns='SKU_NAME', 
+            columns='SKU_ID', 
             values='weight', 
             fill_value=0
         )
