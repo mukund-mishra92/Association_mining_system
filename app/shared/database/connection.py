@@ -517,79 +517,148 @@ class DatabaseConnection:
             logger.exception("Full traceback:")
             return 0
 
+    # def _filter_invalid_rules(self, recommendations_df):
+    #     """
+    #     Filter out invalid rules based on business logic:
+    #     1. Remove rules where either SKU has MIN_SEGMENT_SIZE = 1
+    #     2. Remove rules where one SKU is food (CATEGORY_ID=35) and other is non-food (CATEGORY_ID=1)
+    #     """
+    #     try:
+    #         if len(recommendations_df) == 0:
+    #             return recommendations_df
+            
+    #         initial_count = len(recommendations_df)
+            
+    #         # Get all unique SKU IDs from the recommendations
+    #         all_sku_ids = set(recommendations_df['main_item'].unique()) | set(recommendations_df['recommended_item'].unique())
+    #         sku_ids_str = ','.join([f"'{sku_id}'" for sku_id in all_sku_ids])
+            
+    #         # Fetch SKU metadata from sku_master table
+    #         sku_metadata_query = f"""
+    #         SELECT 
+    #             SKU_ID,
+    #             MIN_SEGMENT_SIZE,
+    #             CATEGORY
+    #         FROM {self.sku_master_table}
+    #         WHERE SKU_ID IN ({sku_ids_str})
+    #         """
+            
+    #         sku_metadata_df = pd.read_sql(sku_metadata_query, self.connection)
+            
+    #         # Create lookup dictionaries
+    #         min_segment_size_lookup = dict(zip(sku_metadata_df['SKU_ID'], sku_metadata_df['MIN_SEGMENT_SIZE']))
+    #         category_id_lookup = dict(zip(sku_metadata_df['SKU_ID'], sku_metadata_df['CATEGORY']))
+            
+    #         # Filter 1: Remove rules where either SKU has MIN_SEGMENT_SIZE = 1
+    #         def is_valid_segment_size(row):
+    #             parent_segment = min_segment_size_lookup.get(row['main_item'], None)
+    #             child_segment = min_segment_size_lookup.get(row['recommended_item'], None)
+                
+    #             # If either has MIN_SEGMENT_SIZE = 1, reject the rule
+    #             if parent_segment == 1 or child_segment == 1:
+    #                 return False
+    #             return True
+            
+    #         # Filter 2: Remove rules where one is food (35) and other is non-food (1)
+    #         def is_valid_category_mix(row):
+    #             parent_category = category_id_lookup.get(row['main_item'], None)
+    #             child_category = category_id_lookup.get(row['recommended_item'], None)
+                
+    #             # Check if one is food (35) and the other is non-food (1)
+    #             if (parent_category == 35 and child_category == 1) or (parent_category == 1 and child_category == 35):
+    #                 return False
+    #             return True
+            
+    #         # Apply both filters
+    #         valid_mask = recommendations_df.apply(lambda row: is_valid_segment_size(row) and is_valid_category_mix(row), axis=1)
+    #         filtered_df = recommendations_df[valid_mask].copy()
+            
+    #         removed_count = initial_count - len(filtered_df)
+    #         logger.info(f"Rule validation: {initial_count} total rules -> {len(filtered_df)} valid rules (removed {removed_count} invalid rules)")
+            
+    #         # Log some details about what was filtered
+    #         segment_invalid = recommendations_df[~recommendations_df.apply(is_valid_segment_size, axis=1)]
+    #         category_invalid = recommendations_df[~recommendations_df.apply(is_valid_category_mix, axis=1)]
+            
+    #         logger.info(f"  - Removed {len(segment_invalid)} rules due to MIN_SEGMENT_SIZE = 1")
+    #         logger.info(f"  - Removed {len(category_invalid)} rules due to food/non-food category mismatch")
+            
+    #         return filtered_df
+            
+    #     except Exception as e:
+    #         logger.error(f"Error filtering invalid rules: {e}")
+    #         logger.exception("Full traceback:")
+    #         # Return original dataframe if filtering fails
+    #         return recommendations_df
     def _filter_invalid_rules(self, recommendations_df):
         """
         Filter out invalid rules based on business logic:
         1. Remove rules where either SKU has MIN_SEGMENT_SIZE = 1
-        2. Remove rules where one SKU is food (CATEGORY_ID=35) and other is non-food (CATEGORY_ID=1)
+        2. Keep only rules where both SKUs have the SAME CATEGORY
         """
         try:
-            if len(recommendations_df) == 0:
+            if recommendations_df.empty:
                 return recommendations_df
-            
+
             initial_count = len(recommendations_df)
-            
-            # Get all unique SKU IDs from the recommendations
-            all_sku_ids = set(recommendations_df['main_item'].unique()) | set(recommendations_df['recommended_item'].unique())
-            sku_ids_str = ','.join([f"'{sku_id}'" for sku_id in all_sku_ids])
-            
-            # Fetch SKU metadata from sku_master table
+
+            # Step 1: Collect all unique SKUs
+            all_sku_ids = pd.unique(
+                recommendations_df[['main_item', 'recommended_item']].values.ravel()
+            )
+            sku_ids_str = ",".join([f"'{sku}'" for sku in all_sku_ids])
+
+            # Step 2: Pull SKU metadata
             sku_metadata_query = f"""
-            SELECT 
-                SKU_ID,
-                MIN_SEGMENT_SIZE,
-                CATEGORY_ID
-            FROM {self.sku_master_table}
-            WHERE SKU_ID IN ({sku_ids_str})
+                SELECT SKU_ID, MIN_SEGMENT_SIZE, CATEGORY
+                FROM {self.sku_master_table}
+                WHERE SKU_ID IN ({sku_ids_str})
             """
-            
-            sku_metadata_df = pd.read_sql(sku_metadata_query, self.connection)
-            
-            # Create lookup dictionaries
-            min_segment_size_lookup = dict(zip(sku_metadata_df['SKU_ID'], sku_metadata_df['MIN_SEGMENT_SIZE']))
-            category_id_lookup = dict(zip(sku_metadata_df['SKU_ID'], sku_metadata_df['CATEGORY_ID']))
-            
-            # Filter 1: Remove rules where either SKU has MIN_SEGMENT_SIZE = 1
-            def is_valid_segment_size(row):
-                parent_segment = min_segment_size_lookup.get(row['main_item'], None)
-                child_segment = min_segment_size_lookup.get(row['recommended_item'], None)
-                
-                # If either has MIN_SEGMENT_SIZE = 1, reject the rule
-                if parent_segment == 1 or child_segment == 1:
-                    return False
-                return True
-            
-            # Filter 2: Remove rules where one is food (35) and other is non-food (1)
-            def is_valid_category_mix(row):
-                parent_category = category_id_lookup.get(row['main_item'], None)
-                child_category = category_id_lookup.get(row['recommended_item'], None)
-                
-                # Check if one is food (35) and the other is non-food (1)
-                if (parent_category == 35 and child_category == 1) or (parent_category == 1 and child_category == 35):
-                    return False
-                return True
-            
-            # Apply both filters
-            valid_mask = recommendations_df.apply(lambda row: is_valid_segment_size(row) and is_valid_category_mix(row), axis=1)
-            filtered_df = recommendations_df[valid_mask].copy()
-            
-            removed_count = initial_count - len(filtered_df)
-            logger.info(f"Rule validation: {initial_count} total rules -> {len(filtered_df)} valid rules (removed {removed_count} invalid rules)")
-            
-            # Log some details about what was filtered
-            segment_invalid = recommendations_df[~recommendations_df.apply(is_valid_segment_size, axis=1)]
-            category_invalid = recommendations_df[~recommendations_df.apply(is_valid_category_mix, axis=1)]
-            
-            logger.info(f"  - Removed {len(segment_invalid)} rules due to MIN_SEGMENT_SIZE = 1")
-            logger.info(f"  - Removed {len(category_invalid)} rules due to food/non-food category mismatch")
-            
+
+            sku_df = pd.read_sql(sku_metadata_query, self.connection)
+            # sku_df["MIN_SEGMENT_SIZE"] = sku_df["MIN_SEGMENT_SIZE"].astype(int)
+            # sku_df["CATEGORY"] = sku_df["CATEGORY"].astype(int)
+
+            # Step 3: Merge metadata for both main_item and recommended_item
+            merged = recommendations_df \
+                .merge(sku_df.rename(columns={
+                    "SKU_ID": "main_item",
+                    "MIN_SEGMENT_SIZE": "main_segment",
+                    "CATEGORY": "main_category"
+                }), on="main_item", how="left") \
+                .merge(sku_df.rename(columns={
+                    "SKU_ID": "recommended_item",
+                    "MIN_SEGMENT_SIZE": "child_segment",
+                    "CATEGORY": "child_category"
+                }), on="recommended_item", how="left")
+
+            # Step 4: Business rules
+
+            # Rule 1: Neither SKU should have MIN_SEGMENT_SIZE = 1
+            mask_segment = (merged["main_segment"] != 1) & (merged["child_segment"] != 1)
+
+            # Rule 2: Both SKUs must be same category (NEW requirement)
+            mask_same_category = merged["main_category"] == merged["child_category"]
+
+            # Combined mask
+            valid_mask = mask_segment & mask_same_category
+
+            filtered_df = merged[valid_mask][recommendations_df.columns].copy()
+
+            # Logging
+            removed = initial_count - len(filtered_df)
+            logger.info(f"Rule validation: {initial_count} total → {len(filtered_df)} valid (removed {removed})")
+
+            logger.info(f"  - Removed {(~mask_segment).sum()} due to MIN_SEGMENT_SIZE = 1")
+            logger.info(f"  - Removed {(~mask_same_category).sum()} due to category mismatch")
+
             return filtered_df
-            
+
         except Exception as e:
             logger.error(f"Error filtering invalid rules: {e}")
             logger.exception("Full traceback:")
-            # Return original dataframe if filtering fails
             return recommendations_df
+
 
     def _ensure_recommendations_table_exists(self):
         """Ensure the recommendations table exists with SKU ID schema"""
