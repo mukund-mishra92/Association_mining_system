@@ -150,14 +150,94 @@ class DatabaseConnection:
             return None
             return None
     
+    def _filter_invalid_rules(self, recommendations_df):
+        """
+        Filter out invalid rules based on business logic:
+        1. Remove rules where either SKU has MIN_SEGMENT_SIZE = 1
+        2. Keep only rules where both SKUs have the SAME CATEGORY
+        
+        Note: Recommendations now use SKU_NAME instead of SKU_ID
+        """
+        try:
+            if recommendations_df.empty:
+                return recommendations_df
+
+            initial_count = len(recommendations_df)
+
+            # Step 1: Collect all unique SKU names
+            all_sku_names = pd.unique(
+                recommendations_df[['main_item', 'recommended_item']].values.ravel()
+            )
+            sku_names_str = ",".join([f"'{sku}'" for sku in all_sku_names])
+
+            # Step 2: Pull SKU metadata using SKU_NAME instead of SKU_ID
+            sku_metadata_query = f"""
+                SELECT SKU_NAME, MIN_SEGMENT_SIZE, CATEGORY
+                FROM {self.sku_master_table}
+                WHERE SKU_NAME IN ({sku_names_str})
+            """
+
+            sku_df = pd.read_sql(sku_metadata_query, self.connection)
+
+            # Step 3: Merge metadata for both main_item and recommended_item
+            merged = recommendations_df \
+                .merge(sku_df.rename(columns={
+                    "SKU_NAME": "main_item",
+                    "MIN_SEGMENT_SIZE": "main_segment",
+                    "CATEGORY": "main_category"
+                }), on="main_item", how="left") \
+                .merge(sku_df.rename(columns={
+                    "SKU_NAME": "recommended_item",
+                    "MIN_SEGMENT_SIZE": "child_segment",
+                    "CATEGORY": "child_category"
+                }), on="recommended_item", how="left")
+
+            # Step 4: Business rules
+
+            # Rule 1: Neither SKU should have MIN_SEGMENT_SIZE = 1
+            mask_segment = (merged["main_segment"] != 1) & (merged["child_segment"] != 1)
+
+            # Rule 2: Both SKUs must be same category (NEW requirement)
+            mask_same_category = merged["main_category"] == merged["child_category"]
+
+            # Combined mask
+            valid_mask = mask_segment & mask_same_category
+
+            filtered_df = merged[valid_mask][recommendations_df.columns].copy()
+
+            # Logging
+            removed = initial_count - len(filtered_df)
+            logger.info(f"Rule validation: {initial_count} total → {len(filtered_df)} valid (removed {removed})")
+
+            logger.info(f"  - Removed {(~mask_segment).sum()} due to MIN_SEGMENT_SIZE = 1")
+            logger.info(f"  - Removed {(~mask_same_category).sum()} due to category mismatch")
+
+            return filtered_df
+
+        except Exception as e:
+            logger.error(f"Error filtering invalid rules: {e}")
+            logger.exception("Full traceback:")
+            return recommendations_df
+    
     def save_recommendations(self, recommendations_df):
         """Save recommendations to database using your schema:
         PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE"""
         try:
-            logger.info(f"Attempting to save {len(recommendations_df)} recommendations")
+            initial_count = len(recommendations_df)
+            logger.info(f"Attempting to save {initial_count} recommendations")
             
             # Ensure the recommendations table exists
             self._ensure_recommendations_table_exists()
+            
+            # Filter out invalid rules before saving
+            recommendations_df = self._filter_invalid_rules(recommendations_df)
+            
+            if len(recommendations_df) == 0:
+                logger.warning(f"No valid recommendations to save after filtering")
+                return True
+            
+            valid_count = len(recommendations_df)
+            logger.info(f"After filtering invalid rules: {valid_count} valid recommendations remain")
             
             # Clear existing recommendations
             self.cursor.execute(f"DELETE FROM {self.recommendations_table}")

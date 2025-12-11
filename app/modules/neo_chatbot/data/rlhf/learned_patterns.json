@@ -4613,6 +4613,73 @@
           "SOP Document NEO ASRS.pdf"
         ]
       }
+    },
+    {
+      "query": "can you give me details of a cbs sorter",
+      "query_keywords": [
+        "give",
+        "details",
+        "sorter"
+      ],
+      "query_length": 9,
+      "response": "**Overview**\nA CBS (Cross Belt Sorter) is a type of automated sorting system used in parcel sortation facilities. It is designed to efficiently sort packages at high speeds, typically ranging from thousands to tens of thousands of packages per hour (PPH). The CBS sorter is a key technology module in various NEO warehouse management system solutions.\n\n**Key Points**\n\n\u2022 **Throughput**: A CBS sorter can handle a high volume of packages per hour, with capacities ranging from 17,000 PPH (Double Deck ",
+      "response_length": 2161,
+      "reward": 0.1,
+      "timestamp": "2025-12-11T12:25:26.764958",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1, Document 2, Document 3]",
+      "response_length": 491,
+      "reward": 0.1,
+      "timestamp": "2025-12-11T15:10:24.172406",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "explain cbs sorter in 100words",
+      "query_keywords": [
+        "explain",
+        "sorter",
+        "100words"
+      ],
+      "query_length": 5,
+      "response": "**Overview**\nA Cross Belt Sorter (CBS) is a key technology module in the NEO Warehouse Management System, designed to efficiently sort and direct shipments to their respective destinations. It is a high-throughput sorting system that can handle a large volume of packages per hour.\n\n**Key Points**\n\u2022 **Throughput**: A CBS can handle a high volume of shipments per hour, ranging from 7200 to 12,000 PPH (pieces per hour).\n\u2022 **Sortation**: The CBS sorts shipments using automatic barcode scanning, dime",
+      "response_length": 1081,
+      "reward": 0.1,
+      "timestamp": "2025-12-11T15:10:35.304028",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
     }
   ],
   "diagnostic_support": [
