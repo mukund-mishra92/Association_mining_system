@@ -12,6 +12,20 @@ from mlxtend.frequent_patterns import apriori, association_rules
 import warnings
 warnings.filterwarnings('ignore')
 
+# Store reference to original print before overriding
+_original_print = print
+
+# Safe print function that won't crash if stdout is unavailable
+def safe_print(*args, **kwargs):
+    """Print wrapper that handles OSError when stdout is not available"""
+    try:
+        _original_print(*args, **kwargs)
+    except (OSError, IOError):
+        pass  # Silently ignore if console is not available
+
+# Replace built-in print with safe version
+print = safe_print
+
 # Add the parent directory to Python path for imports
 import sys
 import os
@@ -153,8 +167,14 @@ def test_server_connection():
     except Exception as e:
         return False, str(e)
 
-def save_rules_to_database(user_config, rules_df):
-    """Save association rules to database"""
+def save_rules_to_database(user_config, rules_df, sku_name_to_id):
+    """Save association rules to database
+    
+    Args:
+        user_config: Database configuration
+        rules_df: DataFrame with columns sku1 (name), sku2 (name), association_composite_score
+        sku_name_to_id: Dictionary mapping SKU_NAME to SKU_ID
+    """
     try:
         logger = logging.getLogger(__name__)
         logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
@@ -191,11 +211,15 @@ def save_rules_to_database(user_config, rules_df):
         cursor.execute(create_query)
         
         # Prepare rules data for insertion
+        # Convert SKU names to SKU IDs before saving
         recommendations_data = []
         for _, rule in rules_df.iterrows():
+            parent_id = sku_name_to_id.get(rule['sku1'], rule['sku1'])  # Fallback to name if not found
+            child_id = sku_name_to_id.get(rule['sku2'], rule['sku2'])    # Fallback to name if not found
+            
             recommendations_data.append((
-                rule['sku1'],  # PARENT_ARTICLE_ID
-                rule['sku2'],  # CHILD_ARTICLE_ID
+                parent_id,  # PARENT_ARTICLE_ID - now using SKU ID
+                child_id,   # CHILD_ARTICLE_ID - now using SKU ID
                 float(rule['association_composite_score'])  # PROXIMITY_SCORE
             ))
         
@@ -267,11 +291,13 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60,
             return {"error": "No popular SKUs found"}, None
         
         # Load data for these SKUs using parameterized query
+        # IMPORTANT: Also fetch SKU_ID for database saving
         placeholders = ','.join(['%s'] * len(popular_sku_list))
         main_query = f"""
         SELECT 
             o.ORDER_ID,
             s.SKU_NAME,
+            s.SKU_ID,
             DATEDIFF(CURDATE(), DATE(o.INSERTED_TIMESTAMP)) as days_ago
         FROM {user_config['order_table']} o
         JOIN {user_config['sku_master_table']} s ON o.ARTICLE_ID = s.SKU_ID
@@ -280,6 +306,10 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60,
         """
         
         df = pd.read_sql(main_query, conn, params=popular_sku_list)
+        
+        # Create SKU_NAME to SKU_ID mapping for later use
+        sku_name_to_id = dict(zip(df['SKU_NAME'], df['SKU_ID']))
+        
         conn.close()
         
         if df.empty:
@@ -339,7 +369,7 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60,
                 # Save to database
                 database_saved = False
                 try:
-                    database_saved = save_rules_to_database(user_config, final_rules)
+                    database_saved = save_rules_to_database(user_config, final_rules, sku_name_to_id)
                 except Exception as db_error:
                     print(f"Database save failed: {db_error}")
                 

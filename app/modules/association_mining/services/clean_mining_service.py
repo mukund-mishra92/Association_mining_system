@@ -143,13 +143,13 @@ class CleanAssociationMiningService:
         return df_basket
     
     def _create_transactions(self, df_weighted):
-        """Create transaction list from weighted data"""
-        logger.info("Creating transaction list")
+        """Create transaction list from weighted basket data"""
+        logger.info("Creating transactions")
         
         transactions = []
         for order_id, group in df_weighted.groupby('ORDER_ID'):
-            # Simple approach: just use unique items per order
-            items = group['SKU_NAME'].unique().tolist()
+            # Use SKU_ID instead of SKU_NAME to ensure IDs are used throughout
+            items = group['ARTICLE_ID'].unique().tolist()
             if len(items) > 0:
                 transactions.append(items)
         
@@ -283,15 +283,20 @@ class CleanAssociationMiningService:
             
             for antecedent in antecedents:
                 for consequent in consequents:
-                    # Get SKU IDs from names
-                    main_item_id = self.sku_name_to_id.get(antecedent, antecedent)
-                    recommended_item_id = self.sku_name_to_id.get(consequent, consequent)
+                    # antecedent and consequent are now SKU IDs (not names)
+                    # No need for conversion, just use them directly
+                    main_item_id = antecedent
+                    recommended_item_id = consequent
+                    
+                    # Get SKU names for reference/logging
+                    main_item_name = self.sku_id_to_name.get(antecedent, antecedent)
+                    recommended_item_name = self.sku_id_to_name.get(consequent, consequent)
                     
                     recommendations.append({
-                        'main_item': main_item_id,          # Now stores SKU ID
-                        'recommended_item': recommended_item_id,  # Now stores SKU ID
-                        'main_item_name': antecedent,       # Keep name for reference
-                        'recommended_item_name': consequent, # Keep name for reference
+                        'main_item': main_item_id,          # SKU ID
+                        'recommended_item': recommended_item_id,  # SKU ID
+                        'main_item_name': main_item_name,       # SKU name for reference
+                        'recommended_item_name': recommended_item_name, # SKU name for reference
                         'confidence_score': rule['confidence'],
                         'lift_score': rule['lift'],
                         'support_score': rule['support'],
