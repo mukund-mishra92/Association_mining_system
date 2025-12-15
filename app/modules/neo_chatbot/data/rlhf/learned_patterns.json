@@ -4680,6 +4680,994 @@
           "DHL NEO Techno-commercial offer.pdf"
         ]
       }
+    },
+    {
+      "query": "do we have any site where two different sorters are combined together",
+      "query_keywords": [
+        "have",
+        "site",
+        "where",
+        "different",
+        "sorters",
+        "combined",
+        "together"
+      ],
+      "query_length": 12,
+      "response": "**Overview**\nThe question inquires about the existence of a site where two different sorters are combined together, specifically within the context of the NEO Warehouse Management System. The answer will be derived from the provided documentation.\n\n**Key Points**\n\u2022 Document 3 (Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf) describes a system where picking is executed directly from the pallet racking and loose items are handled via the NEO automated system.\n\u2022 Document 3 also",
+      "response_length": 2021,
+      "reward": 0.1,
+      "timestamp": "2025-12-11T16:56:30.102253",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you find the exct site where such solution is deployed.",
+      "query_keywords": [
+        "find",
+        "exct",
+        "site",
+        "where",
+        "such",
+        "solution",
+        "deployed."
+      ],
+      "query_length": 11,
+      "response": "**Overview**\nThe NEO Automation System is a solution provided by Falcon Autotech, and its deployment site is mentioned in various technical documents. However, the exact site where the solution is deployed is not explicitly stated in the provided documentation.\n\n**Key Points**\n\u2022 The documentation mentions Falcon Autotech's proposal to UHP (User not specified) for the supply of the NEO Automation System.\n\u2022 The documents do not explicitly mention the deployment site of the NEO Automation System.\n\u2022",
+      "response_length": 1752,
+      "reward": 0.1,
+      "timestamp": "2025-12-11T16:57:34.826845",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.97,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "OverviewThe question inquires about the existence of a site where two different sorters are combined together, specifically within the context of the NEO Warehouse Management System. The answer will be derived from the provided documentation.Key PointsDocument 3 (Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf) describes a system where picking is executed directly from the pallet racking and loose items are handled via the NEO automated system.Document 3 also mentions the B2B",
+      "response_length": 2141,
+      "reward": -0.9,
+      "timestamp": "2025-12-11T16:58:02.207871",
+      "metadata": {
+        "session_id": "71ba9ab9-ce09-4ed4-b906-b12a15dbed31",
+        "chat_id": null,
+        "confidence": 1,
+        "suggested_actions": [
+          "Explore related documentation",
+          "View practical examples",
+          "Check getting started guide",
+          "Ask about specific features"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "OverviewThe NEO Automation System is a solution provided by Falcon Autotech, and its deployment site is mentioned in various technical documents. However, the exact site where the solution is deployed is not explicitly stated in the provided documentation.Key PointsThe documentation mentions Falcon Autotech's proposal to UHP (User not specified) for the supply of the NEO Automation System.The documents do not explicitly mention the deployment site of the NEO Automation System.The technical docum",
+      "response_length": 1874,
+      "reward": -0.9,
+      "timestamp": "2025-12-11T16:58:10.089255",
+      "metadata": {
+        "session_id": "71ba9ab9-ce09-4ed4-b906-b12a15dbed31",
+        "chat_id": null,
+        "confidence": 0.97,
+        "suggested_actions": [
+          "Explore related documentation",
+          "View practical examples",
+          "Check getting started guide",
+          "Ask about specific features"
+        ]
+      }
+    },
+    {
+      "query": "can you tell me the flow of the sorter cbs",
+      "query_keywords": [
+        "tell",
+        "flow",
+        "sorter"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe flow of the sorter CBS (Cross Belt Sorter) in the NEO Warehouse Management System is a critical component for efficient parcel sorting. The system is designed to handle high volumes of parcels per hour, with various configurations and technologies integrated to achieve optimal sorting results.\n\n**Key Points**\n\u2022 **Infeed Conveyors**: The parcels enter the sortation system through three infeed conveyors integrated with automatic label applicators.\n\u2022 **Automatic Barcode Scanning**:",
+      "response_length": 1974,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:36:03.445266",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you explain the flow of flpcart sorter cbs applied in jaipur",
+      "query_keywords": [
+        "explain",
+        "flow",
+        "flpcart",
+        "sorter",
+        "applied",
+        "jaipur"
+      ],
+      "query_length": 12,
+      "response": "**Overview**\nThe flow of FLPCART Sorter CBS (Cross Belt Sorter) applied in Jaipur is a parcel sorting system designed to handle high volumes of parcels per hour. The system is equipped with advanced technologies such as automatic barcode scanning, dimensioning, weighing, and image capture capabilities.\n\n**Key Points**\n\n\u2022 **Infeed Conveyors**: The parcels are fed into the system through three infeed conveyors integrated with automatic label applicators.\n\u2022 **Loop Cross Belt Sorter**: The parcels a",
+      "response_length": 1802,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:36:50.609806",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you explain a cbs sorter flow in detail",
+      "query_keywords": [
+        "explain",
+        "sorter",
+        "flow",
+        "detail"
+      ],
+      "query_length": 9,
+      "response": "**Overview**\nA Cross-Belt Sorter (CBS) is a type of sorting system used in parcel handling and logistics. It is designed to efficiently sort parcels to their respective destinations. The CBS sorter flow involves several key components and processes, which are outlined in the provided documentation. The system is equipped with advanced technology, including automatic barcode scanning, dimensioning, weighing, and image capture capabilities.\n\n**Key Points**\n\u2022 **Infeed Conveyors**: Parcels are fed i",
+      "response_length": 2144,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:55:49.416263",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "",
+      "query_keywords": [],
+      "query_length": 0,
+      "response": "OverviewA Cross-Belt Sorter (CBS) is a type of sorting system used in parcel handling and logistics. It is designed to efficiently sort parcels to their respective destinations. The CBS sorter flow involves several key components and processes, which are outlined in the provided documentation. The system is equipped with advanced technology, including automatic barcode scanning, dimensioning, weighing, and image capture capabilities.Key PointsInfeed Conveyors: Parcels are fed into the system thr",
+      "response_length": 2243,
+      "reward": -0.65,
+      "timestamp": "2025-12-12T11:56:05.429176",
+      "metadata": {
+        "session_id": "f61ba5a0-288b-4677-966b-9a8d3f46791d",
+        "chat_id": null,
+        "confidence": 1,
+        "suggested_actions": [
+          "Explore related documentation",
+          "View practical examples",
+          "Check getting started guide",
+          "Ask about specific features"
+        ]
+      }
+    },
+    {
+      "query": "please explain this in detail",
+      "query_keywords": [
+        "please",
+        "explain",
+        "this",
+        "detail"
+      ],
+      "query_length": 5,
+      "response": "**Overview**\nThe provided documentation consists of five documents related to the NEO Warehouse Management System, including manuals, techno-commercial offers, and system component descriptions. These documents offer insights into the system's functionality, technical details, and implementation process. The relevance of these documents ranges from 62.3% to 63.4%, indicating their significance in understanding the NEO system.\n\n**Key Points**\n\u2022 The NEO system includes a dashboard with table displ",
+      "response_length": 2070,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:56:19.357199",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.91,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "do you understand the flow of cbs, please explain each ad every component",
+      "query_keywords": [
+        "understand",
+        "flow",
+        "cbs,",
+        "please",
+        "explain",
+        "each",
+        "every",
+        "component"
+      ],
+      "query_length": 13,
+      "response": "**Overview**\nThe flow of CBS (Container or Bin Storage) in the NEO Warehouse Management System involves several components and steps, including wave management, bin loading, and article traceability. The process is designed to efficiently manage and track inventory within the warehouse. The documentation provides insight into the various components and their roles in the CBS flow.\n\n**Key Points**\n\u2022 **Wave Management**: The system generates waves, which are used to manage bin loading operations, ",
+      "response_length": 2335,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:56:47.532293",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.97,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "Dashboard Manual.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "no, here cbs refers to cross belt sorter",
+      "query_keywords": [
+        "here",
+        "refers",
+        "cross",
+        "belt",
+        "sorter"
+      ],
+      "query_length": 8,
+      "response": "CBS refers to Cross Belt Sorter, a system designed for high-throughput sorting of shipments. It is equipped with automatic barcode scanning, dimensioning, weighing, and image capture capabilities. [Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf]",
+      "response_length": 266,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:57:20.329931",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you understnad the flow document available in the proposal. explain with the help of that",
+      "query_keywords": [
+        "understnad",
+        "flow",
+        "document",
+        "available",
+        "proposal.",
+        "explain",
+        "help",
+        "that"
+      ],
+      "query_length": 16,
+      "response": "**Overview**\nThe documentation provided includes several techno-commercial offers for the NEO Warehouse Management System, which outline the proposed system description, process flow, and conveyor BOM. The documents highlight the key components and benefits of the proposed solution. The flow of documents in the proposal can be understood by analyzing the different sections and components outlined in the documents.\n\n**Key Points**\n\u2022 The proposed system description includes the design, manufacturi",
+      "response_length": 2346,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T11:58:04.927258",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you explain a cbs sorter in detail",
+      "query_keywords": [
+        "explain",
+        "sorter",
+        "detail"
+      ],
+      "query_length": 8,
+      "response": "A Cross Belt Sorter (CBS) is a highly efficient and versatile sorting system designed to handle a wide range of parcels, packages, and shipments. Based on the provided documentation, I will delve into the details of a CBS sorter, covering its components, processes, technical specifications, and integration with other systems.\n\n**Components:**\n\n1. **Infeed Conveyors:** The system typically consists of multiple infeed conveyors, such as 3 infeed conveyors (Model: Interroll TC60, belt speed 1.2 m/s",
+      "response_length": 5303,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T12:09:58.357466",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is a infeed conveyer, can you explain in detail",
+      "query_keywords": [
+        "what",
+        "infeed",
+        "conveyer,",
+        "explain",
+        "detail"
+      ],
+      "query_length": 10,
+      "response": "The infeed conveyor is a critical component of the fulfillment center automation system, responsible for transporting items, such as parcels or products, into the system for further processing. According to the documentation, specifically [DOCUMENT 1] Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf, page 42 of 87, the infeed conveyor is used to feed items from pigeonholes into the packing machine.\n\n**Technical Specifications:**\n\n* The infeed conveyor is designed to handle ite",
+      "response_length": 5220,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T12:11:26.728689",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you generate a flow chart of cbs sorter",
+      "query_keywords": [
+        "generate",
+        "flow",
+        "chart",
+        "sorter"
+      ],
+      "query_length": 9,
+      "response": "I'm happy to help you with your request. However, I must inform you that I can only reference existing documentation and cannot generate new content, including flow charts.\n\nBut don't worry, I can offer you some relevant examples and templates from the documentation above that might be helpful. For instance, you can refer to the \"Solution Specifications\" and \"Key Technology Modules\" sections in the documents, which provide detailed information about the CBS Sorter and its components.\n\nSpecifical",
+      "response_length": 2125,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T12:12:52.051608",
+      "metadata": {
+        "query_type": "GENERATIVE",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "ENGINEER-P_922_Commercial Offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different type of sorter available",
+      "query_keywords": [
+        "what",
+        "different",
+        "type",
+        "sorter",
+        "available"
+      ],
+      "query_length": 8,
+      "response": "Given the absence of specific documentation, I will provide a comprehensive overview of the different types of sorters available in the context of warehouse automation and logistics. This will include detailed descriptions of their mechanisms, processes, technical specifications, and integration capabilities.\n\n### 1. Cross-Belt Sorter (CBS)\n\n- **Description:** A Cross-Belt Sorter is a high-speed sorting system used for parcel, package, and item sorting in logistics and e-commerce warehouses. It ",
+      "response_length": 4186,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T14:00:52.621537",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "do we have any of the projects available with Falcon documentation apart from cross belt sorter",
+      "query_keywords": [
+        "have",
+        "projects",
+        "available",
+        "falcon",
+        "documentation",
+        "apart",
+        "from",
+        "cross",
+        "belt",
+        "sorter"
+      ],
+      "query_length": 16,
+      "response": "Given the absence of relevant documentation, I must emphasize that a thorough and detailed technical explanation is not feasible at this time. However, I can attempt to provide a structured approach to exploring potential projects that might be available with Falcon documentation, apart from the Cross Belt Sorter.\n\n1. **Project Overview**: Typically, projects involving Falcon documentation would encompass a range of warehouse automation systems, including but not limited to:\n   - **Sortation Sys",
+      "response_length": 3724,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T14:03:28.602831",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.0,
+        "source_count": 0,
+        "document_names": []
+      }
+    },
+    {
+      "query": "what is sorter and how many type of sorters we have",
+      "query_keywords": [
+        "what",
+        "sorter",
+        "many",
+        "type",
+        "sorters",
+        "have"
+      ],
+      "query_length": 11,
+      "response": "**Sorter System Overview**\n\nA sorter is a critical component in warehouse automation, designed to efficiently sort and direct items, such as packages or shipments, to their designated destinations. The sorter system consists of various components, including infeed conveyors, sorting loops, and discharge chutes, which work together to achieve high-speed sorting and accuracy.\n\n**Types of Sorters**\n\nBased on the documentation provided, there are several types of sorters, including:\n\n1. **Arm Sorter",
+      "response_length": 4736,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T19:39:05.570590",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Glaukous_Techno-commercial Offer_Arm Sorter-2K.pdf",
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf",
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, as stated in [DOCUMENT 1] F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf. It is an integrated system consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software, as mentioned in [DOCUMENT 2] DHL NEO Techno-commercial offer.pdf.\nNEO provides higher storage density, is more adaptive, and can be deployed",
+      "response_length": 2046,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T19:41:19.839589",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what are the different types of conveyer available",
+      "query_keywords": [
+        "what",
+        "different",
+        "types",
+        "conveyer",
+        "available"
+      ],
+      "query_length": 8,
+      "response": "The documentation provides a comprehensive overview of various conveyor systems and their components. According to the documents, the following types of conveyors are available:\n\n1. **Telescopic Belt Conveyor (TBC)**: As mentioned in [DOCUMENT 1] (Page: N/A), a TBC is a type of conveyor system that features a telescoping mechanism to extend or retract the conveyor length as needed. The specifications of the TBC include:\n\t* Manufacturer Name: Falcon Autotech / Equivalent\n\t* Suitable Carton Size: ",
+      "response_length": 3657,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T19:51:51.432953",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial Offer for Shipment Sorter_Delhivery Bangalore_31102023.pdf",
+          "Festo_technocommercial offer_Option 5C_10-09-24.pdf",
+          "Flipkart_Anjaneya_SWEDI+ARM Sorter_Technocommercial offer (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "NEO is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. It provides higher storage density, is more adaptive, and can be deployed quickly in a cost-effective manner compared to traditional material handling systems. NEO moves flexibly within the storage grid using lidar and AI software capabilities to store and retrieve totes. [Document 1]",
+      "response_length": 467,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T20:35:35.604585",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf"
+        ]
+      }
+    },
+    {
+      "query": "explain sorters and what are the different type of sorters available",
+      "query_keywords": [
+        "explain",
+        "sorters",
+        "what",
+        "different",
+        "type",
+        "sorters",
+        "available"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nSorters are critical components in warehouse management systems, responsible for efficiently directing parcels to their designated destinations. The NEO Warehouse Management System utilizes various types of sorters to handle high volumes of parcels per hour. According to the documentation, sorters can be equipped with advanced technologies such as automatic barcode scanning, dimensioning, weighing, and image capture capabilities.\n\n## Key Points\n* Sorters are designed to handle high v",
+      "response_length": 1922,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T20:36:02.030341",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is ics",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "ICR stands for Image Character Recognition, which is a software that utilizes image processing to read parcel labels and identify shipment information. It is part of the Application Layer in the NEO system. [Document 3]",
+      "response_length": 219,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T20:36:51.285205",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.91,
+        "source_count": 5,
+        "document_names": [
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2 (1).pdf",
+          "F24-00543_UHP_Techno-commercial Offer_Neo Automaiton_R2.pdf",
+          "Burjeel Holdings_Techno-commercial Offer_FC Automation_24.10.25.pdf"
+        ]
+      }
+    },
+    {
+      "query": "in sorter system, where is actually thios ics systems [laces",
+      "query_keywords": [
+        "sorter",
+        "system,",
+        "where",
+        "actually",
+        "thios",
+        "systems",
+        "[laces"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe NEO Warehouse Management System features a sorter system that utilizes various components to manage and direct parcels to their appropriate destinations. The system includes a range of technologies, such as Image Character Recognition (ICR) software, Programmable Logic Controllers (PLC), and image services. These components work together to ensure efficient and accurate sorting of parcels.\n\n**Key Points**\n* The sorter system includes an Application Layer that processes and manag",
+      "response_length": 1671,
+      "reward": 0.1,
+      "timestamp": "2025-12-12T20:37:45.325632",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "DHL NEO Techno-commercial offer.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you explain me the overall flow of a NEO system",
+      "query_keywords": [
+        "explain",
+        "overall",
+        "flow",
+        "system"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nThe NEO system is an end-to-end engineered robotic system for storage and order picking, consisting of storage bins or totes, storage grids, robots, goods-to-person workstations, and other components. The system is designed to provide maximum uptime and efficient storage and retrieval of products. The overall flow of a NEO system involves inbound processing, storage, and outbound picking.\n\n## Key Points\n* Inbound processing: Pallets are brought to put away stations, where the SKU bar",
+      "response_length": 1754,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:17:52.509580",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you tell me end to end process flow of how neo works in simple term?",
+      "query_keywords": [
+        "tell",
+        "process",
+        "flow",
+        "works",
+        "simple",
+        "term?"
+      ],
+      "query_length": 16,
+      "response": "## Overview\nThe NEO system is an end-to-end engineered robotic system for storage and order picking, designed to streamline inventory management with precision and efficiency. The system consists of storage bins or totes, storage grids, robots, goods-to-person workstations, and software. The NEO system operates on all three axes within the grid to store totes at predetermined locations. \n\n## Key Points\n* Inbound process: Boxes/Totes are received at the Goods-to-Conveyor (GTC) stations, where the",
+      "response_length": 1914,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:20:29.797402",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf"
+        ]
+      }
+    },
+    {
+      "query": "who built neo?",
+      "query_keywords": [
+        "built",
+        "neo?"
+      ],
+      "query_length": 3,
+      "response": "FALCON AUTOTECH built the NEO system, an end-to-end engineered robotic system for storage and order picking. The company provides proposals and supplies the NEO-ASRS system to various clients. [Document 1, Document 2, Document 3, Document 4, Document 5]",
+      "response_length": 253,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:21:12.375361",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.9,
+        "source_count": 5,
+        "document_names": [
+          "DHL NEO Techno-commercial offer.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf",
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf"
+        ]
+      }
+    },
+    {
+      "query": "who are the neo",
+      "query_keywords": [],
+      "query_length": 4,
+      "response": "NEO refers to an end-to-end engineered robotic system for storage and order picking, consisting of storage bins, storage grids, robots, goods-to-person workstations, and software. It is designed to provide higher storage density and can be deployed quickly in a cost-effective manner. The NEO system is developed by FALCON AUTOTECH. [Document 1]",
+      "response_length": 345,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:21:33.739006",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf",
+          "DHL NEO Techno-commercial offer.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
+    },
+    {
+      "query": "who are neo's client? list down in a table",
+      "query_keywords": [
+        "neo's",
+        "client?",
+        "list",
+        "down",
+        "table"
+      ],
+      "query_length": 9,
+      "response": "NEO's clients include Decathlon, Trent, and LW Reid, as mentioned in the documents. \nHere is a table of the clients: \n- Decathlon \n- Trent \n- LW Reid \n[Document 1, Document 2, Document 4]",
+      "response_length": 187,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:21:48.574166",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf",
+          "Techno Commercial offer For Trent with additional scope.pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you tell me how many different type of sorter we have ?",
+      "query_keywords": [
+        "tell",
+        "many",
+        "different",
+        "type",
+        "sorter",
+        "have"
+      ],
+      "query_length": 13,
+      "response": "**Overview**\nThe documentation provides information on various types of sorters, including Arm Sorter, Bag Sorter, and Shipment Sorter. These sorters have different characteristics, such as throughput capacity, conveyor systems, and scanning technologies. The documents outline the technical specifications and features of each sorter type.\n\n**Key Points**\n\u2022 Arm Sorter: a one-arm based sorter for shipments, with a throughput of 2,000 packages per hour on one highway line.\n\u2022 Bag Sorter: a sorter wi",
+      "response_length": 1557,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:22:33.231534",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Glaukous_Techno-commercial Offer_Arm Sorter-2K.pdf",
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 3_Phase 1-02-02-24 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "do you know about SWEDI sorter?",
+      "query_keywords": [
+        "know",
+        "about",
+        "swedi",
+        "sorter?"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe SWEDI Sorter is a non-impact sortation module designed for linear sortation lines, ideal for medium volume sort centers. It has a modular design that allows for space savings and future expansion of sorting points. The sorter is offered by Falcon Autotech, with various technical specifications and capabilities.\n\n**Key Points**\n\u2022 The SWEDI Sorter is a non-impact sortation module for linear sortation lines.\n\u2022 It has a modular design that allows for space savings and future expansi",
+      "response_length": 1490,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:23:04.601169",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F22-00317_00_Techno-commercial offer FedEx _SWEDI With Spiral chute.pdf",
+          "F22-00317_00_Techno-commercial offer FedEx _SWEDI With spiral conveyor.pdf",
+          "F22-00317_00_Techno-commercial offer _FedEx _SWEDI Sorter.pdf"
+        ]
+      }
+    },
+    {
+      "query": "is SWEDI sorter is a type of sorter ?",
+      "query_keywords": [
+        "swedi",
+        "sorter",
+        "type",
+        "sorter"
+      ],
+      "query_length": 9,
+      "response": "**Overview**\nThe SWEDI sorter is a type of non-impact sortation module designed for linear sortation lines, ideal for medium volume sort centers. It features a modular design that saves space and allows for future expansion of sorting points. The SWEDI sorter is equipped with a swivel wheel diverter that enables efficient sorting and diverting of items.\n\n**Key Points**\n* The SWEDI sorter is a non-impact sortation module for linear sortation lines\n* It is ideal for medium volume sort centers\n* Th",
+      "response_length": 1402,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T11:23:43.726713",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F22-00317_01_Techno-commercial offer_SAB Express _SWEDI.pdf",
+          "Falcon's SWEDI Diverter techno-commercial offer - 1200 PPH.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 1_18-11-2023 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is the use of GL6 sensor in our sorter system",
+      "query_keywords": [
+        "what",
+        "sensor",
+        "sorter",
+        "system"
+      ],
+      "query_length": 11,
+      "response": "**Overview**\nThe GL6 sensor is used in the sorter system for scanning and sensing purposes, specifically for automatic barcode scanning and shipment positioning. The sensor plays a crucial role in the overall sorting process, ensuring accurate and efficient sorting of shipments. The documentation provides details on the technical specifications of the sorter system, including the scanning and sensing capabilities.\n\n**Key Points**\n\u2022 The GL6 sensor is used for automatic barcode scanning, capturing",
+      "response_length": 1738,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:01:41.428899",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Glaukous_Techno-commercial Offer_Arm Sorter-2K.pdf",
+          "Glaukous_Techno-commercial Offer_Arm Sorter-2K.pdf",
+          "Amaon_ISK3_Bhiwandi_Technocommercial offer_Linear CBS_Option AMZ_03-10-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "i want to understand how this gL6 sensor helps in barcode scanning",
+      "query_keywords": [
+        "want",
+        "understand",
+        "this",
+        "sensor",
+        "helps",
+        "barcode",
+        "scanning"
+      ],
+      "query_length": 12,
+      "response": "**Overview**\nThe documentation provides information on the NEO Warehouse Management System, specifically on barcode scanning and sensor technology. The GL6 sensor is not explicitly mentioned, but the documents discuss various aspects of barcode scanning, including automatic barcode scanners, hand-held barcode scanners, and barcode scanner data. \n\n**Key Points**\n\u2022 Barcode scanner data provides essential details about barcodes previously read during the automatic cycle, including coordinates and c",
+      "response_length": 1597,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:02:30.300203",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "F23-00439_IDecathlon_Neo and Conveyor Automation_BLR_26032024_Rev5_Detailed Break-up_05032025_Automation Scope Def_Temp.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is alligner in sorter",
+      "query_keywords": [
+        "what",
+        "alligner",
+        "sorter"
+      ],
+      "query_length": 5,
+      "response": "The aligner in a sorter is a component that ensures proper positioning and orientation of items, such as parcels or bags, on the conveyor belt to facilitate efficient sorting and scanning. It helps to align the items in a specific direction or position to enable accurate barcode scanning and dimensioning. [Document 2]",
+      "response_length": 319,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:02:57.774161",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf",
+          "Commercial Offer for Sorter_Bhiwandi.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 3_Phase 1-02-02-24 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "how we control and manage allginer can you expxlain in detail",
+      "query_keywords": [
+        "control",
+        "manage",
+        "allginer",
+        "expxlain",
+        "detail"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nThe control and management of the Allginer system is a complex process that involves various components and technologies. Based on the provided documentation, it appears that the system utilizes a combination of hardware and software solutions to manage and control its operations. The key components include the HAA Server, Falcon's WCS CONTROLIT, and the Automation Management System (AMS).\n\n## Key Points\n* The HAA Server is a critical component of the system, responsible for managing",
+      "response_length": 1885,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:03:34.685794",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Glaukous_Techno-commercial Offer_Arm Sorter-2K.pdf",
+          "Techno Commercial offer For Trent with additional scope.pdf",
+          "Festo_technocommercial offer_Option 5A_10-09-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is a highway comnveryer",
+      "query_keywords": [
+        "what",
+        "highway",
+        "comnveryer"
+      ],
+      "query_length": 5,
+      "response": "A highway conveyor is a main conveyor line that parcels and bags move along, often equipped with mechanical aligners to ensure proper alignment for segregation and sorting. It is a key component in warehouse automation systems, allowing for the efficient transportation of items to various stations for processing. [Document 2]",
+      "response_length": 327,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:04:18.196826",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Loop CBS_Conveyor Automation_Amazon_JED4_R1.pdf",
+          "F22-00259_Offer_Warehouse Automation _Bhiwandi_07122022.pdf",
+          "Techno Commercial Offer for Bag Sorter_Delhivery Bangalore_13102023.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is autofeed line",
+      "query_keywords": [
+        "what",
+        "autofeed",
+        "line"
+      ],
+      "query_length": 4,
+      "response": "An autofeed line is a fully automatic feedline used in the system to induct parcels directly onto the sorter. It consists of components such as infeed conveyors, where shipments are loaded in a single stream. The autofeed line is designed to transport shipments efficiently and ensure a smooth sorting process. [Document 1]",
+      "response_length": 323,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:05:36.172799",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.94,
+        "source_count": 5,
+        "document_names": [
+          "F22-00317_00_Techno-commercial offer FedEx _SWEDI With Spiral chute.pdf",
+          "F22-00317_00_Techno-commercial offer FedEx _SWEDI With spiral conveyor.pdf",
+          "F22-00317_00_Techno-commercial offer _FedEx _SWEDI Sorter.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is the difference between autofeed line and feedline. can you explain with example",
+      "query_keywords": [
+        "what",
+        "difference",
+        "between",
+        "autofeed",
+        "line",
+        "feedline.",
+        "explain",
+        "example"
+      ],
+      "query_length": 14,
+      "response": "## Key Differences:\n\n| Aspect | Autofeed Line | Feedline |\n|--------|---------------|----------|\n| Purpose | Receive and induct shipments onto the sorter | Transport shipments from infeed points to the sorter |\n| Components | Receiving conveyors, Weighing, Buffer/Spacing Conveyor, Angle Merge conveyors | Straight and curved belt conveyors, Loading Conveyor, Buffer Conveyor, Top loader Conveyor |\n| Capacity | Designed for 2500 shipments/hour (Totes & Boxes) | Designed for 8000 shipments/hour |\n| ",
+      "response_length": 1741,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:06:15.349715",
+      "metadata": {
+        "query_type": "COMPARISON",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Amaon_ISK3_Bhiwandi_Technocommercial offer_Linear CBS_13-09-24.pdf",
+          "Amaon_India _Techno-commercial Offer_Linear CBS.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2_18-11-2023 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is MLG can you explain in detail",
+      "query_keywords": [
+        "what",
+        "explain",
+        "detail"
+      ],
+      "query_length": 8,
+      "response": "## Overview\nThe MLG is a component mentioned in the documentation related to the NEO Warehouse Management System, specifically in the context of a bespoke ergonomic feedline. The MLG is described as having light grids at a 5 mm pitch, which suggests it is a sensor or detection system. \n\n## Key Points\n* The MLG is part of a bespoke ergonomic feedline design\n* It features light grids at a 5 mm pitch\n* The purpose of the MLG is not explicitly stated but can be inferred as related to detection or se",
+      "response_length": 1280,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T14:08:06.516668",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.91,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 3_Phase 1-02-02-24 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is neo fleet management",
+      "query_keywords": [
+        "what",
+        "fleet",
+        "management"
+      ],
+      "query_length": 5,
+      "response": "NEO fleet management is not explicitly defined in the provided documents, but it can be inferred that it refers to the management of the NEO Bots, which are part of the Automated Storage and Retrieval System (ASRS). The system likely includes features for managing and optimizing the fleet of NEO Bots to ensure efficient storage and retrieval operations. [Document 1] [Document 2] [Document 3]",
+      "response_length": 394,
+      "reward": 0.1,
+      "timestamp": "2025-12-15T16:50:57.376057",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "SOP Document NEO ASRS.pdf",
+          "Style Union Neo _ Final Techno Commercial Offer (12).pdf",
+          "SOP Document NEO ASRS.pdf"
+        ]
+      }
     }
   ],
   "diagnostic_support": [

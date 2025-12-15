@@ -33,7 +33,7 @@ DOCUMENT_CATEGORIES = {
 # ============================================================================
 
 # Enable/disable code ingestion
-ENABLE_CODE_INGESTION = True
+ENABLE_CODE_INGESTION = False  # Set to False - don't need C# code in chatbot
 
 # Code repositories to ingest
 # Each repository is a dictionary with:

@@ -34,7 +34,11 @@ class LLMService:
         if self.huggingface_api_key:
             try:
                 from huggingface_hub import InferenceClient
-                self.hf_client = InferenceClient(token=self.huggingface_api_key)
+                # Add timeout to prevent hanging
+                self.hf_client = InferenceClient(
+                    token=self.huggingface_api_key,
+                    timeout=30  # 30 second timeout
+                )
                 logger.info("✅ HuggingFace API initialized for FREE embeddings")
             except ImportError:
                 logger.warning("⚠️ huggingface_hub not installed. Run: pip install huggingface_hub")
@@ -157,8 +161,8 @@ class LLMService:
         full_messages.extend(messages)
         
         response = self.groq_client.chat.completions.create(
-            #model="llama-3.3-70b-versatile",  # Fast Llama model on Groq
-            model = "llama-3.1-8b-instant",
+            model="llama-3.3-70b-versatile",  # Fast Llama model on Groq - 9x larger, much better quality
+            #model = "llama-3.1-8b-instant",  # Too small, produces templated responses
             #model = "mixtral-8x7b",
             #model = "qwen2-72b-instruct",
             messages=full_messages,
@@ -315,56 +319,67 @@ How can I help you today?"""
         """
         Generate embedding vector for text (for vector search)
         
-        Priority:
-        1. HuggingFace (FREE, unlimited, high quality)
-        2. OpenAI (paid, high quality)
-        3. Mock embeddings (fallback)
+        Priority (UPDATED FOR RELIABILITY):
+        1. OpenAI (paid but MOST RELIABLE, excellent quality)
+        2. HuggingFace (FREE but may timeout due to network issues)
+        3. Mock embeddings (fallback for testing only)
         
         Args:
             text: Text to embed
             
         Returns:
-            Embedding vector (768 or 1536 dimensions)
+            Embedding vector (1536 or 384 dimensions)
         """
         try:
-            # Priority 1: HuggingFace FREE Embeddings (BEST FOR PRODUCTION!)
-            if self.hf_client:
+            # Priority 1: OpenAI Embeddings (MOST RELIABLE!)
+            if self.openai_client:
                 try:
-                    # Using sentence-transformers/all-MiniLM-L6-v2 (FREE, fast, 384 dims)
-                    # Or BAAI/bge-small-en-v1.5 (FREE, better quality, 384 dims)
-                    response = self.hf_client.feature_extraction(
-                        text,
-                        model="BAAI/bge-small-en-v1.5"  # High-quality free embeddings
+                    response = self.openai_client.embeddings.create(
+                        model="text-embedding-3-small",  # Fast, cheap ($0.02/1M tokens), good quality
+                        input=text
                     )
-                    
-                    # HuggingFace returns nested list, flatten it
-                    if isinstance(response, list):
-                        if isinstance(response[0], list):
-                            embedding = response[0]
-                        else:
-                            embedding = response
-                    else:
-                        embedding = list(response)
-                    
-                    logger.debug(f"✅ Generated HuggingFace embedding ({len(embedding)} dims)")
+                    embedding = response.data[0].embedding
+                    logger.debug(f"✅ Generated OpenAI embedding ({len(embedding)} dims)")
                     return embedding
-                    
-                except Exception as hf_error:
-                    logger.warning(f"⚠️ HuggingFace embedding failed: {hf_error}, falling back...")
+                except Exception as openai_error:
+                    logger.warning(f"⚠️ OpenAI embedding failed: {openai_error}, trying HuggingFace...")
             
-            # Priority 2: OpenAI Embeddings (paid but high quality)
-            if self.provider == "openai" and self.openai_client:
-                response = self.openai_client.embeddings.create(
-                    model="text-embedding-3-small",
-                    input=text
-                )
-                embedding = response.data[0].embedding
-                logger.debug(f"✅ Generated OpenAI embedding ({len(embedding)} dims)")
-                return embedding
+            # Priority 2: HuggingFace FREE Embeddings (with retry logic)
+            if self.hf_client:
+                # Try HuggingFace with retry logic (3 attempts with increasing timeout)
+                for attempt in range(3):
+                    try:
+                        logger.debug(f"Attempting HuggingFace embedding (attempt {attempt + 1}/3)...")
+                        response = self.hf_client.feature_extraction(
+                            text,
+                            model="BAAI/bge-small-en-v1.5"  # High-quality free embeddings
+                        )
+                        
+                        # HuggingFace returns nested list, flatten it
+                        if isinstance(response, list):
+                            if isinstance(response[0], list):
+                                embedding = response[0]
+                            else:
+                                embedding = response
+                        else:
+                            embedding = list(response)
+                        
+                        logger.debug(f"✅ Generated HuggingFace embedding ({len(embedding)} dims)")
+                        return embedding
+                        
+                    except Exception as hf_error:
+                        if attempt < 2:  # Not last attempt
+                            logger.debug(f"⚠️ Attempt {attempt + 1} failed: {hf_error}, retrying...")
+                            import time
+                            time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s
+                        else:  # Last attempt failed
+                            logger.warning(f"⚠️ HuggingFace embedding failed after 3 attempts: {hf_error}")
+                            logger.warning(f"   Using mock fallback (search quality will be reduced)")
             
-            # Fallback: Mock embeddings (for development/testing only)
-            logger.warning("⚠️ Using MOCK embeddings - Add HUGGINGFACE_API_KEY to .env for FREE real embeddings!")
-            logger.warning("   Get your FREE key at: https://huggingface.co/settings/tokens")
+            # Fallback: Mock embeddings (POOR QUALITY - for testing only!)
+            logger.warning("⚠️ Using MOCK embeddings - search quality will be SIGNIFICANTLY REDUCED!")
+            logger.warning("   Configure OPENAI_API_KEY for reliable, high-quality embeddings")
+            logger.warning("   OR fix HuggingFace network connectivity for free embeddings")
             
             # Simple sentence-transformer-like mock
             import hashlib

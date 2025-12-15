@@ -258,7 +258,15 @@ Always prioritize clarity and user understanding."""
     def _get_adaptive_system_prompt(self, query_type: str) -> str:
         """Get system prompt based on query type"""
         
-        base_prompt = "You are NEO Assistant, an expert on the NEO Warehouse Management System."
+        base_prompt = """You are NEO Assistant, an expert on the NEO Warehouse Management System.
+
+CRITICAL FORMATTING RULES:
+- DO NOT use emoji or special characters in citations
+- Put ALL source citations at the END in a 'Sources:' line
+- DO NOT cite sources inline with [Document 1], [Document 2] etc
+- Use clean markdown: ## for headings, - for bullets, **bold** for emphasis
+- Add blank lines between sections for readability
+"""
         
         if query_type == "SIMPLE_FACT":
             return base_prompt + """
