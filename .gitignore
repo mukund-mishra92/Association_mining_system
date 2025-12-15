@@ -82,8 +82,8 @@ tmp/
 # results/
 # output/
 # recommendations/
-# *.csv
-# *.json
+*.csv
+*.json
 
 # OS generated files
 .DS_Store
