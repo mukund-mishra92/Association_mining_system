@@ -85,6 +85,14 @@ tmp/
 *.csv
 *.json
 
+Edit .gitignore:
+
+# Vector stores / embeddings
+app/modules/neo_chatbot/data/vector_store.json
+*.faiss
+*.index
+*.pkl
+
 # OS generated files
 .DS_Store
 .DS_Store?
