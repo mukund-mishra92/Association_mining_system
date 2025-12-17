@@ -82,13 +82,12 @@ tmp/
 # results/
 # output/
 # recommendations/
-*.csv
-*.json
 
-Edit .gitignore:
-
-# Vector stores / embeddings
-app/modules/neo_chatbot/data/vector_store.json
+# Vector stores / embeddings (large binary files)
+app/modules/neo_chatbot/data/vector_store*.json
+app/modules/neo_chatbot/data/*.faiss
+app/modules/neo_chatbot/data/*.index
+app/modules/neo_chatbot/data/*.pkl
 *.faiss
 *.index
 *.pkl
