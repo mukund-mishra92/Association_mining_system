@@ -1,385 +1,313 @@
-# Association Mining System# Association Mining System
+# Association Mining System
 
+**NEO Warehouse Intelligence Platform**  
+AI-powered analytics for order patterns, inventory optimization, and intelligent support.
 
+---
 
-A comprehensive warehouse analytics platform combining association rule mining with AI-powered insights for NEO warehouse management systems.Warehouse intelligence platform for order pattern analysis and inventory optimization.
+## 🎯 What It Does
 
+This system analyzes warehouse order data to provide:
 
+- **📊 Association Mining** - Discover SKU relationships and bundling opportunities
+- **🤖 AI Chatbot Support** - Three specialized assistants:
+  - 💬 General Chatbot - Technical documentation Q&A
+  - 🔧 Diagnostic Support - Troubleshoot warehouse issues
+  - 📊 SQL Assistant - Natural language database queries
+- **📈 Velocity Analysis** - Optimize bin placement based on demand
+- **🎯 Smart Recommendations** - Data-driven inventory decisions
 
-## Overview## What it does
+---
 
+## 🚀 Quick Start
 
+### Prerequisites
 
-This system analyzes SKU relationships and provides intelligent recommendations through:This system helps you analyze your warehouse order data to:
+- Python 3.8+
+- MySQL 8.0+
+- 4GB RAM minimum
 
-- Market basket analysis for SKU associations- Find patterns in customer orders
+### Installation
 
-- AI chatbot for technical documentation queries- Get AI-powered inventory recommendations  
-
-- Velocity analysis for bin optimization- See demand forecasts and trends
-
-- Real-time performance monitoring- Optimize SKU performance
-
-
-
-## Features## Requirements
-
-
-
-### Association Mining- Python 3.8 or newer
-
-- FP-Growth algorithm for efficient pattern discovery- MySQL 8.0 or newer
-
-- Configurable support, confidence, and lift thresholds- At least 4GB RAM
-
-- Interactive web dashboard for rule visualization
-
-- Scheduled mining with automatic database updates## Installation
-
-
-
-### AI Chatbot1. Download or clone the project
-
-- Technical documentation Q&A using RAG (Retrieval-Augmented Generation)2. Open command prompt and go to the project folder:
-
-- Supports 164 technical documents (proposals, manuals, SOPs)   ```
-
-- Vision capability for flowchart and diagram understanding   cd association_mining_system
-
-- Powered by Groq LLM with HuggingFace embeddings   ```
-
-
-
-### Velocity Analysis3. Create a virtual environment:
-
-- ABC classification for inventory prioritization   ```
-
-- Bin allocation optimization recommendations   python -m venv .venv
-
-- Historical trend analysis   ```
-
-
-
-### Performance Monitoring4. Activate the virtual environment:
-
-- Real-time mining execution tracking   ```
-
-- Resource usage analytics   .venv\Scripts\activate
-
-- Historical performance logs   ```
-
-
-
-## Quick Start5. Install required packages:
-
+1. **Clone the repository**
+   ```bash
+   cd association_mining_system
    ```
 
-### Prerequisites   pip install -r requirements.txt
-
-- Python 3.10 or higher   ```
-
-- MySQL database
-
-- Windows OS (for batch scripts)## How to run
-
-
-
-### Installation### Easy way (recommended)
-
-```
-
-1. Clone the repositorypython main.py
-
-2. Create virtual environment:```
-
+2. **Set up virtual environment**
    ```bash
-
-   python -m venv venv### Using batch files (Windows only)
-
-   ``````
-
-quick_start.bat
-
-3. Activate environment:```
-
-   ```bash
-
-   venv\Scripts\activate## How to use
-
+   python -m venv venv
+   venv\Scripts\activate
+   pip install -r requirements.txt
    ```
 
-1. Start the system using one of the methods above
+3. **Configure environment**
+   - Copy `.env.example` to `.env`
+   - Add your database credentials and API keys:
+     ```
+     DB_HOST=localhost
+     DB_USER=your_user
+     DB_PASSWORD=your_password
+     DB_NAME=neo_database
+     
+     GROQ_API_KEY=your_groq_key
+     HUGGINGFACE_API_KEY=your_hf_key
+     ```
 
-4. Install dependencies:2. Open your web browser
-
-   ```bash3. Go to: http://localhost:5000
-
-   pip install -r requirements.txt4. Set up your database connection
-
-   ```5. Upload your order data
-
-6. Run the analysis
-
-5. Configure environment variables in `.env`:7. View results in the dashboard
-
+4. **Ingest documents (first-time setup)**
+   ```bash
+   python ingest_unified.py
    ```
 
-   DB_HOST=localhost## Web Interface
-
-   DB_USER=root
-
-   DB_PASSWORD=your_passwordThe main dashboard runs at: http://localhost:5000
-
-   DB_NAME=your_database
-
-   Features:
-
-   GROQ_API_KEY=your_groq_key- Database setup
-
-   HUGGINGFACE_API_KEY=your_hf_key- Data upload and validation
-
-   ```- Start analysis
-
-- View results and charts
-
-### Running the Application- Download reports
-
-
-
-**Option 1: Quick Start (Recommended)**## API Interface
-
-```bash
-
-quick_start.batThe API runs at: http://localhost:8001
-
-```
-
-This starts both FastAPI (port 8080) and Flask UI (port 5000) in background mode.Key endpoints:
-
-- `/docs` - See all available API functions
-
-**Option 2: Manual Start**- `/mine` - Start data analysis
-
-```bash- `/recommendations/{item}` - Get recommendations for an item
-
-# Start API server- `/health` - Check if system is working
-
-uvicorn app.main:app --host 0.0.0.0 --port 8080
-
-## Database Setup
-
-# Start UI server (in separate terminal)
-
-python app/web/main.pyYou need these tables in your MySQL database:
-
-```- Order data table (your transaction records)
-
-- SKU master table (product information)
-
-**Stop Servers**
-
-```bashThe system will create a recommendations table automatically.
-
-stop_servers.bat
-
-```## Configuration
-
-
-
-## UsageCreate a `.env` file with your settings:
-
-```
-
-### Web InterfaceDB_HOST=localhost
-
-- Main Dashboard: http://localhost:5000DB_USER=your_username
-
-- Association Mining: http://localhost:5000/association-miningDB_PASSWORD=your_password
-
-- AI Chatbot: http://localhost:5000/chatbotDB_NAME=your_database
-
-- Velocity Analysis: http://localhost:5000/velocity-analysisORDER_TABLE=your_order_table_name
-
-SKU_MASTER_TABLE=your_sku_table_name
-
-### API Documentation```
-
-- Interactive API Docs: http://localhost:8080/docs
-
-- OpenAPI Schema: http://localhost:8080/openapi.json## Troubleshooting
-
-
-
-### Document Ingestion**Cannot start the system:**
-
-- Make sure Python is installed
-
-To add new technical documents to the chatbot:- Check that MySQL is running
-
-- Activate the virtual environment first
-
-```bash
-
-# Ingest all documents from configured folders**Database connection errors:**
-
-python ingest_unified.py- Verify your database credentials
-
-- Make sure MySQL service is running
-
-# Or ingest specific PDFs- Check if tables exist
-
-python reingest_documents.py
-
-```**Module not found errors:**
-
-- Activate virtual environment: `.venv\Scripts\activate`
-
-### Running Association Mining- Install packages: `pip install -r requirements.txt`
-
-
-
-1. Via Web UI:**Port conflicts:**
-
-   - Navigate to Association Mining dashboard- Web interface uses port 5000
-
-   - Set parameters (min_support, min_confidence, min_lift)- API uses port 8001
-
-   - Click "Run Mining"- Make sure these ports are available
-
-
-
-2. Via API:## Getting Help
-
+5. **Start the servers**
+   
+   **Option A - Visible Windows** (recommended for development):
    ```bash
+   python quick_start.py
+   ```
+   
+   **Option B - Background** (silent mode):
+   ```bash
+   python start_background.py
+   ```
 
-   curl -X POST http://localhost:8080/api/association-mining/run \If you need help:
+6. **Access the application**
+   - 🌐 Web UI: http://localhost:5000
+   - 🚀 FastAPI: http://localhost:8080
+   - 📚 API Docs: http://localhost:8080/docs
 
-     -H "Content-Type: application/json" \1. Check the troubleshooting section above
+---
 
-     -d '{"min_support": 0.01, "min_confidence": 0.3, "min_lift": 1.0}'2. Look at the API documentation at http://localhost:8001/docs
+## 📁 Project Structure
 
-   ```3. Check the log files for error messages
-
-
-
-3. Via Scheduled Task (runs automatically based on configuration)## Files and Folders
-
-
-
-## Project Structure```
-
+```
 association_mining_system/
-
-```├── main.py                 # Start the system
-
-association_mining_system/├── requirements.txt        # Required packages
-
-├── app/├── scripts/               # Batch files for Windows
-
-│   ├── modules/├── app/                   # Main application code
-
-│   │   ├── association_mining/    # Mining algorithms & UI│   ├── main.py           # API backend
-
-│   │   ├── neo_chatbot/           # AI chatbot with RAG│   ├── web/              # Web dashboard
-
-│   │   ├── velocity_analysis/     # ABC analysis & bin optimization│   ├── modules/          # Analysis features
-
-│   │   └── ai_insights/           # Performance analytics│   └── shared/           # Common code
-
-│   ├── shared/└── utils/                # Helper tools
-
-│   │   ├── config/                # Configuration management```
-
-│   │   ├── database/              # Database connections
-
-│   │   └── utils/                 # Shared utilitiesThat's it! The system should work for analyzing your warehouse data and providing insights.
-│   ├── web/                       # Flask UI
-│   └── main.py                    # FastAPI application
-├── docs/                          # Documentation
-├── logs/                          # Application logs
-├── requirements.txt               # Python dependencies
-├── quick_start.bat               # Quick start script
-└── stop_servers.bat              # Stop servers script
+├── app/
+│   ├── modules/
+│   │   ├── association_mining/    # Mining engine
+│   │   └── neo_chatbot/            # AI chatbot services
+│   ├── web/                        # Flask UI
+│   └── main.py                     # FastAPI backend
+├── docs/                           # Documentation
+├── logs/                           # Application logs
+├── templates/                      # UI templates
+├── quick_start.py                  # Start servers (visible)
+├── start_background.py             # Start servers (background)
+├── ingest_unified.py               # Document ingestion
+├── ingestion_config.py             # Ingestion settings
+├── requirements.txt                # Dependencies
+├── .env                            # Configuration (create from .env.example)
+└── README.md                       # This file
 ```
 
-## Configuration
+---
 
-### Association Mining Parameters
-Edit in web UI or pass to API:
-- `min_support`: Minimum transaction frequency (default: 0.01)
-- `min_confidence`: Minimum rule confidence (default: 0.3)
-- `min_lift`: Minimum lift value (default: 1.0)
-- `max_length`: Maximum items per rule (default: 10)
+## 🎨 Features
 
-### Chatbot Configuration
-Edit `app/modules/neo_chatbot/services/llm_service.py`:
-- LLM model selection
-- Embedding model configuration
-- Temperature and token limits
+### 1. Association Mining
+- **FP-Growth Algorithm** for efficient pattern discovery
+- **Configurable Parameters**:
+  - Support: Minimum frequency threshold
+  - Confidence: Rule strength
+  - Lift: Correlation measure
+- **Interactive Dashboard** for rule visualization
+- **Scheduled Mining** with automatic updates
 
-### Database Schema
-Required tables:
-- `sku_master`: SKU information
-- `order_details`: Transaction data
-- `sku_recommendations`: Mining results
-- `sku_velocity_analysis`: Velocity metrics
+### 2. AI Chatbot System
 
-## API Endpoints
+#### 💬 General Chatbot
+- Technical documentation Q&A using RAG
+- Supports 160+ documents (proposals, manuals, SOPs)
+- Vision capability for diagrams/flowcharts
+- Powered by Groq LLM + HuggingFace embeddings
+
+#### 🔧 Diagnostic Support
+- Real-time troubleshooting for warehouse issues
+- SQL query execution for system diagnostics
+- Historical issue database with 30+ known solutions
+- Intelligent root cause analysis
+
+#### 📊 SQL Assistant
+- Natural language to SQL conversion
+- Safe query execution with validation
+- Conversational query refinement
+- Schema learning and optimization
+
+### 3. Velocity Analysis
+- Demand pattern tracking
+- Bin optimization recommendations
+- SKU performance metrics
+
+---
+
+## 🛠️ Usage
+
+### Running Association Mining
+
+1. Configure parameters in the web UI
+2. Select date range for analysis
+3. Click "Start Mining"
+4. View results in the Rules Dashboard
+
+### Using AI Chatbot
+
+1. Open http://localhost:5000
+2. Select chatbot type:
+   - **General** - Ask about documentation
+   - **Diagnostic** - Troubleshoot issues
+   - **SQL** - Query database
+3. Type your question
+4. Get intelligent, context-aware responses
+
+### Document Ingestion
+
+To update the knowledge base:
+```bash
+python ingest_unified.py
+```
+
+Configuration in `ingestion_config.py`:
+- Document paths
+- Chunk sizes
+- Embedding models
+- Vector store settings
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables (.env)
+
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_user
+DB_PASSWORD=your_password
+DB_NAME=neo_database
+
+# API Keys
+GROQ_API_KEY=your_groq_api_key
+HUGGINGFACE_API_KEY=your_hf_api_key
+
+# Logging
+LOG_LEVEL=INFO
+```
+
+### Mining Parameters
+
+Edit in web UI or `app/modules/association_mining/config.py`:
+- `min_support`: 0.001 - 0.1 (default: 0.01)
+- `min_confidence`: 0.3 - 0.9 (default: 0.5)
+- `min_lift`: 1.0 - 10.0 (default: 1.5)
+
+---
+
+## 📊 API Endpoints
 
 ### Association Mining
-- `POST /api/association-mining/run` - Execute mining
-- `GET /api/association-mining/recommendations` - Get results
-- `GET /api/association-mining/status` - Check mining status
+- `POST /api/association-mining/run` - Start mining
+- `GET /api/association-mining/rules` - Get rules
+- `GET /api/association-mining/status` - Check status
 
 ### Chatbot
-- `POST /api/chatbot/chat` - Send message
-- `POST /api/chatbot/ingest` - Upload documents
-- `GET /api/chatbot/history` - Get conversation history
+- `POST /api/chat` - Send message
+- `GET /api/chat/history` - Get conversation
+- `POST /api/chat/feedback` - Submit feedback
 
-### Velocity Analysis
-- `POST /api/velocity-analysis/run` - Run ABC analysis
-- `GET /api/velocity-analysis/results` - Get analysis results
+### Diagnostics
+- `POST /api/diagnostic/search` - Search issues
+- `GET /api/diagnostic/issues` - List all issues
+- `POST /api/diagnostic/query` - Run diagnostic
 
-## Troubleshooting
+Full API documentation: http://localhost:8080/docs
 
-### Port Already in Use
-```bash
-# Kill processes on port 5000 and 8080
-stop_servers.bat
-```
+---
 
-### Database Connection Failed
+## 🐛 Troubleshooting
+
+### Servers won't start
+- Check if ports 5000 and 8080 are available
+- Verify virtual environment is activated
+- Check `.env` file exists and is configured
+
+### Database connection errors
 - Verify MySQL is running
 - Check credentials in `.env`
 - Ensure database exists
 
-### Chatbot Not Finding Documents
+### Chatbot not responding
+- Verify API keys in `.env`
+- Check internet connection
+- Review logs in `logs/` folder
+
+### Document ingestion fails
+- Ensure document paths exist in `ingestion_config.py`
+- Check file permissions
+- Verify sufficient disk space
+
+---
+
+## 📝 Logs
+
+Application logs are stored in:
+- `logs/association_mining.log` - Mining operations
+- `logs/neo_chatbot.log` - Chatbot activity
+- `logs/fastapi_background.log` - FastAPI server
+- `logs/flask_background.log` - Flask UI server
+
+---
+
+## 🔄 Updates & Maintenance
+
+### Updating Documents
 ```bash
-# Re-ingest documents
 python ingest_unified.py
 ```
 
-### No Association Rules Found
-- Lower `min_support` threshold
-- Ensure sufficient transaction data
-- Check SKU master data integrity
+### Clearing Cache
+```bash
+# Remove vector store cache
+rm -rf app/modules/neo_chatbot/data/vector_store/*
+```
 
-## Performance Tuning
+### Database Backup
+Regularly backup your MySQL database:
+```bash
+mysqldump -u user -p neo_database > backup.sql
+```
 
-### For Large Datasets (>100K transactions)
-- Increase `min_support` to 0.02 or higher
-- Use scheduled mining during off-peak hours
-- Enable database indexing on ORDER_ID, SKU_ID
+---
 
-### For Better Chatbot Responses
-- Add more technical documents
-- Use OpenAI embeddings (set OPENAI_API_KEY)
-- Increase context window in llm_service.py
+## 🤝 Support
 
-## License
+For issues or questions:
+1. Check logs in `logs/` folder
+2. Review documentation in `docs/`
+3. Use Diagnostic Support chatbot
+4. Contact system administrator
 
-Proprietary - Falcon Autotech
+---
 
-## Support
+## 📄 License
 
-For technical support, contact the development team or refer to documentation in the `docs/` folder.
+Internal use only - NEO Warehouse Management System
+
+---
+
+## 🎯 Quick Commands
+
+| Action | Command |
+|--------|---------|
+| Start (visible) | `python quick_start.py` |
+| Start (background) | `python start_background.py` |
+| Ingest documents | `python ingest_unified.py` |
+| Activate venv | `venv\Scripts\activate` |
+| Install deps | `pip install -r requirements.txt` |
+| View API docs | http://localhost:8080/docs |
+| Access UI | http://localhost:5000 |
+
+---
+
+**Version**: 2.0  
+**Last Updated**: December 2025

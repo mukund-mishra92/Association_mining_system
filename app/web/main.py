@@ -517,12 +517,11 @@ def chatbot_page():
         
         # Render the chatbot template
         return render_template('chatbot.html')
-        
+    
     except Exception as e:
-        print(f"❌ [CHATBOT LOG] Error loading chatbot: {e}")
-        logger.error(f"Error loading chatbot: {e}")
+        print(f"❌ [CHATBOT ERROR] Error loading chatbot page: {e}")
+        logger.error(f"Error loading chatbot page: {e}")
         
-        # Log the error (if logging available)
         if LOGGING_AVAILABLE and mining_logger:
             mining_logger.log_operation(
                 operation="chatbot_page_error",
@@ -531,7 +530,43 @@ def chatbot_page():
             )
         
         return render_template('error.html', 
-                             error_message=f"Could not load NEO chatbot: {str(e)}")
+                             error_message=f"Could not load chatbot: {str(e)}")
+
+@app.route('/diagnostic-support')
+def diagnostic_support_page():
+    """Diagnostic Support page"""
+    print("🔍 [ROUTE LOG] Diagnostic Support route called")
+    logger.info("Diagnostic Support page accessed")
+    
+    try:
+        # Log diagnostic support page access
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="diagnostic_support_page_access",
+                details={"page": "diagnostic_support", "status": "success"},
+                user_id="system"
+            )
+        
+        print("✅ [DIAGNOSTIC LOG] Rendering diagnostic support template")
+        logger.info("Rendering diagnostic support template")
+        
+        # Render the diagnostic support template
+        return render_template('diagnostic_support.html')
+        
+    except Exception as e:
+        print(f"❌ [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
+        logger.error(f"Error loading diagnostic support page: {e}")
+        
+        # Log the error (if logging available)
+        if LOGGING_AVAILABLE and mining_logger:
+            mining_logger.log_operation(
+                operation="diagnostic_support_page_error",
+                details={"page": "diagnostic_support", "status": "error", "error": str(e)},
+                user_id="system"
+            )
+        
+        return render_template('error.html', 
+                             error_message=f"Could not load diagnostic support: {str(e)}")
 
 @app.route('/velocity-analysis-legacy')
 def velocity_analysis_legacy():

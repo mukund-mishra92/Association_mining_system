@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from app.modules.association_mining.api.endpoints import router
 from app.modules.neo_chatbot.api.chatbot_endpoints import router as chatbot_router
+from app.modules.neo_chatbot.api.diagnostic_support_routes import router as diagnostic_router
 from app.shared.config.config import config
 import logging
 from pathlib import Path
@@ -17,6 +18,7 @@ app = FastAPI(
 # Include routers
 app.include_router(router, prefix="/api/v1")
 app.include_router(chatbot_router)  # Chatbot API routes (already has /api/chatbot prefix)
+app.include_router(diagnostic_router)  # Diagnostic support routes (/api/diagnostic-support)
 
 @app.get("/")
 async def root():

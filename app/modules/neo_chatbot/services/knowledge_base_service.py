@@ -12,6 +12,7 @@ from pathlib import Path
 from .llm_service import LLMService
 from .vector_store_service import VectorStoreService
 from .rlhf_service import RLHFService
+from .diagnostic_support_service import DiagnosticSupportService
 from ..models.schemas import ChatRequest, ChatResponse, SourceDocument, ChatbotType, MessageRole
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ class KnowledgeBaseService:
         self.llm_service = LLMService()
         self.vector_store = VectorStoreService()
         self.rlhf_service = RLHFService()
+        self.diagnostic_service = DiagnosticSupportService()  # Add diagnostic support
         
         self.system_prompt = """You are NEO Assistant, an expert on the NEO Warehouse Management System.
 
@@ -38,6 +40,7 @@ Your knowledge base includes:
 - Code examples and implementations
 - Standard Operating Procedures (SOPs)
 - Safety guidelines and best practices
+- **Diagnostic Support Database** - Real troubleshooting solutions for bot and station issues
 
 Response Guidelines:
 1. **Structure your answers clearly** with headings and sections
@@ -47,7 +50,8 @@ Response Guidelines:
 5. **Be concise yet comprehensive** - break complex topics into digestible parts
 6. **Include code examples** when relevant - show actual implementation details
 7. **For code queries**: Explain the code's purpose, key methods, and how it fits in the system
-8. **If information is incomplete**, clearly state what's missing
+8. **For troubleshooting**: Check diagnostic database first for known issues and solutions
+9. **If information is incomplete**, clearly state what's missing
 9. **Use professional tone** - helpful, clear, and authoritative
 
 Formatting Standards:
@@ -95,7 +99,15 @@ Always prioritize clarity and user understanding."""
             if len(self.vector_store.documents) == 0:
                 return self._handle_empty_knowledge_base(chat_request)
             
-            # Step 0: Classify query type for adaptive response strategy
+            # Step 0: Check if this is a troubleshooting query
+            is_troubleshooting = self._is_troubleshooting_query(chat_request.message)
+            if is_troubleshooting:
+                logger.info("🔧 Detected troubleshooting query, checking diagnostic database...")
+                diagnostic_result = self._handle_diagnostic_query(chat_request)
+                if diagnostic_result:
+                    return diagnostic_result
+            
+            # Step 1: Classify query type for adaptive response strategy
             query_type = self._classify_query(chat_request.message)
             logger.info(f"📊 Query classified as: {query_type}")
             
@@ -714,6 +726,104 @@ Category: {category} | Relevance: {similarity:.1%}
             
         except Exception as e:
             logger.error(f"❌ Error adding document to knowledge base: {e}")
+            return False
+    
+    def _is_troubleshooting_query(self, query: str) -> bool:
+        """Detect if query is asking for troubleshooting help"""
+        troubleshooting_keywords = [
+            'error', 'issue', 'problem', 'stuck', 'not working', 'failed', 'stopped',
+            'unable to', 'cannot', 'can\'t', 'won\'t', 'troubleshoot', 'debug', 'fix',
+            'alarm', 'stopped', 'bot stuck', 'station', 'lidar', 'buffer', 'maintenance',
+            'e-stop', 'emergency', 'recovery', 'manual mode', 'hmi', 'teleoperation'
+        ]
+        
+        query_lower = query.lower()
+        return any(keyword in query_lower for keyword in troubleshooting_keywords)
+    
+    def _handle_diagnostic_query(self, chat_request: ChatRequest) -> Optional[ChatResponse]:
+        """Handle troubleshooting queries using diagnostic database"""
+        try:
+            # Search diagnostic database
+            matches = self.diagnostic_service.search_issue(
+                query=chat_request.message,
+                issue_type=None  # Search both BOT and STATION level
+            )
+            
+            if not matches:
+                return None  # Fall back to normal RAG
+            
+            # Take top 3 matches
+            top_matches = matches[:3]
+            
+            # Build diagnostic response
+            response_parts = [
+                "## 🔧 Diagnostic Support\n",
+                f"I found {len(top_matches)} known solution(s) for similar issues:\n"
+            ]
+            
+            for i, match in enumerate(top_matches, 1):
+                severity_emoji = "🔴" if match['severity'].lower() == "high" else "🟡" if match['severity'].lower() == "medium" else "🟢"
+                
+                response_parts.append(f"\n### Solution {i}: {match['problem']}")
+                response_parts.append(f"\n{severity_emoji} **Severity:** {match['severity']}")
+                response_parts.append(f"\n**Type:** {match['type'].replace('_', ' ')}")
+                response_parts.append(f"\n\n**Solution Steps:**")
+                
+                # Format solution steps
+                solution_lines = match['solution'].split('.')
+                for step in solution_lines:
+                    step = step.strip()
+                    if step:
+                        response_parts.append(f"\n- {step}")
+                
+                # Add SQL query if available
+                if match.get('sql_query') and match['sql_query'].strip():
+                    response_parts.append(f"\n\n**SQL Query for Diagnosis:**")
+                    response_parts.append(f"\n```sql\n{match['sql_query']}\n```")
+                
+                # Add developer escalation note
+                if match.get('reported_to_dev', '').upper() == 'Y':
+                    response_parts.append(f"\n\n⚠️ *Note: This issue may require developer attention if not resolved.*")
+                
+                response_parts.append("\n" + "-" * 60)
+            
+            # Add general advice
+            response_parts.append("\n\n### 📋 General Troubleshooting Tips:")
+            response_parts.append("\n1. Always check bot status and alarms first")
+            response_parts.append("\n2. Verify task assignments in task_master")
+            response_parts.append("\n3. Check bot communication via IP ping")
+            response_parts.append("\n4. Try RECOVERY before NON-RECOVERY")
+            response_parts.append("\n5. Document the issue for future reference")
+            
+            response_text = "".join(response_parts)
+            
+            # Create source documents from matches
+            sources = [
+                SourceDocument(
+                    content=match['problem'][:200],
+                    filename=f"Diagnostic DB - {match['type']}",
+                    page_number=match['id'],
+                    relevance_score=match['relevance_score'] / 100.0
+                )
+                for match in top_matches
+            ]
+            
+            return ChatResponse(
+                message_id=str(uuid.uuid4()),
+                response=response_text,
+                chatbot_type=ChatbotType.KNOWLEDGE_BASE,
+                confidence=0.95,  # High confidence for exact matches
+                sources=sources,
+                suggested_questions=[
+                    "Show me SQL queries for bot diagnostics",
+                    "What are common station-level issues?",
+                    "How do I use HMI teleoperation mode?"
+                ]
+            )
+            
+        except Exception as e:
+            logger.error(f"Error in diagnostic query handling: {e}")
+            return None  # Fall back to normal RAG
             return False
     
     def get_statistics(self) -> Dict[str, Any]:

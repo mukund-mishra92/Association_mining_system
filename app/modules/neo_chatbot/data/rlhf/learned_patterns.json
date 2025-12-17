@@ -5668,6 +5668,275 @@
           "SOP Document NEO ASRS.pdf"
         ]
       }
+    },
+    {
+      "query": "can you give me important compinent of auto induct systems",
+      "query_keywords": [
+        "give",
+        "important",
+        "compinent",
+        "auto",
+        "induct",
+        "systems"
+      ],
+      "query_length": 10,
+      "response": "**Overview**\nThe auto induct systems are a crucial component of warehouse automation, and they consist of several key components that work together to improve efficiency and reduce costs. The main components of auto induct systems include control panels, engines, sensors, and control commands. These components are designed to work together to sort and transport packages within a warehouse.\n\n**Key Points**\n\u2022 **Control Panels**: The control panels are the brain of the auto induct system, and they ",
+      "response_length": 1975,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T12:12:30.278827",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "F22-00409_Offer_Warehouse Automation _Shipment Sorter_Bhiwandi.pdf",
+          "Loop CBS_Conveyor Automation_Amazon_JED4_R1.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2-02-02-24 (1).pdf"
+        ]
+      }
+    },
+    {
+      "query": "no i means four different type of intelligence applied for automatically feeding the packets to the cbs",
+      "query_keywords": [
+        "means",
+        "four",
+        "different",
+        "type",
+        "intelligence",
+        "applied",
+        "automatically",
+        "feeding",
+        "packets"
+      ],
+      "query_length": 17,
+      "response": "The statement refers to four types of intelligence applied for automatic feeding of packets to the CBS, but the provided documents do not explicitly mention these types. However, the documents do describe various components of the automatic feedlines, such as singulators, aligning conveyors, and sensors, which contribute to the intelligent feeding process. Sources: [Document 2], [Document 3], [Document 4], [Document 5]",
+      "response_length": 422,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T12:13:30.341092",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Prime_IQ-loopCBS_24K-Technocommercial offer.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2-02-02-24 (1).pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2-02-02-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "es, i mean autofeed line have singulators, aligner and what else",
+      "query_keywords": [
+        "mean",
+        "autofeed",
+        "line",
+        "have",
+        "singulators,",
+        "aligner",
+        "what",
+        "else"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nThe autofeed line is a critical component of the warehouse management system, and it consists of several key elements that work together to ensure efficient and accurate processing of items. The autofeed line is designed to handle a high volume of items and is typically used in conjunction with other automation systems. \n\n## Key Points\n* Singulators are used to separate items and ensure they are properly aligned for processing\n* Aligners are used to adjust the position of items to en",
+      "response_length": 1459,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T12:16:30.793014",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.99,
+        "source_count": 5,
+        "document_names": [
+          "Festo_technocommercial offer_Option 5A_10-09-24.pdf",
+          "Festo_technocommercial offer_Option 5C_10-09-24.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "bot is not responding to the commands what should i do",
+      "query_keywords": [
+        "responding",
+        "commands",
+        "what",
+        "should"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nIf a bot is not responding to commands, it is essential to troubleshoot the issue to ensure the bot's functionality and the overall efficiency of the system. The NEO Warehouse Management System provides various features and modes to diagnose and resolve such problems. The bot's non-responsiveness could be due to several reasons, including errors, maintenance requirements, or communication issues.\n\n## Key Points\n* Check the bot's status and error messages on the dashboard to identify ",
+      "response_length": 1538,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T12:50:50.881543",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you check why bot is not responding to my commandds",
+      "query_keywords": [
+        "check",
+        "responding",
+        "commandds"
+      ],
+      "query_length": 11,
+      "response": "## Overview\nThe bot not responding to commands could be due to various reasons, including errors requiring maintenance, being disabled, or issues with its operational parameters. To troubleshoot the issue, it's essential to check the bot's status and details.\n\n## Key Points\n* The bot may be in an error state requiring maintenance, which can be checked on the maintenance screen.\n* The bot's status can be viewed on the Bots page, which provides comprehensive real-time data and operational paramete",
+      "response_length": 1413,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:14:18.306991",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "bot not responding to the commands",
+      "query_keywords": [
+        "responding",
+        "commands"
+      ],
+      "query_length": 6,
+      "response": "**Overview**\nThe NEO Warehouse Management System provides a comprehensive solution for managing bots and their operations. If a bot is not responding to commands, it is essential to follow specific procedures to address the issue. The system offers various features, such as manual mode operations and non-recovery options, to handle bot errors and ensure uninterrupted task execution.\n\n**Key Points**\n\u2022 The bot's status and details can be viewed on the Bot Details page, which provides real-time dat",
+      "response_length": 1488,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:18:10.008758",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 0.98,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf"
+        ]
+      }
+    },
+    {
+      "query": "why station is overloaded",
+      "query_keywords": [
+        "station",
+        "overloaded"
+      ],
+      "query_length": 4,
+      "response": "The station is overloaded due to a high volume of orders and mono cartons being processed, exceeding its capacity. This can be seen in the system calculation summary where the B2B outbound has 77 orders per day and 183,785 mono cartons per day. The station's capacity is not sufficient to handle this volume, leading to overload [Document 4]",
+      "response_length": 341,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:37:53.866167",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Dashboard Manual.pdf",
+          "Dashboard Manual.pdf",
+          "F25-00163_LW Reid_Techno-commercial Offer_Neo Automaiton.pdf"
+        ]
+      }
+    },
+    {
+      "query": "can you tell me what are the different type of cpnveyers we have",
+      "query_keywords": [
+        "tell",
+        "what",
+        "different",
+        "type",
+        "cpnveyers",
+        "have"
+      ],
+      "query_length": 13,
+      "response": "## Overview\nThe documentation provides information on various conveyor systems used in warehouse management. There are several types of conveyors mentioned, each with its specific function and characteristics. The main types of conveyors include feedlines, sorters, and their respective components.\n\n## Key Points\n* Feedlines consist of multiple conveyor types, including spacing conveyor, buffer conveyor, scanning conveyor, and top loader conveyor.\n* Sorters, such as the Linear Cross Belt Sorter, ",
+      "response_length": 1675,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T16:58:27.253927",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Flipkart_India_Technocommercial Offer_Linear CBS_3 Sites_15-04-2024 (1).pdf",
+          "Flipkart_India_Technocommercial Offer_Linear CBS_3 Sites_15-04-2024.pdf",
+          "F23-00164_01_Techno- Commercial offer for CBS_Chennai_Delhivery_09032023.pdf"
+        ]
+      }
+    },
+    {
+      "query": "sweedi. can you explain what is this and why it is used.",
+      "query_keywords": [
+        "sweedi.",
+        "explain",
+        "what",
+        "this",
+        "used."
+      ],
+      "query_length": 12,
+      "response": "## Overview\nThe SWEDI, or Swivel Wheel Diverter, is a non-impact sortation module designed for linear sortation lines, particularly suited for medium volume sort centers. It is used to efficiently sort and divert parcels or items in a warehouse or logistics setting. The SWEDI system is modular, allowing for space savings and future expansion of sorting points.\n\n## Key Points\n* The SWEDI is a non-impact sortation module for linear sortation lines\n* It is ideal for medium volume sort centers\n* The",
+      "response_length": 1596,
+      "reward": 0.1,
+      "timestamp": "2025-12-17T12:13:01.660724",
+      "metadata": {
+        "query_type": "EXPLORATORY",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Flipkart_Anjaneya_SWEDI+ARM Sorter_Technocommercial offer (1).pdf",
+          "Flipkart_Anjaneya_SWEDI+ARM Sorter_Technocommercial offer.pdf",
+          "F22-00317_00_Techno-commercial offer FedEx _SWEDI With Spiral chute.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is loading conveyer",
+      "query_keywords": [
+        "what",
+        "loading",
+        "conveyer"
+      ],
+      "query_length": 4,
+      "response": "A loading conveyor, also known as a top loader conveyor, is a type of conveyor that incorporates advanced automation and control technologies to transfer a stream of materials into a single unified flow. It is used for inducting shipments or boxes directly onto a sorter, with features such as PVC belts for smooth movement. [Document 1]",
+      "response_length": 337,
+      "reward": 0.1,
+      "timestamp": "2025-12-17T12:36:09.557395",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 1.0,
+        "source_count": 5,
+        "document_names": [
+          "Techno Commercial Offer to Xpressbees for Linear CBS.pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2-02-02-24 (1).pdf",
+          "FK_Kalash_Technocommercial Offer_Option 2-02-02-24.pdf"
+        ]
+      }
+    },
+    {
+      "query": "what is IFV",
+      "query_keywords": [
+        "what"
+      ],
+      "query_length": 3,
+      "response": "The term IFV is not defined in the provided documents, however, it can be inferred that it might be related to a technical term, possibly \"In-Feed Vehicle\" or similar, but without further context, it's difficult to provide a precise definition. \nSources: [Document 1] [Document 2] [Document 3] [Document 4] [Document 5]",
+      "response_length": 319,
+      "reward": 0.1,
+      "timestamp": "2025-12-17T12:38:27.443184",
+      "metadata": {
+        "query_type": "SIMPLE_FACT",
+        "confidence": 0.8,
+        "source_count": 5,
+        "document_names": [
+          "F23-00164_01_Techno- Commercial offer for CBS_Chennai_Delhivery_09032023.pdf",
+          "F23-00173-02_Techno-commercial_Offer_CBS_Hyderabad_Delhivery_01042023.pdf",
+          "Techno Commercial Offer for Linear Arm Sorter_3K_DTDC_06072024.pdf"
+        ]
+      }
     }
   ],
   "diagnostic_support": [
@@ -5709,6 +5978,104 @@
         "best_match_title": "Bot Picking Issues",
         "confidence": 0.75,
         "suggested_actions_count": 4
+      }
+    },
+    {
+      "query": "bot is not responding to the commands, what should i do",
+      "query_keywords": [
+        "responding",
+        "commands,",
+        "what",
+        "should"
+      ],
+      "query_length": 11,
+      "response": "\ud83d\udd27 **Found 3 potential solution(s) for your issue:**\n\n============================================================\n### Solution 1: Put wave is not getting after clicking the wave cpmplete\n**Type:** Station Level\n**Severity:** Medium\n**Relevance:** 55%\n\n**Solution:**\n\u2022 We have to check the order_bin_mapping table if there is any bin is in pending state then we have to check why bot is not getting assigned if not then we have to check put_wave_order_master table is there any order which in in pendi",
+      "response_length": 2335,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T12:54:54.899415",
+      "metadata": {
+        "matched_issues_count": 10,
+        "top_relevance": 55,
+        "confidence": 0.55
+      }
+    },
+    {
+      "query": "bots are not responding to the commands, what should i do",
+      "query_keywords": [
+        "bots",
+        "responding",
+        "commands,",
+        "what",
+        "should"
+      ],
+      "query_length": 11,
+      "response": "\ud83d\udd27 **Diagnostic Analysis Complete**\nFound 3 potential solution(s). Running diagnostics...\n\n============================================================\n### Issue 1: Put wave is not getting after clicking the wave suspend\n**Type:** Station Level\n**Severity:** Medium\n**Relevance:** 35%\n\n**\ud83d\udccb Solution Steps:**\n\u2022 If operation has pressed the suspend then we have check if is there any bin pending in order_bin_mapping table then its of if there is such entry showing bin is in below state 1:-Pre_on_stati",
+      "response_length": 2545,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:00:05.300852",
+      "metadata": {
+        "matched_issues_count": 10,
+        "top_relevance": 35,
+        "confidence": 0.35
+      }
+    },
+    {
+      "query": "bot is not respondig what should do",
+      "query_keywords": [
+        "respondig",
+        "what",
+        "should"
+      ],
+      "query_length": 7,
+      "response": "\ud83d\udd27 **Diagnostic Analysis Complete**\nFound 3 potential solution(s). Running diagnostics...\n\n============================================================\n### Issue 1: Put wave is not getting after clicking the wave cpmplete\n**Type:** Station Level\n**Severity:** Medium\n**Relevance:** 35%\n\n**\ud83d\udd0d Running Diagnostic Query...**\n\ud83d\udcdd **Suggested Fix Query** (requires manual execution):\n```sql\nINSERT IGNORE INTO order_bin_mapping(order_bin_id, bin_id, station_id, TYPE) SELECT order_bin_id, bin_id, station_id, ",
+      "response_length": 2649,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:03:26.636043",
+      "metadata": {
+        "matched_issues_count": 10,
+        "top_relevance": 35,
+        "confidence": 0.35
+      }
+    },
+    {
+      "query": "bot stuck at stations can you check what is the issue",
+      "query_keywords": [
+        "stuck",
+        "stations",
+        "check",
+        "what",
+        "issue"
+      ],
+      "query_length": 11,
+      "response": "\ud83d\udd27 **Diagnostic Analysis Complete**\nFound 3 potential solution(s). Running diagnostics...\n\n============================================================\n### Issue 1: Put wave is not getting after clicking the wave cpmplete\n**Type:** Station Level\n**Severity:** Medium\n**Relevance:** 40%\n\n**\ud83d\udd0d Running Diagnostic Query...**\n\ud83d\udcdd **Suggested Fix Query** (requires manual execution):\n```sql\nINSERT IGNORE INTO order_bin_mapping(order_bin_id, bin_id, station_id, TYPE) SELECT order_bin_id, bin_id, station_id, ",
+      "response_length": 2638,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:08:03.507629",
+      "metadata": {
+        "matched_issues_count": 10,
+        "top_relevance": 40,
+        "confidence": 0.4
+      }
+    },
+    {
+      "query": "can you check the bot communication with server. it seems they are not interacting",
+      "query_keywords": [
+        "check",
+        "communication",
+        "server.",
+        "seems",
+        "they",
+        "interacting"
+      ],
+      "query_length": 14,
+      "response": "\ud83d\udd27 **Diagnostic Analysis Complete**\nFound 3 potential solution(s). Running diagnostics...\n\n============================================================\n### Issue 1: Put wave is not getting after clicking the wave cpmplete\n**Type:** Station Level\n**Severity:** Medium\n**Relevance:** 45%\n\n**\ud83d\udd0d Running Diagnostic Query...**\n\ud83d\udcdd **Suggested Fix Query** (requires manual execution):\n```sql\nINSERT IGNORE INTO order_bin_mapping(order_bin_id, bin_id, station_id, TYPE) SELECT order_bin_id, bin_id, station_id, ",
+      "response_length": 2652,
+      "reward": 0.1,
+      "timestamp": "2025-12-16T13:09:24.797014",
+      "metadata": {
+        "matched_issues_count": 10,
+        "top_relevance": 45,
+        "confidence": 0.45
       }
     }
   ]
