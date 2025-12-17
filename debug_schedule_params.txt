@@ -1,0 +1,9 @@
+
+=== 2025-12-17 13:43:09.527102 ===
+🔍 Received schedule data from UI: {'job_name': 'asdsadsaf', 'job_description': 'sadsadsad', 'schedule_type': 'daily', 'schedule_time': '13:44', 'is_active': True, 'min_support': 0.11, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 2, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.11
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 2
+   decay_rate: 0.05
