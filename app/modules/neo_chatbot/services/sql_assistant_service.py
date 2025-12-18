@@ -46,6 +46,10 @@ class SQLAssistantService:
             'database': config.DB_NAME
         }
         
+        # LLM-as-Judge configuration for self-improving queries
+        self.max_refinement_iterations = 3  # Maximum number of self-refinement loops
+        self.judge_confidence_threshold = 0.85  # Stop iterating if judge confidence exceeds this
+        
         # Initialize vector store for SQL examples
         try:
             from .vector_store_service import VectorStoreService
@@ -72,6 +76,10 @@ class SQLAssistantService:
         # Test database connection
         self.db_available = self._test_db_connection()
         
+        # Load and cache available tables for validation
+        self.available_tables = self._get_available_tables()
+        logger.info(f"✅ Cached {len(self.available_tables)} available tables for validation")
+        
         logger.info(f"✅ SQL Assistant Service initialized | DB Available: {self.db_available} | Tables: {len(self.schema_parser.get_table_names())}")
     
     def _load_schema_parser(self):
@@ -85,7 +93,263 @@ class SQLAssistantService:
             logger.error(f"❌ Error loading schema parser: {e}")
             return None
     
-    def _find_similar_sql_examples(self, question: str, top_k: int = 3) -> List[Dict[str, Any]]:
+    def _get_available_tables(self) -> set:
+        """Get set of all available tables from schema for fast validation"""
+        try:
+            if self.schema_parser:
+                tables = set(self.schema_parser.get_table_names())
+                return tables
+            return set()
+        except Exception as e:
+            logger.error(f"❌ Error getting available tables: {e}")
+            return set()
+    
+    def _get_table_columns(self, table_name: str) -> List[str]:
+        """Get list of column names for a specific table"""
+        try:
+            if self.schema_parser and table_name in self.schema_parser.tables:
+                columns = self.schema_parser.tables[table_name]
+                return [col['field'] for col in columns]
+            return []
+        except Exception as e:
+            logger.error(f"❌ Error getting columns for {table_name}: {e}")
+            return []
+    
+    def _get_full_table_schema(self, table_name: str) -> str:
+        """Get full schema with columns for a table"""
+        try:
+            if self.schema_parser:
+                return self.schema_parser.get_table_schema(table_name)
+            return ""
+        except Exception as e:
+            logger.error(f"❌ Error getting schema for {table_name}: {e}")
+            return ""
+    
+    def _get_distinct_column_values(self, table_name: str, column_name: str, limit: int = 50) -> List[str]:
+        """Query database to get actual distinct values for a column"""
+        try:
+            # Validate table and column exist first
+            if not self._validate_table_exists(table_name):
+                logger.warning(f"⚠️ Table {table_name} does not exist")
+                return []
+            
+            if not self._validate_column_exists(table_name, column_name):
+                logger.warning(f"⚠️ Column {column_name} does not exist in {table_name}")
+                return []
+            
+            # Query for distinct values
+            query = f"SELECT DISTINCT {column_name} FROM {table_name} WHERE {column_name} IS NOT NULL LIMIT {limit};"
+            results, error = self._execute_query_safe(query)
+            
+            if error:
+                logger.error(f"Error querying distinct values for {table_name}.{column_name}: {error}")
+                return []
+            
+            # Extract values from results
+            values = []
+            for row in results:
+                value = row.get(column_name)
+                if value is not None:
+                    values.append(str(value))
+            
+            logger.info(f"📊 Found {len(values)} distinct values for {table_name}.{column_name}: {values[:10]}")
+            return values
+            
+        except Exception as e:
+            logger.error(f"Error getting distinct values for {table_name}.{column_name}: {e}")
+            return []
+    
+    def _extract_where_conditions(self, sql_query: str) -> List[tuple]:
+        """Extract column=value conditions from WHERE clause"""
+        try:
+            import re
+            
+            # Find WHERE clause
+            where_match = re.search(r'WHERE\s+(.+?)(?:GROUP BY|ORDER BY|LIMIT|HAVING|;|$)', sql_query, re.IGNORECASE | re.DOTALL)
+            if not where_match:
+                return []
+            
+            where_clause = where_match.group(1)
+            
+            # Extract simple equality conditions: column = 'value' or column = "value"
+            # Pattern: column_name = 'value' or table.column = 'value'
+            pattern = r"([\w.]+)\s*=\s*['\"]([ ^'\"]+)['\"]"
+            matches = re.findall(pattern, where_clause, re.IGNORECASE)
+            
+            conditions = []
+            for col_ref, value in matches:
+                # Remove table alias if present (e.g., bm.status -> status)
+                if '.' in col_ref:
+                    col_name = col_ref.split('.')[-1]
+                else:
+                    col_name = col_ref
+                
+                conditions.append((col_name.upper(), value))
+            
+            return conditions
+            
+        except Exception as e:
+            logger.error(f"Error extracting WHERE conditions: {e}")
+            return []
+    
+    def _validate_query_values(self, sql_query: str) -> tuple[bool, List[dict]]:
+        """Validate that values in WHERE clause actually exist in the database"""
+        try:
+            # Extract table names to know which tables are being queried
+            tables = self._extract_tables_from_sql(sql_query)
+            if not tables:
+                return True, []  # No tables, can't validate
+            
+            # Extract WHERE conditions
+            conditions = self._extract_where_conditions(sql_query)
+            if not conditions:
+                return True, []  # No WHERE conditions, nothing to validate
+            
+            invalid_values = []
+            
+            # For each condition, check if the value exists in the column
+            for column_name, filter_value in conditions:
+                # Try to find which table this column belongs to
+                table_found = None
+                for table in tables:
+                    if self._validate_column_exists(table, column_name):
+                        table_found = table
+                        break
+                
+                if not table_found:
+                    continue  # Column validation will catch this
+                
+                # Get actual distinct values from the database
+                actual_values = self._get_distinct_column_values(table_found, column_name)
+                
+                if actual_values:
+                    # Check if filter value exists in actual values (case-insensitive)
+                    actual_values_upper = [v.upper() for v in actual_values]
+                    if filter_value.upper() not in actual_values_upper:
+                        invalid_values.append({
+                            'table': table_found,
+                            'column': column_name,
+                            'filter_value': filter_value,
+                            'actual_values': actual_values[:20]  # Limit to 20 for display
+                        })
+            
+            if invalid_values:
+                logger.warning(f"⚠️ Query uses filter values that don't exist in database: {len(invalid_values)} issues")
+                for issue in invalid_values:
+                    logger.warning(f"  ❌ {issue['table']}.{issue['column']} = '{issue['filter_value']}' (not found)")
+                    logger.warning(f"     ✓ Actual values: {issue['actual_values']}")
+                return False, invalid_values
+            
+            return True, []
+            
+        except Exception as e:
+            logger.error(f"Error validating query values: {e}")
+            return True, []  # Don't block on validation errors
+    
+    def _validate_column_exists(self, table_name: str, column_name: str) -> bool:
+        """Check if a column exists in a specific table"""
+        columns = self._get_table_columns(table_name)
+        return column_name in columns
+    
+    def _extract_columns_from_sql(self, sql_query: str) -> Dict[str, List[str]]:
+        """Extract columns referenced in SQL query grouped by table"""
+        import re
+        column_refs = {}
+        
+        # Extract table aliases first
+        alias_pattern = r'FROM\s+(\w+)\s+(?:AS\s+)?(\w+)|JOIN\s+(\w+)\s+(?:AS\s+)?(\w+)'
+        aliases = {}  # alias -> table_name
+        for match in re.finditer(alias_pattern, sql_query, re.IGNORECASE):
+            if match.group(1):  # FROM clause
+                table = match.group(1)
+                alias = match.group(2) if match.group(2) else table
+                aliases[alias] = table
+            elif match.group(3):  # JOIN clause
+                table = match.group(3)
+                alias = match.group(4) if match.group(4) else table
+                aliases[alias] = table
+        
+        # Extract column references (table.column or alias.column)
+        column_pattern = r'(\w+)\.(\w+)'
+        for match in re.finditer(column_pattern, sql_query):
+            table_or_alias = match.group(1)
+            column = match.group(2)
+            
+            # Resolve alias to actual table name
+            table_name = aliases.get(table_or_alias, table_or_alias)
+            
+            if table_name not in column_refs:
+                column_refs[table_name] = []
+            if column not in column_refs[table_name]:
+                column_refs[table_name].append(column)
+        
+        return column_refs
+    
+    def _validate_sql_columns(self, sql_query: str) -> Tuple[bool, List[str]]:
+        """Validate that all columns in SQL query exist in their respective tables"""
+        column_refs = self._extract_columns_from_sql(sql_query)
+        invalid_columns = []
+        
+        for table_name, columns in column_refs.items():
+            if not self._validate_table_exists(table_name):
+                continue  # Table validation will catch this
+            
+            for column in columns:
+                if not self._validate_column_exists(table_name, column):
+                    invalid_columns.append(f"{table_name}.{column}")
+        
+        if invalid_columns:
+            logger.warning(f"⚠️ SQL uses non-existent columns: {invalid_columns}")
+            return False, invalid_columns
+        
+        return True, []
+    
+    def _validate_table_exists(self, table_name: str) -> bool:
+        """Check if a table actually exists in the database schema"""
+        return table_name in self.available_tables
+    
+    def _extract_tables_from_sql(self, sql_query: str) -> List[str]:
+        """Extract table names from SQL query"""
+        import re
+        # Match FROM and JOIN clauses
+        patterns = [
+            r'FROM\s+([`\"]?(\w+)[`\"]?)',
+            r'JOIN\s+([`\"]?(\w+)[`\"]?)',
+            r'INTO\s+([`\"]?(\w+)[`\"]?)'
+        ]
+        
+        tables = []
+        for pattern in patterns:
+            matches = re.findall(pattern, sql_query, re.IGNORECASE)
+            for match in matches:
+                # match is a tuple, get the table name (second group)
+                table = match[1] if len(match) > 1 else match[0]
+                tables.append(table)
+        
+        return list(set(tables))
+    
+    def _validate_sql_tables(self, sql_query: str) -> Tuple[bool, List[str]]:
+        """
+        Validate that all tables in SQL query actually exist.
+        
+        Returns:
+            Tuple of (all_valid, invalid_tables)
+        """
+        tables_in_query = self._extract_tables_from_sql(sql_query)
+        invalid_tables = [t for t in tables_in_query if not self._validate_table_exists(t)]
+        
+        if invalid_tables:
+            logger.warning(f"⚠️ SQL uses non-existent tables: {invalid_tables}")
+            return False, invalid_tables
+        
+        return True, []
+    
+    def _find_similar_valid_tables(self, invalid_table: str, limit: int = 3) -> List[str]:
+        from difflib import get_close_matches
+        similar = get_close_matches(invalid_table, list(self.available_tables), n=limit, cutoff=0.6)
+        return similar
+    
+    def _find_sql_examples(self, question: str, top_k: int = 3) -> List[Dict[str, Any]]:
         """
         Search vector store for similar SQL queries from codebase
         Returns relevant SQL file examples that can help generate better queries
@@ -1181,6 +1445,30 @@ class SQLAssistantService:
 
 {context_prompt}
 
+⚠️⚠️⚠️ CRITICAL: ONLY USE TABLES THAT EXIST ⚠️⚠️⚠️
+AVAILABLE TABLES IN DATABASE: {len(self.available_tables)} total
+{', '.join(sorted(list(self.available_tables)[:30]))}... (and {len(self.available_tables) - 30} more)
+
+**DO NOT** make up table names or use tables not in the list above!
+If you're unsure, use the schema provided which contains only valid tables.
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+
+⚠️⚠️⚠️ CRITICAL: COLUMN NAMES & VALUES ⚠️⚠️⚠️
+IMPORTANT KEY TABLE SCHEMAS:
+
+bot_master:
+  - Columns: BOT_ID, BOT_NUMBER, STATUS, MODEL, BATTERY_LEVEL, IS_ACTIVE, etc.
+  - ⚠️ Use 'STATUS' NOT 'bot_status'
+  - ⚠️ STATUS values: Check actual data, NOT 'active'/'inactive'
+  
+task_master:
+  - Columns: TASK_ID, STATUS, BOT_ID, PRIORITY, etc.
+  - Check actual STATUS values in database
+
+⚠️ NEVER make up column names - use ONLY columns that exist in schema!
+⚠️ NEVER use filter values without checking - query distinct values if unsure!
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+
 ⚠️⚠️⚠️ CRITICAL WARNING ⚠️⚠️⚠️
 IF THE USER CORRECTION SECTION ABOVE SAYS A TABLE DOESN'T EXIST OR IS BLACKLISTED:
 - DO NOT USE THAT TABLE UNDER ANY CIRCUMSTANCES
@@ -1388,6 +1676,269 @@ CREATE TABLE mining_job_logs (
 -- Add more tables as needed
 """
     
+    def _judge_query_quality(
+        self, 
+        question: str, 
+        sql_query: str, 
+        results: List[Dict[str, Any]], 
+        schema_context: str,
+        iteration: int
+    ) -> Dict[str, Any]:
+        """
+        LLM acts as a judge to evaluate query quality and suggest improvements
+        
+        Args:
+            question: User's natural language question
+            sql_query: Generated SQL query
+            results: Query execution results
+            schema_context: Relevant schema information
+            iteration: Current refinement iteration number
+            
+        Returns:
+            Dict with judgment: {
+                'is_satisfactory': bool,
+                'confidence': float,
+                'issues': List[str],
+                'suggestions': List[str],
+                'improved_query': Optional[str]
+            }
+        """
+        try:
+            # Prepare result summary for judge
+            result_summary = self._prepare_result_summary_for_judge(results)
+            
+            # Validate tables, columns, and values in the query
+            tables_valid, invalid_tables = self._validate_sql_tables(sql_query)
+            columns_valid, invalid_columns = self._validate_sql_columns(sql_query)
+            values_valid, invalid_values = self._validate_query_values(sql_query)
+            
+            validation_msg = ""
+            if not tables_valid or not columns_valid or not values_valid:
+                validation_msg = "\n**⚠️ CRITICAL: QUERY HAS VALIDATION ERRORS!**\n"
+                
+                if not tables_valid:
+                    similar_tables = []
+                    for invalid_table in invalid_tables:
+                        similar = self._find_similar_valid_tables(invalid_table)
+                        if similar:
+                            similar_tables.append(f"{invalid_table} → {similar}")
+                    
+                    validation_msg += f"""
+Invalid tables: {', '.join(invalid_tables)}
+Available similar tables: {', '.join(similar_tables)}
+"""
+                
+                if not columns_valid:
+                    column_details = []
+                    for invalid_col in invalid_columns:
+                        if '.' in invalid_col:
+                            table, col = invalid_col.split('.', 1)
+                            actual_columns = self._get_table_columns(table)
+                            if actual_columns:
+                                column_details.append(f"  ❌ {invalid_col} (not in {table})")
+                                column_details.append(f"     ✓ Available columns: {', '.join(actual_columns[:15])}")
+                    
+                    validation_msg += f"""
+Invalid columns detected:
+{chr(10).join(column_details)}
+"""
+                
+                if not values_valid:
+                    value_details = []
+                    for issue in invalid_values:
+                        value_details.append(f"  ❌ {issue['table']}.{issue['column']} = '{issue['filter_value']}' (value not found in database!)")
+                        value_details.append(f"     ✓ Actual values in database: {', '.join([str(v) for v in issue['actual_values'][:15]])}")
+                    
+                    validation_msg += f"""
+Invalid filter values detected:
+{chr(10).join(value_details)}
+"""
+            
+            table_validation_msg = validation_msg
+            
+            judge_prompt = f"""You are an expert SQL query evaluator. Analyze the following query and its results.
+
+**User's Question:** {question}
+
+**Generated SQL:**
+```sql
+{sql_query}
+```
+
+{table_validation_msg}
+
+**Execution Results:**
+{result_summary}
+
+**Available Schema:**
+{schema_context}
+
+**Current Iteration:** {iteration}/{self.max_refinement_iterations}
+
+**Evaluate the query quality:**
+
+0. **Table Validity**: Do ALL tables in the query actually exist in the schema? (CRITICAL CHECK)
+0.5. **Column Validity**: Do ALL columns referenced exist in their respective tables? (CRITICAL CHECK)
+0.6. **Value Validity**: Do filter values in WHERE clause match ACTUAL data in the database? (CRITICAL CHECK)
+1. **Correctness**: Does the SQL correctly answer the user's question?
+2. **Schema Alignment**: Are the tables and columns used appropriate for the question?
+3. **Result Quality**: Do the results make sense? Right number of rows? Meaningful data?
+4. **Optimization**: Could the query be more efficient or accurate?
+
+**Respond in JSON format:**
+{{
+    "is_satisfactory": true/false,
+    "confidence": 0.0-1.0,
+    "issues": ["issue 1", "issue 2", ...],
+    "suggestions": ["suggestion 1", "suggestion 2", ...],
+    "improved_query": "IMPROVED SQL QUERY HERE or null if satisfactory"
+}}
+
+**Rules:**
+- **If query uses non-existent tables, columns, OR values, set is_satisfactory=false with confidence=0.2**
+- **If filter values don't match actual data (e.g., status='active' when actual values are 'ENABLED'/'DISABLED'), this is CRITICAL error**
+- If confidence >= 0.85, set is_satisfactory=true
+- If results are empty but should have data, check if filter values match actual database values
+- If wrong tables/columns/values used, suggest correct ones from schema and actual data
+- improved_query should use ONLY tables, columns, and values that exist in the database
+- improved_query should be a complete, executable SQL query or null
+"""
+
+            response = self.llm_service.generate_response(
+                messages=[{"role": "user", "content": judge_prompt}],
+                system_prompt="You are an expert SQL quality judge. Be critical but constructive. Return valid JSON only.",
+                max_tokens=800,
+                temperature=0.2
+            )
+            
+            # Parse JSON response
+            import json
+            # Extract JSON from response (handle cases where LLM wraps in markdown)
+            json_text = response.strip()
+            if "```json" in json_text:
+                json_text = json_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in json_text:
+                json_text = json_text.split("```")[1].split("```")[0].strip()
+            
+            judgment = json.loads(json_text)
+            
+            logger.info(f"🧑‍⚖️ Judge decision (iteration {iteration}): satisfactory={judgment.get('is_satisfactory')}, confidence={judgment.get('confidence'):.2f}")
+            
+            return judgment
+            
+        except Exception as e:
+            logger.error(f"❌ Error in query judgment: {e}")
+            # Return neutral judgment on error
+            return {
+                'is_satisfactory': True,  # Don't loop on errors
+                'confidence': 0.5,
+                'issues': [f"Judge error: {str(e)}"],
+                'suggestions': [],
+                'improved_query': None
+            }
+    
+    def _prepare_result_summary_for_judge(self, results: List[Dict[str, Any]]) -> str:
+        """Prepare a concise summary of results for the judge"""
+        if not results:
+            return "**No results returned** (0 rows)"
+        
+        row_count = len(results)
+        columns = list(results[0].keys()) if results else []
+        
+        summary = f"**Row Count:** {row_count}\n"
+        summary += f"**Columns:** {', '.join(columns)}\n\n"
+        
+        # Show sample data (first 3 rows)
+        if row_count > 0:
+            summary += "**Sample Data (first 3 rows):**\n"
+            for i, row in enumerate(results[:3], 1):
+                summary += f"\nRow {i}:\n"
+                for col, val in row.items():
+                    summary += f"  - {col}: {val}\n"
+        
+        # Data quality indicators
+        if row_count > 0:
+            first_row = results[0]
+            null_count = sum(1 for v in first_row.values() if v is None)
+            summary += f"\n**Data Quality:** {null_count}/{len(first_row)} null values in first row\n"
+        
+        return summary
+    
+    def _refine_query_with_judge_feedback(
+        self,
+        question: str,
+        original_sql: str,
+        judgment: Dict[str, Any],
+        schema_context: str,
+        conversation_context: Optional[Dict[str, Any]]
+    ) -> Optional[str]:
+        """
+        Generate improved SQL query based on judge feedback
+        
+        Args:
+            question: User's question
+            original_sql: Previous SQL attempt
+            judgment: Judge's feedback
+            schema_context: Schema information
+            conversation_context: Conversation history
+            
+        Returns:
+            Improved SQL query or None if can't improve
+        """
+        try:
+            # If judge already provided improved query, use it
+            if judgment.get('improved_query') and judgment['improved_query'].strip():
+                improved = judgment['improved_query'].strip()
+                logger.info(f"📝 Using judge-provided improved query")
+                return improved
+            
+            # Otherwise, generate improvement based on feedback
+            issues_text = "\n".join(f"  - {issue}" for issue in judgment.get('issues', []))
+            suggestions_text = "\n".join(f"  - {suggestion}" for suggestion in judgment.get('suggestions', []))
+            
+            refinement_prompt = f"""The previous SQL query needs improvement. Generate a better query.
+
+**User's Question:** {question}
+
+**Previous SQL (needs improvement):**
+```sql
+{original_sql}
+```
+
+**Issues Found:**
+{issues_text}
+
+**Suggestions for Improvement:**
+{suggestions_text}
+
+**Available Schema:**
+{schema_context}
+
+Generate an IMPROVED SQL query that addresses the issues. Return ONLY the SQL query, nothing else.
+"""
+
+            system_prompt = self._get_system_prompt(question, conversation_context)
+            
+            response = self.llm_service.generate_response(
+                messages=[{"role": "user", "content": refinement_prompt}],
+                system_prompt=system_prompt,
+                max_tokens=400,
+                temperature=0.1
+            )
+            
+            improved_sql = self._extract_sql_query(response)
+            
+            if improved_sql and improved_sql.strip() != original_sql.strip():
+                logger.info(f"✨ Generated improved query based on feedback")
+                return improved_sql
+            else:
+                logger.warning(f"⚠️ Could not generate meaningful improvement")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Error refining query: {e}")
+            return None
+    
     def process_query(self, chat_request: ChatRequest) -> ChatResponse:
         """
         Process natural language query with intelligent SQL generation, execution, and validation
@@ -1526,6 +2077,100 @@ I'm here to help - just tell me what you need! 💡""",
                 if not sql_query:
                     continue
                 
+                # STEP 1.5: Validate tables AND columns before execution (PROACTIVE VALIDATION)
+                tables_valid, invalid_tables = self._validate_sql_tables(sql_query)
+                if not tables_valid:
+                    logger.error(f"❌ Generated SQL uses non-existent tables: {invalid_tables}")
+                    
+                    # Find similar valid tables
+                    suggestions = []
+                    for invalid_table in invalid_tables:
+                        similar = self._find_similar_valid_tables(invalid_table, limit=2)
+                        if similar:
+                            suggestions.append(f"{invalid_table} → try: {', '.join(similar)}")
+                    
+                    error_msg = f"Query uses non-existent tables: {', '.join(invalid_tables)}."
+                    if suggestions:
+                        error_msg += f" Similar tables that exist: {'; '.join(suggestions)}"
+                    
+                    # Skip to next attempt with different strategy
+                    logger.warning(f"⚠️ Skipping execution due to invalid tables (attempt {attempt + 1})")
+                    
+                    # Mark these as failed tables for future attempts
+                    if chat_request.session_id:
+                        for invalid_table in invalid_tables:
+                            self._store_failed_table(
+                                chat_request.session_id,
+                                invalid_table,
+                                "does not exist in schema"
+                            )
+                    
+                    continue  # Try next strategy
+                
+                logger.info(f"✅ Table validation passed - all tables exist in schema")
+                
+                # STEP 1.6: Validate columns (NEW)
+                columns_valid, invalid_columns = self._validate_sql_columns(sql_query)
+                if not columns_valid:
+                    logger.error(f"❌ Generated SQL uses non-existent columns: {invalid_columns}")
+                    
+                    # Provide actual columns for those tables
+                    column_hints = []
+                    for invalid_col in invalid_columns:
+                        if '.' in invalid_col:
+                            table, col = invalid_col.split('.', 1)
+                            actual_columns = self._get_table_columns(table)
+                            if actual_columns:
+                                column_hints.append(f"{table} has: {', '.join(actual_columns[:10])}")
+                    
+                    error_msg = f"Query uses non-existent columns: {', '.join(invalid_columns)}."
+                    if column_hints:
+                        error_msg += f" Actual columns: {'; '.join(column_hints)}"
+                    
+                    logger.warning(f"⚠️ Skipping execution due to invalid columns (attempt {attempt + 1})")
+                    
+                    # Mark in session corrections
+                    if chat_request.session_id:
+                        if chat_request.session_id not in self.session_corrections:
+                            self.session_corrections[chat_request.session_id] = {'corrections': [], 'failed_tables': []}
+                        self.session_corrections[chat_request.session_id]['corrections'].append({
+                            'wrong': str(invalid_columns),
+                            'correct': error_msg
+                        })
+                    
+                    continue  # Try next strategy
+                
+                logger.info(f"✅ Column validation passed - all columns exist in their tables")
+                
+                # STEP 1.7: Validate filter values in WHERE clause (CRITICAL!)
+                values_valid, invalid_values = self._validate_query_values(sql_query)
+                if not values_valid:
+                    logger.error(f"❌ Generated SQL uses filter values that don't exist in database!")
+                    
+                    # Provide actual values for those columns
+                    value_hints = []
+                    for issue in invalid_values:
+                        value_hints.append(
+                            f"{issue['table']}.{issue['column']} = '{issue['filter_value']}' (NOT FOUND IN DB)\n" +
+                            f"  ✓ Actual values: {', '.join([str(v) for v in issue['actual_values'][:15]])}"
+                        )
+                    
+                    error_msg = "Query uses filter values that don't exist in database:\n" + "\n".join(value_hints)
+                    logger.error(f"\n{error_msg}")
+                    
+                    # Mark in session corrections
+                    if chat_request.session_id:
+                        if chat_request.session_id not in self.session_corrections:
+                            self.session_corrections[chat_request.session_id] = {'corrections': [], 'failed_tables': []}
+                        self.session_corrections[chat_request.session_id]['corrections'].append({
+                            'wrong': str([f"{issue['filter_value']}" for issue in invalid_values]),
+                            'correct': error_msg
+                        })
+                    
+                    continue  # Try next strategy
+                
+                logger.info(f"✅ Value validation passed - filter values exist in database")
+                
                 # Step 2: Execute query
                 results, error = self._execute_query_safe(sql_query)
                 
@@ -1564,24 +2209,143 @@ I'm here to help - just tell me what you need! 💡""",
                     
                     continue
                 
-                # Step 3: Validate results
-                confidence, validation_msg = self._validate_results(
-                    results, 
-                    chat_request.message, 
-                    sql_query
-                )
+                # ========================================
+                # SELF-IMPROVING LOOP WITH LLM AS JUDGE
+                # ========================================
                 
-                logger.info(f"📊 Validation: confidence={confidence:.2f}, msg={validation_msg}")
+                # Get schema context for judge
+                schema_context = self._get_relevant_schema(query_to_process, max_tables=8)
+                
+                # Initialize refinement tracking
+                current_sql = sql_query
+                current_results = results
+                best_confidence = 0.0
+                best_sql = sql_query
+                best_results = results
+                refinement_history = []
+                
+                # Self-refinement loop
+                for refinement_iteration in range(1, self.max_refinement_iterations + 1):
+                    logger.info(f"🔁 Self-refinement iteration {refinement_iteration}/{self.max_refinement_iterations}")
+                    
+                    # Step 3a: Validate results (basic validation)
+                    confidence, validation_msg = self._validate_results(
+                        current_results, 
+                        chat_request.message, 
+                        current_sql
+                    )
+                    
+                    logger.info(f"📊 Validation: confidence={confidence:.2f}, msg={validation_msg}")
+                    
+                    # Track best result so far
+                    if confidence > best_confidence:
+                        best_confidence = confidence
+                        best_sql = current_sql
+                        best_results = current_results
+                    
+                    # Step 3b: LLM Judge evaluates query quality
+                    judgment = self._judge_query_quality(
+                        question=query_to_process,
+                        sql_query=current_sql,
+                        results=current_results,
+                        schema_context=schema_context,
+                        iteration=refinement_iteration
+                    )
+                    
+                    # Track refinement history
+                    refinement_history.append({
+                        'iteration': refinement_iteration,
+                        'sql': current_sql,
+                        'confidence': confidence,
+                        'judge_confidence': judgment.get('confidence', 0.0),
+                        'is_satisfactory': judgment.get('is_satisfactory', False),
+                        'issues': judgment.get('issues', []),
+                        'suggestions': judgment.get('suggestions', [])
+                    })
+                    
+                    # Check if judge is satisfied with high confidence
+                    judge_confidence = judgment.get('confidence', 0.0)
+                    is_satisfactory = judgment.get('is_satisfactory', False)
+                    
+                    logger.info(f"🧑‍⚖️ Judge: satisfactory={is_satisfactory}, confidence={judge_confidence:.2f}")
+                    
+                    # Exit condition 1: Judge is satisfied AND confidence is high
+                    if is_satisfactory and judge_confidence >= self.judge_confidence_threshold:
+                        logger.info(f"✅ Judge satisfied with high confidence ({judge_confidence:.2f}) - stopping refinement")
+                        break
+                    
+                    # Exit condition 2: Last iteration
+                    if refinement_iteration >= self.max_refinement_iterations:
+                        logger.info(f"🛑 Reached max iterations ({self.max_refinement_iterations}) - using best result")
+                        # Use best result found across all iterations
+                        current_sql = best_sql
+                        current_results = best_results
+                        confidence = best_confidence
+                        break
+                    
+                    # Exit condition 3: Very high basic confidence
+                    if confidence >= 0.90:
+                        logger.info(f"✅ Very high confidence ({confidence:.2f}) - stopping refinement")
+                        break
+                    
+                    # Step 3c: Generate improved query based on judge feedback
+                    if not is_satisfactory or judge_confidence < self.judge_confidence_threshold:
+                        improved_sql = self._refine_query_with_judge_feedback(
+                            question=query_to_process,
+                            original_sql=current_sql,
+                            judgment=judgment,
+                            schema_context=schema_context,
+                            conversation_context=conversation_context
+                        )
+                        
+                        if improved_sql and improved_sql.strip() != current_sql.strip():
+                            logger.info(f"🔄 Executing improved query (iteration {refinement_iteration + 1})")
+                            
+                            # Execute improved query
+                            improved_results, improved_error = self._execute_query_safe(improved_sql)
+                            
+                            if improved_error:
+                                logger.warning(f"⚠️ Improved query failed: {improved_error[:200]}")
+                                # Keep current query, don't iterate further on this attempt
+                                break
+                            else:
+                                # Use improved query for next iteration
+                                current_sql = improved_sql
+                                current_results = improved_results
+                                logger.info(f"✨ Improved query executed successfully, continuing refinement")
+                        else:
+                            logger.info(f"⚠️ Could not generate improved query - stopping refinement")
+                            break
+                
+                # Update to use final refined results
+                sql_query = current_sql
+                results = current_results
+                
+                # Log refinement process
+                if len(refinement_history) > 1:
+                    logger.info(f"📈 Refinement summary: {len(refinement_history)} iterations, final confidence: {best_confidence:.2f}")
+                
+                # ========================================
+                # END OF SELF-IMPROVING LOOP
+                # ========================================
                 
                 # Step 4: Check if confident enough to return
-                if confidence >= 0.75:  # High confidence threshold
+                if best_confidence >= 0.75:  # High confidence threshold
+                    # Use the validation message from best result
+                    final_validation_msg = f"Query refined through {len(refinement_history)} iterations"
+                    
                     response_text = self._format_results_with_confidence(
                         results, 
                         sql_query, 
                         original_message,  # Use original message for display
-                        confidence,
-                        validation_msg
+                        best_confidence,
+                        final_validation_msg
                     )
+                    
+                    # Add refinement information if iterations occurred
+                    if len(refinement_history) > 1:
+                        refinement_note = f"\n\n🔄 **Query Refinement:** Improved through {len(refinement_history)} iterations for optimal results.\n"
+                        response_text = refinement_note + response_text
                     
                     # Add note about auto-corrections if any were made
                     if auto_corrections:
@@ -1609,7 +2373,7 @@ I'm here to help - just tell me what you need! 💡""",
                                 chatbot_type="sql_assistant",
                                 user_query=chat_request.message,
                                 assistant_response=response_text,
-                                confidence_score=confidence,
+                                confidence_score=best_confidence,
                                 response_time_ms=response_time_ms
                             )
                             
@@ -1680,13 +2444,14 @@ I'm here to help - just tell me what you need! 💡""",
                             response=response_text,
                             feedback_type="neutral",  # Auto-logged on generation
                             rating=None,
-                            comment="Auto-generated with high confidence",
+                            comment="Auto-generated with high confidence after refinement",
                             metadata={
                                 "sql_query": sql_query,
-                                "confidence": confidence,
+                                "confidence": best_confidence,
                                 "row_count": len(results) if results else 0,
                                 "strategy": strategy,
                                 "attempt": attempt + 1,
+                                "refinement_iterations": len(refinement_history),
                                 "auto_corrections": auto_corrections if auto_corrections else None
                             }
                         )
@@ -1699,8 +2464,12 @@ I'm here to help - just tell me what you need! 💡""",
                         session_id=chat_request.session_id or str(uuid.uuid4()),
                         sql_query=sql_query,
                         query_results=results[:100] if results else [],  # Limit to 100 for response
-                        confidence_score=confidence,
-                        sources=[]
+                        confidence_score=best_confidence,
+                        sources=[],
+                        metadata={
+                            'refinement_iterations': len(refinement_history),
+                            'refinement_history': refinement_history if len(refinement_history) > 1 else None
+                        }
                     )
             
             # If all attempts failed, return query-only response
