@@ -48,7 +48,7 @@ class SQLAssistantService:
         
         # LLM-as-Judge configuration for self-improving queries
         self.max_refinement_iterations = 3  # Maximum number of self-refinement loops
-        self.judge_confidence_threshold = 0.85  # Stop iterating if judge confidence exceeds this
+        self.judge_confidence_threshold = 0.90  # Stop iterating if judge confidence exceeds this
         
         # Initialize vector store for SQL examples
         try:
@@ -539,14 +539,185 @@ class SQLAssistantService:
             'today', 'yesterday', 'week', 'month', 'year', 'recent', 'last', 'past'
         ])
         
+        # Detect temporal scope (historical vs current)
+        temporal_scope = self._classify_temporal_scope(query)
+        
         return {
             'intent': intent,
             'entities': entities,
             'operations': operations,
             'time_filter': time_filter,
             'join_needed': join_needed,
-            'is_metadata_query': is_metadata_query
+            'is_metadata_query': is_metadata_query,
+            'temporal_scope': temporal_scope  # NEW: historical vs current
         }
+    
+    def _classify_temporal_scope(self, query: str) -> Dict[str, Any]:
+        """
+        Classify whether query needs historical log tables or current state tables.
+        
+        CRITICAL BUSINESS LOGIC:
+        - Historical queries (e.g., "all tasks performed till now") → Use *_log tables
+        - Current queries (e.g., "what is bot doing now") → Use regular tables
+        
+        Returns:
+            {
+                'scope': 'historical' | 'current' | 'both',
+                'confidence': 0.0-1.0,
+                'indicators': [list of matching keywords],
+                'table_preference': 'log' | 'current' | 'both'
+            }
+        """
+        query_lower = query.lower()
+        
+        # Historical indicators - strong signals for log tables
+        historical_indicators = [
+            # Explicit log references
+            'check the log', 'from log', 'in the log', 'log table', 'historical',
+            
+            # Past tense and completion
+            'have done', 'has done', 'have performed', 'has performed', 
+            'have completed', 'has completed', 'was doing', 'were doing',
+            'did', 'performed', 'completed', 'finished',
+            
+            # Time range indicators
+            'till now', 'till today', 'till date', 'until now', 'up to now',
+            'since', 'from', 'between', 'in the past', 'previously',
+            'all the task performed', 'all task done', 'all tasks executed',
+            
+            # Aggregate history
+            'total', 'all time', 'ever', 'lifetime', 'complete history',
+            'how many times', 'number of times', 'count of',
+            
+            # Audit/tracking
+            'audit', 'track', 'trace', 'history of', 'record of'
+        ]
+        
+        # Current state indicators - signals for live tables
+        current_indicators = [
+            # Present tense
+            'is doing', 'are doing', 'is performing', 'are performing',
+            'is running', 'are running', 'is executing', 'are executing',
+            
+            # Current state
+            'current', 'currently', 'now', 'right now', 'at the moment',
+            'present', 'today', 'active', 'ongoing', 'in progress',
+            
+            # Assignment/allocation
+            'assigned to', 'allocated to', 'working on',
+            
+            # Latest/recent
+            'latest', 'most recent', 'newest', 'last assigned'
+        ]
+        
+        # Count matches
+        historical_matches = [ind for ind in historical_indicators if ind in query_lower]
+        current_matches = [ind for ind in current_indicators if ind in query_lower]
+        
+        # Determine scope
+        historical_score = len(historical_matches)
+        current_score = len(current_matches)
+        
+        if historical_score > current_score:
+            scope = 'historical'
+            table_preference = 'log'
+            confidence = min(0.95, 0.6 + (historical_score * 0.1))
+        elif current_score > historical_score:
+            scope = 'current'
+            table_preference = 'current'
+            confidence = min(0.95, 0.6 + (current_score * 0.1))
+        elif historical_score == current_score and historical_score > 0:
+            scope = 'both'
+            table_preference = 'both'
+            confidence = 0.5
+        else:
+            # No clear indicators - default based on verb tense
+            if any(word in query_lower for word in ['has', 'have', 'had', 'was', 'were', 'did']):
+                scope = 'historical'
+                table_preference = 'log'
+                confidence = 0.4
+            else:
+                scope = 'current'
+                table_preference = 'current'
+                confidence = 0.5
+        
+        return {
+            'scope': scope,
+            'confidence': confidence,
+            'historical_indicators': historical_matches,
+            'current_indicators': current_matches,
+            'table_preference': table_preference
+        }
+    
+    def _build_temporal_table_guidance(self, temporal_info: Dict[str, Any], query: str) -> str:
+        """
+        Build guidance for LLM about which table types to use based on temporal scope.
+        
+        CRITICAL: Routes queries to appropriate tables (log vs current)
+        """
+        if not temporal_info:
+            return ""
+        
+        scope = temporal_info.get('scope', 'current')
+        preference = temporal_info.get('table_preference', 'current')
+        confidence = temporal_info.get('confidence', 0.5)
+        
+        guidance_parts = []
+        
+        if scope == 'historical' and confidence > 0.6:
+            guidance_parts.append("\n" + "="*80)
+            guidance_parts.append("🕐 TEMPORAL SCOPE DETECTED: HISTORICAL/PAST QUERY")
+            guidance_parts.append("="*80)
+            guidance_parts.append("\n⚠️⚠️⚠️ CRITICAL TABLE SELECTION RULE ⚠️⚠️⚠️")
+            guidance_parts.append(f"User Query: \"{query}\"")
+            guidance_parts.append(f"\nDetected indicators: {', '.join(temporal_info.get('historical_indicators', []))}")
+            guidance_parts.append(f"\n✅ USE LOG/HISTORICAL TABLES for this query:")
+            guidance_parts.append("   - task_detail_log (NOT task_detail) → For ALL tasks performed till now")
+            guidance_parts.append("   - bot_master_log (NOT bot_master) → For historical bot states")
+            guidance_parts.append("   - bin_info_master_log → For historical bin states")
+            guidance_parts.append("   - order_line_log → For historical order data")
+            guidance_parts.append("   - alarm_log → For historical alarms")
+            guidance_parts.append("   - charge_log → For historical charging data")
+            guidance_parts.append("\n❌ DO NOT use current state tables like:")
+            guidance_parts.append("   - task_detail (only shows current/active tasks)")
+            guidance_parts.append("   - bot_master (only shows current bot state)")
+            guidance_parts.append("\n💡 REASON: User asked for COMPLETE HISTORY, not just current state")
+            guidance_parts.append(f"   Confidence: {confidence:.0%}")
+            guidance_parts.append("="*80 + "\n")
+            
+        elif scope == 'current' and confidence > 0.6:
+            guidance_parts.append("\n" + "="*80)
+            guidance_parts.append("⏱️ TEMPORAL SCOPE DETECTED: CURRENT STATE QUERY")
+            guidance_parts.append("="*80)
+            guidance_parts.append("\n⚠️⚠️⚠️ CRITICAL TABLE SELECTION RULE ⚠️⚠️⚠️")
+            guidance_parts.append(f"User Query: \"{query}\"")
+            guidance_parts.append(f"\nDetected indicators: {', '.join(temporal_info.get('current_indicators', []))}")
+            guidance_parts.append(f"\n✅ USE CURRENT STATE TABLES for this query:")
+            guidance_parts.append("   - task_detail → For current/active tasks")
+            guidance_parts.append("   - bot_master → For current bot states")
+            guidance_parts.append("   - bin_info_master → For current bin states")
+            guidance_parts.append("   - live_inventory_master → For current inventory")
+            guidance_parts.append("\n❌ DO NOT use log tables unless specifically asked:")
+            guidance_parts.append("   - Avoid task_detail_log (contains all historical data, will be slow)")
+            guidance_parts.append("\n💡 REASON: User asked for CURRENT/ACTIVE state only")
+            guidance_parts.append(f"   Confidence: {confidence:.0%}")
+            guidance_parts.append("="*80 + "\n")
+            
+        elif scope == 'both':
+            guidance_parts.append("\n📊 TEMPORAL SCOPE: Query may need BOTH current and historical data")
+            guidance_parts.append("   → Consider using UNION or separate queries for current + historical")
+        
+        # Add common log table mappings
+        if preference == 'log':
+            guidance_parts.append("\n📋 COMMON TABLE MAPPINGS (Current → Log):")
+            guidance_parts.append("   • task_detail → task_detail_log")
+            guidance_parts.append("   • bot_master → bot_master_log")
+            guidance_parts.append("   • bin_info_master → bin_info_master_log")
+            guidance_parts.append("   • order data → order_line_log")
+            guidance_parts.append("   • alarms → alarm_log")
+            guidance_parts.append("   • charging → charge_log\n")
+        
+        return "\n".join(guidance_parts) if guidance_parts else ""
     
     def _get_tables_for_entities(self, entities: List[str]) -> Dict[str, List[str]]:
         """
@@ -796,61 +967,308 @@ class SQLAssistantService:
     
     def _get_join_paths(self, tables: List[str]) -> List[Dict[str, Any]]:
         """
-        Identify how to JOIN multiple tables.
-        Returns possible JOIN paths with columns.
+        INTELLIGENT JOIN PATH DETECTION - Three-tier strategy:
+        
+        TIER 1: Experience-based predefined relationships (highest priority)
+        TIER 2: Automatic FK discovery from database schema
+        TIER 3: LLM-based implicit JOIN detection for complex queries
         
         Args:
             tables: List of table names that need to be joined
             
         Returns:
-            List of JOIN path dictionaries
+            List of JOIN path dictionaries with confidence scores
         """
-        # Known JOIN relationships in NEO WMS
-        join_relationships = [
+        all_join_paths = []
+        
+        # ========================================================================
+        # TIER 1: EXPERIENCE-BASED PREDEFINED JOINS (Highest Confidence: 0.95)
+        # ========================================================================
+        # These are battle-tested JOIN patterns from production experience
+        predefined_relationships = [
             {
                 'table1': 'wms_to_wcs_order_line_request_data',
                 'table2': 'sku_master',
                 'join_on': 'ARTICLE_ID = SKU_ID',
-                'description': 'Orders to SKU details'
+                'description': 'Orders to SKU details',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
             {
                 'table1': 'order_bin_mapping',
                 'table2': 'bin_info_master',
                 'join_on': 'BIN_ID = BIN_ID',
-                'description': 'Order-Bin mapping to bin details'
+                'description': 'Order-Bin mapping to bin details',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
             {
                 'table1': 'bin_info_master',
                 'table2': 'bin_configuration',
                 'join_on': 'BIN_BARCODE = bin_id',
-                'description': 'Bin info to bin configuration'
+                'description': 'Bin info to bin configuration',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
             {
                 'table1': 'live_inventory_master',
                 'table2': 'sku_master',
                 'join_on': 'ARTICLE_ID = SKU_ID',
-                'description': 'Inventory to SKU details'
+                'description': 'Inventory to SKU details',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
             {
                 'table1': 'bot_master',
                 'table2': 'bot_alarm_log',
                 'join_on': 'BOT_ID = BOT_ID',
-                'description': 'Bots to their alarms'
+                'description': 'Bots to their alarms',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
             {
                 'table1': 'dashboard_log_maintenance_task_master',
                 'table2': 'bot_master',
                 'join_on': 'MAINTENANCE_POINT_BOT_ID = BOT_ID',
-                'description': 'Maintenance tasks to bots'
+                'description': 'Maintenance tasks to bots',
+                'confidence': 0.95,
+                'source': 'predefined'
+            },
+            {
+                'table1': 'task_detail',
+                'table2': 'bot_master',
+                'join_on': 'BOT_ID = BOT_ID',
+                'description': 'Tasks to bots',
+                'confidence': 0.95,
+                'source': 'predefined'
+            },
+            {
+                'table1': 'task_detail_log',
+                'table2': 'bot_master',
+                'join_on': 'BOT_ID = BOT_ID',
+                'description': 'Historical tasks to bots',
+                'confidence': 0.95,
+                'source': 'predefined'
+            },
+            {
+                'table1': 'bin_info_master',
+                'table2': 'location_master',
+                'join_on': 'ZONE_ID = ZONE_ID',
+                'description': 'Bins to locations via zone',
+                'confidence': 0.90,
+                'source': 'predefined'
+            },
+            {
+                'table1': 'live_inventory_master',
+                'table2': 'bin_info_master',
+                'join_on': 'BIN_ID = BIN_ID',
+                'description': 'Inventory to bins',
+                'confidence': 0.95,
+                'source': 'predefined'
             },
         ]
         
-        relevant_joins = []
-        for join in join_relationships:
+        # Check predefined relationships
+        for join in predefined_relationships:
             if join['table1'] in tables and join['table2'] in tables:
-                relevant_joins.append(join)
+                all_join_paths.append(join)
+                logger.debug(f"✅ TIER 1: Found predefined join {join['table1']} → {join['table2']}")
         
-        return relevant_joins
+        # ========================================================================
+        # TIER 2: AUTOMATIC FK DISCOVERY FROM SCHEMA (Medium Confidence: 0.75)
+        # ========================================================================
+        discovered_joins = self._discover_joins_from_schema(tables)
+        for join in discovered_joins:
+            # Check if not already in predefined (avoid duplicates)
+            is_duplicate = any(
+                p['table1'] == join['table1'] and p['table2'] == join['table2']
+                for p in all_join_paths
+            )
+            if not is_duplicate:
+                all_join_paths.append(join)
+                logger.debug(f"✅ TIER 2: Discovered FK join {join['table1']} → {join['table2']}")
+        
+        # ========================================================================
+        # TIER 3: LLM-BASED IMPLICIT JOIN DETECTION (Lower Confidence: 0.60)
+        # ========================================================================
+        # Only use for complex queries where TIER 1 & 2 didn't find enough paths
+        if len(all_join_paths) < len(tables) - 1:  # Need at least N-1 joins for N tables
+            llm_joins = self._detect_implicit_joins_with_llm(tables)
+            for join in llm_joins:
+                # Check if not already found
+                is_duplicate = any(
+                    p['table1'] == join['table1'] and p['table2'] == join['table2']
+                    for p in all_join_paths
+                )
+                if not is_duplicate:
+                    all_join_paths.append(join)
+                    logger.debug(f"✅ TIER 3: LLM detected join {join['table1']} → {join['table2']}")
+        
+        # Sort by confidence (highest first)
+        all_join_paths.sort(key=lambda x: x.get('confidence', 0.5), reverse=True)
+        
+        if all_join_paths:
+            logger.info(f"🔗 Found {len(all_join_paths)} JOIN paths using all tiers")
+        
+        return all_join_paths
+    
+    def _discover_joins_from_schema(self, tables: List[str]) -> List[Dict[str, Any]]:
+        """
+        TIER 2: Discover JOIN relationships from database schema.
+        
+        Uses column name matching patterns:
+        - *_ID columns likely join with ID columns
+        - Same column names in different tables likely join
+        
+        Returns:
+            List of discovered JOIN paths with confidence scores
+        """
+        discovered_joins = []
+        
+        try:
+            if not self.schema_parser:
+                return discovered_joins
+            
+            # For each pair of tables, find matching columns
+            for i, table1 in enumerate(tables):
+                for table2 in tables[i+1:]:
+                    # Get columns for both tables
+                    cols1 = self.schema_parser.tables.get(table1, [])
+                    cols2 = self.schema_parser.tables.get(table2, [])
+                    
+                    if not cols1 or not cols2:
+                        continue
+                    
+                    col1_names = {c['field']: c for c in cols1}
+                    col2_names = {c['field']: c for c in cols2}
+                    
+                    # Strategy 1: Exact column name match
+                    common_cols = set(col1_names.keys()) & set(col2_names.keys())
+                    for col in common_cols:
+                        # Prioritize ID columns
+                        if 'ID' in col or col.endswith('_id'):
+                            discovered_joins.append({
+                                'table1': table1,
+                                'table2': table2,
+                                'join_on': f'{col} = {col}',
+                                'description': f'Auto-discovered via matching column: {col}',
+                                'confidence': 0.80,
+                                'source': 'schema_discovery'
+                            })
+                            break  # One join per table pair
+                    
+                    # Strategy 2: Foreign key pattern (table1.TABLE2_ID = table2.ID)
+                    for col1_name, col1_info in col1_names.items():
+                        # Check if col1 references table2 (e.g., BOT_ID in task_detail → BOT_ID in bot_master)
+                        if col1_name in col2_names:
+                            # Check if it's a key column
+                            if col2_names[col1_name].get('key') == 'PRI' or 'ID' in col1_name:
+                                discovered_joins.append({
+                                    'table1': table1,
+                                    'table2': table2,
+                                    'join_on': f'{col1_name} = {col1_name}',
+                                    'description': f'Auto-discovered FK pattern: {col1_name}',
+                                    'confidence': 0.75,
+                                    'source': 'schema_discovery'
+                                })
+                                break
+            
+            if discovered_joins:
+                logger.info(f"📊 Schema discovery found {len(discovered_joins)} potential JOINs")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Schema-based JOIN discovery failed: {e}")
+        
+        return discovered_joins
+    
+    def _detect_implicit_joins_with_llm(self, tables: List[str]) -> List[Dict[str, Any]]:
+        """
+        TIER 3: Use LLM to detect implicit JOIN paths for complex queries.
+        
+        This handles cases where:
+        - Tables need multi-hop joins (A→B→C)
+        - Relationships aren't obvious from column names
+        - Business logic requires specific join patterns
+        
+        Returns:
+            List of LLM-suggested JOIN paths with lower confidence
+        """
+        llm_joins = []
+        
+        try:
+            if len(tables) < 2:
+                return llm_joins
+            
+            # Get schema info for these tables
+            table_schemas = {}
+            for table in tables:
+                cols = self.schema_parser.tables.get(table, [])
+                col_list = [f"{c['field']} ({c['type']})" for c in cols[:10]]
+                table_schemas[table] = col_list
+            
+            # Ask LLM to find JOIN paths
+            llm_prompt = f"""Analyze these database tables and identify how they should be joined.
+
+**Tables to join:** {', '.join(tables)}
+
+**Table Schemas:**
+{chr(10).join([f'{t}: {", ".join(cols)}' for t, cols in table_schemas.items()])}
+
+**Task:** Identify JOIN relationships between these tables.
+
+**Rules:**
+- Only suggest JOINs where column names/types match
+- Prefer ID columns for joins
+- Consider multi-hop paths if needed (A→B→C)
+- Return ONLY valid, executable JOIN conditions
+
+**Respond in JSON format:**
+{{
+    "joins": [
+        {{
+            "table1": "table_name_1",
+            "table2": "table_name_2",
+            "join_on": "table1.column = table2.column",
+            "reasoning": "why this join makes sense"
+        }}
+    ]
+}}
+"""
+            
+            response = self.llm_service.generate_response(
+                messages=[{"role": "user", "content": llm_prompt}],
+                system_prompt="You are a database schema expert. Analyze table structures and suggest valid JOIN paths. Return JSON only.",
+                max_tokens=500,
+                temperature=0.1
+            )
+            
+            # Parse response
+            import json
+            json_text = response.strip()
+            if "```json" in json_text:
+                json_text = json_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in json_text:
+                json_text = json_text.split("```")[1].split("```")[0].strip()
+            
+            result = json.loads(json_text)
+            
+            for join in result.get('joins', []):
+                llm_joins.append({
+                    'table1': join['table1'],
+                    'table2': join['table2'],
+                    'join_on': join['join_on'],
+                    'description': f"LLM-detected: {join.get('reasoning', 'implicit relationship')}",
+                    'confidence': 0.60,  # Lower confidence for LLM suggestions
+                    'source': 'llm_detection'
+                })
+            
+            if llm_joins:
+                logger.info(f"🤖 LLM detected {len(llm_joins)} implicit JOIN paths")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ LLM-based JOIN detection failed: {e}")
+        
+        return llm_joins
     
     def _get_relevant_schema(self, query: str, max_tables: int = 10) -> str:
         """
@@ -906,17 +1324,45 @@ class SQLAssistantService:
         # Limit to max_tables
         relevant_tables = list(relevant_tables)[:max_tables]
         
-        # Step 5: Get JOIN paths if multiple tables
+        # Step 5: Get JOIN paths if multiple tables (THREE-TIER STRATEGY)
         join_hints = []
         if len(relevant_tables) > 1:
             join_paths = self._get_join_paths(relevant_tables)
             if join_paths:
-                join_hints.append("\n🔗 SUGGESTED JOIN PATHS:")
-                for join in join_paths:
-                    join_hints.append(
-                        f"  • {join['table1']} JOIN {join['table2']} ON {join['join_on']}"
-                    )
-                    join_hints.append(f"    ({join['description']})")
+                join_hints.append("\n🔗 INTELLIGENT JOIN PATH DETECTION (Three-Tier Strategy):")
+                join_hints.append("   TIER 1: Experience-based (95% confidence) → Battle-tested production joins")
+                join_hints.append("   TIER 2: Schema discovery (75% confidence) → Auto-detected from column names")
+                join_hints.append("   TIER 3: LLM detection (60% confidence) → AI-suggested implicit joins")
+                join_hints.append("\n📍 SUGGESTED JOIN PATHS FOR THIS QUERY:")
+                
+                # Group by source tier
+                predefined = [j for j in join_paths if j.get('source') == 'predefined']
+                discovered = [j for j in join_paths if j.get('source') == 'schema_discovery']
+                llm_detected = [j for j in join_paths if j.get('source') == 'llm_detection']
+                
+                if predefined:
+                    join_hints.append("  ✅ TIER 1 - PREDEFINED (Use these first!):")
+                    for join in predefined:
+                        confidence_pct = int(join.get('confidence', 0.95) * 100)
+                        join_hints.append(f"     • {join['table1']} JOIN {join['table2']} ON {join['join_on']}")
+                        join_hints.append(f"       {join['description']} [{confidence_pct}% confidence]")
+                
+                if discovered:
+                    join_hints.append("  📊 TIER 2 - AUTO-DISCOVERED:")
+                    for join in discovered:
+                        confidence_pct = int(join.get('confidence', 0.75) * 100)
+                        join_hints.append(f"     • {join['table1']} JOIN {join['table2']} ON {join['join_on']}")
+                        join_hints.append(f"       {join['description']} [{confidence_pct}% confidence]")
+                
+                if llm_detected:
+                    join_hints.append("  🤖 TIER 3 - LLM-DETECTED (Verify carefully):")
+                    for join in llm_detected:
+                        confidence_pct = int(join.get('confidence', 0.60) * 100)
+                        join_hints.append(f"     • {join['table1']} JOIN {join['table2']} ON {join['join_on']}")
+                        join_hints.append(f"       {join['description']} [{confidence_pct}% confidence]")
+                
+                join_hints.append("\n⚠️ CRITICAL: Always use TIER 1 joins when available. Lower tiers are fallbacks.")
+
         
         # Build compact schema with semantic information
         schema_lines = [f"📊 Database Schema (Intent: {intent_info['intent']}, Entities: {', '.join(intent_info['entities']) or 'general'})"]
@@ -1441,9 +1887,15 @@ class SQLAssistantService:
             except Exception as e:
                 logger.warning(f"⚠️ Could not retrieve historical learning: {e}")
         
+        # Build temporal scope guidance (NEW)
+        temporal_info = intent_info.get('temporal_scope', {})
+        temporal_guidance = self._build_temporal_table_guidance(temporal_info, query)
+        
         return f"""You are a SQL expert for the NEO Warehouse Management System.
 
 {context_prompt}
+
+{temporal_guidance}
 
 ⚠️⚠️⚠️ CRITICAL: ONLY USE TABLES THAT EXIST ⚠️⚠️⚠️
 AVAILABLE TABLES IN DATABASE: {len(self.available_tables)} total
@@ -1780,6 +2232,13 @@ Invalid filter values detected:
 0. **Table Validity**: Do ALL tables in the query actually exist in the schema? (CRITICAL CHECK)
 0.5. **Column Validity**: Do ALL columns referenced exist in their respective tables? (CRITICAL CHECK)
 0.6. **Value Validity**: Do filter values in WHERE clause match ACTUAL data in the database? (CRITICAL CHECK)
+0.7. **JOIN Validity** (CRITICAL FOR MULTI-TABLE QUERIES):
+   - Are JOIN conditions using correct column names from both tables?
+   - Do JOIN column types match (don't join INT with VARCHAR)?
+   - Are JOIN conditions using correct table aliases?
+   - For multi-table queries, are there enough JOINs to connect all tables?
+   - Are JOINs using the right relationship (e.g., BOT_ID = BOT_ID, not BOT_ID = TASK_ID)?
+   - Check for Cartesian products (missing JOIN conditions)
 1. **Correctness**: Does the SQL correctly answer the user's question?
 2. **Schema Alignment**: Are the tables and columns used appropriate for the question?
 3. **Result Quality**: Do the results make sense? Right number of rows? Meaningful data?
@@ -1791,17 +2250,25 @@ Invalid filter values detected:
     "confidence": 0.0-1.0,
     "issues": ["issue 1", "issue 2", ...],
     "suggestions": ["suggestion 1", "suggestion 2", ...],
-    "improved_query": "IMPROVED SQL QUERY HERE or null if satisfactory"
+    "improved_query": "IMPROVED SQL QUERY HERE or null if satisfactory",
+    "join_analysis": {{
+        "joins_valid": true/false,
+        "join_issues": ["join issue 1", "join issue 2", ...],
+        "suggested_joins": ["table1 JOIN table2 ON condition", ...]
+    }}
 }}
 
 **Rules:**
 - **If query uses non-existent tables, columns, OR values, set is_satisfactory=false with confidence=0.2**
+- **If JOINs are missing, incorrect, or use wrong columns, set is_satisfactory=false with confidence=0.3**
+- **If JOIN creates Cartesian product (missing ON condition), this is CRITICAL error**
 - **If filter values don't match actual data (e.g., status='active' when actual values are 'ENABLED'/'DISABLED'), this is CRITICAL error**
 - If confidence >= 0.85, set is_satisfactory=true
-- If results are empty but should have data, check if filter values match actual database values
-- If wrong tables/columns/values used, suggest correct ones from schema and actual data
-- improved_query should use ONLY tables, columns, and values that exist in the database
+- If results are empty but should have data, check if filter values or JOIN conditions are wrong
+- If wrong tables/columns/values/joins used, suggest correct ones from schema and actual data
+- improved_query should use ONLY tables, columns, values, and JOINs that exist in the database
 - improved_query should be a complete, executable SQL query or null
+- For multi-table queries, ALWAYS validate JOIN logic in join_analysis
 """
 
             response = self.llm_service.generate_response(
@@ -2992,44 +3459,116 @@ Would you like to try a different question?"""
             logger.error(f"❌ Error extracting tables from SQL: {e}")
             return []
     
-    def _extract_columns_from_sql(self, sql_query: str) -> List[str]:
-        """Extract column names from SQL query"""
+    def _find_similar_sql_examples(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        """
+        Find similar SQL examples from codebase with multi-tier fallback strategy.
+        
+        TIER 1: Vector similarity search (best)
+        TIER 2: Keyword matching in query text (fallback)
+        TIER 3: Common SQL patterns (last resort)
+        TIER 4: Empty list (graceful degradation)
+        
+        Args:
+            query: Natural language query
+            top_k: Number of examples to return
+            
+        Returns:
+            List of similar SQL examples with metadata
+        """
         try:
-            columns = []
+            # TIER 1: Try vector store if available
+            if self.vector_store:
+                try:
+                    results = self.vector_store.search_sql_examples(query, top_k=top_k)
+                    if results and len(results) > 0:
+                        logger.debug(f"✅ Found {len(results)} SQL examples via vector search")
+                        return results
+                except Exception as e:
+                    logger.warning(f"⚠️ Vector search failed: {e}, trying fallback")
             
-            # Extract columns from SELECT clause
-            select_match = re.search(r'SELECT\s+(.*?)\s+FROM', sql_query, re.IGNORECASE | re.DOTALL)
-            if select_match:
-                select_clause = select_match.group(1)
-                # Split by comma but ignore commas in functions
-                parts = re.split(r',(?![^()]*\))', select_clause)
-                for part in parts:
-                    part = part.strip()
-                    if part and part != '*':
-                        # Extract column name (handle aliases)
-                        col_match = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:AS|$)', part, re.IGNORECASE)
-                        if col_match:
-                            columns.append(col_match.group(1))
-                        else:
-                            # Try to get just the column name
-                            col_match = re.search(r'([a-zA-Z_][a-zA-Z0-9_]*)', part)
-                            if col_match:
-                                columns.append(col_match.group(1))
+            # TIER 2: Keyword-based matching from common patterns
+            logger.debug("📋 Using keyword-based SQL pattern matching")
+            patterns = self._get_common_sql_patterns()
             
-            # Extract columns from WHERE, ORDER BY, GROUP BY
-            for clause in ['WHERE', 'ORDER BY', 'GROUP BY']:
-                pattern = rf'{clause}\s+(.*?)(?:ORDER BY|GROUP BY|LIMIT|$)'
-                matches = re.findall(pattern, sql_query, re.IGNORECASE)
-                for match in matches:
-                    col_matches = re.findall(r'([a-zA-Z_][a-zA-Z0-9_]*)', match)
-                    columns.extend(col_matches)
+            # Extract keywords from query
+            query_lower = query.lower()
+            keywords = []
+            if any(word in query_lower for word in ['count', 'how many', 'number of']):
+                keywords.append('count')
+            if any(word in query_lower for word in ['list', 'show', 'get all', 'find all']):
+                keywords.append('list')
+            if any(word in query_lower for word in ['join', 'combine', 'with', 'and their']):
+                keywords.append('join')
+            if any(word in query_lower for word in ['filter', 'where', 'that are', 'with status']):
+                keywords.append('filter')
+            if any(word in query_lower for word in ['group', 'by', 'per', 'each']):
+                keywords.append('group')
             
-            # Remove duplicates and SQL keywords
-            sql_keywords = {'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 
-                           'ORDER', 'BY', 'GROUP', 'HAVING', 'LIMIT', 'ASC', 'DESC'}
-            columns = [c for c in set(columns) if c.upper() not in sql_keywords]
+            # Match patterns to keywords
+            matched_patterns = []
+            for pattern in patterns:
+                pattern_type = pattern.get('type', '')
+                if any(kw in pattern_type for kw in keywords):
+                    matched_patterns.append(pattern)
             
-            return columns
+            # Return top_k matches
+            if matched_patterns:
+                logger.debug(f"✅ Matched {len(matched_patterns[:top_k])} SQL patterns via keywords")
+                return matched_patterns[:top_k]
+            
+            # TIER 3: Return basic patterns if no keywords match
+            logger.debug("📋 Returning basic SQL patterns as fallback")
+            return patterns[:top_k]
+            
         except Exception as e:
-            logger.error(f"❌ Error extracting columns from SQL: {e}")
+            logger.error(f"❌ Error finding SQL examples: {e}", exc_info=True)
+            # TIER 4: Graceful degradation
             return []
+    
+    def _get_common_sql_patterns(self) -> List[Dict[str, Any]]:
+        """
+        Get hardcoded common SQL patterns as ultimate fallback.
+        
+        Returns:
+            List of common SQL pattern examples
+        """
+        return [
+            {
+                'filename': 'common_patterns.sql',
+                'sql': 'SELECT * FROM table_name WHERE status = "ENABLED" LIMIT 10',
+                'type': 'filter_list',
+                'similarity': 0.7,
+                'description': 'Basic filtered list query'
+            },
+            {
+                'filename': 'common_patterns.sql',
+                'sql': 'SELECT COUNT(*) as total FROM table_name WHERE condition',
+                'type': 'count_filter',
+                'similarity': 0.7,
+                'description': 'Count with filter'
+            },
+            {
+                'filename': 'common_patterns.sql',
+                'sql': '''SELECT t1.*, t2.column_name 
+FROM table1 t1 
+JOIN table2 t2 ON t1.id = t2.foreign_id 
+WHERE t1.status = "ACTIVE"''',
+                'type': 'join_filter',
+                'similarity': 0.7,
+                'description': 'Join two tables with filter'
+            },
+            {
+                'filename': 'common_patterns.sql',
+                'sql': 'SELECT category, COUNT(*) as count FROM table_name GROUP BY category ORDER BY count DESC',
+                'type': 'group_count',
+                'similarity': 0.7,
+                'description': 'Group by and count'
+            },
+            {
+                'filename': 'common_patterns.sql',
+                'sql': 'SELECT * FROM table_name ORDER BY created_at DESC LIMIT 5',
+                'type': 'recent_list',
+                'similarity': 0.7,
+                'description': 'Get recent records'
+            }
+        ]

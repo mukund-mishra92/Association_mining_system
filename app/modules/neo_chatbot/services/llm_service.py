@@ -51,41 +51,49 @@ class LLMService:
         self.openai_client = None
         self.anthropic_client = None
         
+        # Initialize ALL available clients (for fallback support)
         # Try Groq first (Fast inference API)
         if self.groq_api_key:
             try:
                 from groq import Groq
                 self.groq_client = Groq(api_key=self.groq_api_key)
-                self.provider = "groq"
-                logger.info("✅ Groq (Fast Inference) LLM initialized")
+                if not self.provider:  # Set as primary if no provider yet
+                    self.provider = "groq"
+                logger.info("✅ Groq (Fast Inference) client initialized")
             except ImportError:
                 logger.warning("⚠️ Groq package not installed. Run: pip install groq")
             except Exception as e:
                 logger.warning(f"⚠️ Groq initialization failed: {e}")
         
-        # Fallback to OpenAI
-        if not self.provider and self.openai_api_key:
+        # Initialize OpenAI (always initialize if key available, for fallback)
+        if self.openai_api_key:
             try:
                 from openai import OpenAI
                 self.openai_client = OpenAI(api_key=self.openai_api_key)
-                self.provider = "openai"
-                logger.info("✅ OpenAI LLM initialized")
+                if not self.provider:  # Set as primary only if no provider yet
+                    self.provider = "openai"
+                logger.info("✅ OpenAI client initialized")
             except ImportError:
                 logger.warning("⚠️ OpenAI package not installed. Run: pip install openai")
             except Exception as e:
                 logger.warning(f"⚠️ OpenAI initialization failed: {e}")
         
-        # Fallback to Anthropic
-        if not self.provider and self.anthropic_api_key:
+        # Initialize Anthropic (always initialize if key available, for fallback)
+        if self.anthropic_api_key:
             try:
                 import anthropic
                 self.anthropic_client = anthropic.Anthropic(api_key=self.anthropic_api_key)
-                self.provider = "anthropic"
-                logger.info("✅ Anthropic Claude LLM initialized")
+                if not self.provider:  # Set as primary only if no provider yet
+                    self.provider = "anthropic"
+                logger.info("✅ Anthropic client initialized")
             except ImportError:
                 logger.warning("⚠️ Anthropic package not installed. Run: pip install anthropic")
             except Exception as e:
                 logger.warning(f"⚠️ Anthropic initialization failed: {e}")
+        
+        # Log primary provider
+        if self.provider:
+            logger.info(f"🎯 Primary LLM provider: {self.provider.upper()}")
         
         # Initialize local LLM if enabled and no cloud API available
         if not self.provider and self.local_llm_enabled:
@@ -137,14 +145,37 @@ class LLMService:
         except Exception as e:
             logger.error(f"❌ Error with {self.provider} LLM: {e}")
             
-            # Try fallback to local LLM if enabled and not already using it
+            # Try fallback chain: OpenAI → Anthropic → Local LLM
+            fallback_tried = []
+            
+            # Try OpenAI if available and not already using it
+            if self.openai_api_key and self.provider != "openai":
+                try:
+                    fallback_tried.append("OpenAI")
+                    logger.info("🔄 Attempting fallback to OpenAI...")
+                    return self._generate_openai(messages, system_prompt, max_tokens, temperature)
+                except Exception as openai_error:
+                    logger.error(f"❌ OpenAI fallback failed: {openai_error}")
+            
+            # Try Anthropic if available and not already using it
+            if self.anthropic_api_key and self.provider != "anthropic":
+                try:
+                    fallback_tried.append("Anthropic")
+                    logger.info("🔄 Attempting fallback to Anthropic...")
+                    return self._generate_anthropic(messages, system_prompt, max_tokens, temperature)
+                except Exception as anthropic_error:
+                    logger.error(f"❌ Anthropic fallback failed: {anthropic_error}")
+            
+            # Try local LLM if enabled and not already using it
             if self.local_llm_enabled and self.provider != "local_llm":
                 try:
+                    fallback_tried.append("Local LLM")
                     logger.info("🔄 Attempting fallback to local LLM...")
                     return self._generate_local_llm(messages, system_prompt, max_tokens, temperature)
                 except Exception as fallback_error:
                     logger.error(f"❌ Local LLM fallback also failed: {fallback_error}")
             
+            logger.error(f"❌ All fallbacks exhausted. Tried: {', '.join(fallback_tried) if fallback_tried else 'none available'}")
             return "I apologize, but I encountered an error processing your request. Please try again."
     
     def _generate_groq(

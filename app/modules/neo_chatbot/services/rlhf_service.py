@@ -91,6 +91,13 @@ class RLHFService:
             # Calculate reward score based on feedback
             reward_score = self._calculate_reward(feedback_type, rating, comment)
             
+            # Auto-generate chat_id if not provided in metadata
+            if metadata is None:
+                metadata = {}
+            if 'chat_id' not in metadata or metadata.get('chat_id') is None:
+                metadata['chat_id'] = f"chat_{uuid.uuid4().hex[:16]}"
+                logger.debug(f"🔧 Auto-generated chat_id: {metadata['chat_id']}")
+            
             feedback_record = {
                 "feedback_id": feedback_id,
                 "timestamp": timestamp,
@@ -101,7 +108,7 @@ class RLHFService:
                 "rating": rating,
                 "comment": comment,
                 "reward_score": reward_score,
-                "metadata": metadata or {}
+                "metadata": metadata
             }
             
             # Save to feedback history
@@ -488,9 +495,14 @@ class RLHFService:
             conn = self._get_connection()
             cursor = conn.cursor()
             
-            # Get chat_id from metadata if available
+            # Get chat_id from metadata with defensive validation
             chat_id = feedback.get('metadata', {}).get('chat_id')
             session_id = feedback.get('metadata', {}).get('session_id', 'unknown')
+            
+            # Validate chat_id exists before database insert
+            if not chat_id:
+                logger.warning(f"⚠️ Skipping DB insert - chat_id missing for feedback: {feedback.get('feedback_id')}")
+                return  # Skip DB insert but still saved to JSONL above
             
             cursor.execute("""
                 INSERT INTO chatbot_feedback 
@@ -577,45 +589,102 @@ class RLHFService:
         except Exception as e:
             logger.error(f"Error saving learned patterns: {e}")
     
-    def get_sql_corrections(self, limit: int = 50) -> List[Dict[str, Any]]:
+    def _read_feedback_history(
+        self, 
+        chatbot_type: Optional[str] = None,
+        limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Retrieve SQL corrections from negative feedback history
-        Returns patterns where users provided corrections for SQL queries
+        Read feedback history from JSONL file with defensive error handling.
+        
+        Args:
+            chatbot_type: Filter by chatbot type (sql_assistant, knowledge_base, etc.)
+            limit: Maximum number of feedback records to return
+            
+        Returns:
+            List of feedback records (most recent first), empty list if unavailable
         """
         try:
-            feedbacks = self._read_feedback_history()
+            if not self.feedback_file.exists():
+                logger.debug(f"📂 Feedback file not found: {self.feedback_file}")
+                return []
+            
+            feedbacks = []
+            with open(self.feedback_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    try:
+                        feedback = json.loads(line.strip())
+                        
+                        # Filter by chatbot type if specified
+                        if chatbot_type and feedback.get('chatbot_type') != chatbot_type:
+                            continue
+                        
+                        feedbacks.append(feedback)
+                        
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"⚠️ Skipping malformed feedback line: {e}")
+                        continue
+            
+            # Return most recent first
+            feedbacks.reverse()
+            
+            # Apply limit if specified
+            if limit and limit > 0:
+                feedbacks = feedbacks[:limit]
+            
+            logger.debug(f"📖 Read {len(feedbacks)} feedback records from file")
+            return feedbacks
+            
+        except Exception as e:
+            logger.error(f"❌ Error reading feedback history: {e}", exc_info=True)
+            return []  # Graceful degradation - never crash
+    
+    def get_sql_corrections(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Get SQL correction feedback from history for learning.
+        
+        Args:
+            limit: Maximum number of corrections to return
+            
+        Returns:
+            List of SQL corrections with query, comment, and metadata
+        """
+        try:
+            # Read all SQL assistant feedback
+            all_feedback = self._read_feedback_history(chatbot_type='sql_assistant')
+            
+            if not all_feedback:
+                logger.debug("📭 No SQL feedback history found")
+                return []
             
             corrections = []
-            for feedback in feedbacks:
-                # Look for SQL assistant feedback with corrections
-                if feedback.get('chatbot_type') != 'sql_assistant':
-                    continue
-                
-                # Check if it's negative feedback or a correction
+            for feedback in all_feedback:
                 comment = feedback.get('comment', '')
-                if not comment:
-                    continue
                 
-                comment_lower = comment.lower()
-                
-                # Detect correction patterns in comments
-                if any(indicator in comment_lower for indicator in [
-                    'wrong', 'incorrect', 'should be', 'use instead',
-                    'not correct', 'the correct', 'actually'
+                # Only include feedback with correction indicators
+                if comment and any(indicator in comment.lower() for indicator in [
+                    'wrong', 'incorrect', 'should', 'use instead',
+                    'not correct', 'correct', 'actually', 'error',
+                    'table', 'column', 'field'
                 ]):
                     corrections.append({
                         'query': feedback.get('query'),
+                        'response': feedback.get('response'),
                         'comment': comment,
+                        'rating': feedback.get('rating'),
                         'timestamp': feedback.get('timestamp'),
-                        'reward': feedback.get('reward_score', 0),
+                        'reward_score': feedback.get('reward_score', 0),
                         'metadata': feedback.get('metadata', {})
                     })
+                
+                # Stop if we have enough
+                if len(corrections) >= limit:
+                    break
             
-            # Sort by timestamp (most recent first)
-            corrections.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            
-            return corrections[:limit]
+            logger.debug(f"🎓 Found {len(corrections)} SQL corrections from feedback")
+            return corrections
             
         except Exception as e:
-            logger.error(f"❌ Error retrieving SQL corrections: {e}")
-            return []
+            logger.error(f"❌ Error getting SQL corrections: {e}", exc_info=True)
+            return []  # Graceful degradation
+
