@@ -114,12 +114,13 @@ Always prioritize clarity and user understanding."""
             # Step 1: Generate query embedding
             query_embedding = self.llm_service.generate_embedding(chat_request.message)
             
-            # Step 2: Search for relevant documents
-            search_results = self.vector_store.search(
+            # Step 2: Search for relevant documents (with balanced category distribution)
+            search_results = self.vector_store.search_balanced(
                 query_embedding=query_embedding,
                 top_k=8,  # Retrieve more documents for better context
                 filter_metadata=chat_request.context,
-                min_similarity=0.25  # Lower threshold to catch more relevant content
+                min_similarity=0.25,  # Lower threshold to catch more relevant content
+                diversify=True  # Reduce proposal bias
             )
             
             # Filter and re-rank results
@@ -177,9 +178,12 @@ Always prioritize clarity and user understanding."""
             )
             
         except Exception as e:
-            logger.error(f"❌ Error processing knowledge base query: {e}", exc_info=True)
+            error_msg = str(e)
+            logger.error(f"❌ Error processing knowledge base query: {error_msg}", exc_info=True)
+            logger.error(f"Query was: {chat_request.message}")
+            logger.error(f"Error type: {type(e).__name__}")
             return ChatResponse(
-                response="I apologize, but I encountered an error while processing your question. Please try rephrasing or contact support.",
+                response=f"I apologize, but I encountered an error while processing your question. Error: {error_msg}. Please try rephrasing or contact support.",
                 chatbot_type=ChatbotType.KNOWLEDGE_BASE,
                 session_id=chat_request.session_id or str(uuid.uuid4()),
                 sources=[],
@@ -800,21 +804,22 @@ Category: {category} | Relevance: {similarity:.1%}
             # Create source documents from matches
             sources = [
                 SourceDocument(
-                    content=match['problem'][:200],
-                    filename=f"Diagnostic DB - {match['type']}",
+                    document_name=f"Diagnostic DB - {match['type']}",
+                    content_snippet=match['problem'][:200],
+                    relevance_score=match['relevance_score'] / 100.0,
                     page_number=match['id'],
-                    relevance_score=match['relevance_score'] / 100.0
+                    document_type="diagnostic"
                 )
                 for match in top_matches
             ]
             
             return ChatResponse(
-                message_id=str(uuid.uuid4()),
                 response=response_text,
                 chatbot_type=ChatbotType.KNOWLEDGE_BASE,
-                confidence=0.95,  # High confidence for exact matches
+                session_id=chat_request.session_id or str(uuid.uuid4()),
                 sources=sources,
-                suggested_questions=[
+                confidence_score=0.95,  # High confidence for exact matches
+                suggested_actions=[
                     "Show me SQL queries for bot diagnostics",
                     "What are common station-level issues?",
                     "How do I use HMI teleoperation mode?"
@@ -822,9 +827,8 @@ Category: {category} | Relevance: {similarity:.1%}
             )
             
         except Exception as e:
-            logger.error(f"Error in diagnostic query handling: {e}")
+            logger.error(f"❌ Error in diagnostic query handling: {e}", exc_info=True)
             return None  # Fall back to normal RAG
-            return False
     
     def get_statistics(self) -> Dict[str, Any]:
         """Get knowledge base statistics"""

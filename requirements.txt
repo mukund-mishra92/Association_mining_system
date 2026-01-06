@@ -16,6 +16,7 @@ mysql-connector-python>=8.2.0
 psutil>=5.9.0
 scipy>=1.11.0
 beautifulsoup4>=4.12.0
+python-pptx>=0.6.21
 
 # Local LLM support (OPTIONAL - requires C++ build tools on Windows)
 # llama-cpp-python>=0.2.20  # Uncomment if you have Visual Studio Build Tools installed

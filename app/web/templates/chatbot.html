@@ -525,6 +525,9 @@
             <button class="chatbot-btn" data-type="diagnostic">
                 <i class="fas fa-stethoscope"></i> Diagnostic Support
             </button>
+            <button class="chatbot-btn" data-type="semi_auto_diagnostic">
+                <i class="fas fa-tools"></i> Semi-Auto Diagnostic
+            </button>
         </div>
 
         <!-- Main Chat Area -->
@@ -644,6 +647,12 @@
                 "Database connection error",
                 "Mining job failed",
                 "System performance is slow"
+            ],
+            semi_auto_diagnostic: [
+                "Bot is not moving",
+                "Station showing error",
+                "Conveyor belt stopped",
+                "Data synchronization issue"
             ]
         };
 
@@ -659,6 +668,9 @@
                     currentChatbotType = this.dataset.type;
                     document.getElementById('activeAssistant').textContent = this.textContent.trim();
                     updateSuggestions();
+                    
+                    // Reset semi-auto diagnostic session when switching
+                    semiAutoDiagSession = null;
                     
                     // Show upload area only for knowledge base
                     const uploadArea = document.getElementById('uploadArea');
@@ -697,6 +709,9 @@
             }
         }
 
+        // Global variable for semi-auto diagnostic session
+        let semiAutoDiagSession = null;
+
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
@@ -718,33 +733,39 @@
             sendBtn.disabled = true;
 
             try {
-                const response = await fetch('/api/chatbot/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        chatbot_type: currentChatbotType,
-                        session_id: sessionId,
-                        conversation_history: []
-                    })
-                });
+                // Check if semi-automated diagnostic
+                if (currentChatbotType === 'semi_auto_diagnostic') {
+                    await handleSemiAutoDiagnostic(message);
+                } else {
+                    // Regular chatbot handling
+                    const response = await fetch('/api/chatbot/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            chatbot_type: currentChatbotType,
+                            session_id: sessionId,
+                            conversation_history: []
+                        })
+                    });
 
-                const data = await response.json();
-                
-                // Update session ID
-                if (data.session_id) {
-                    sessionId = data.session_id;
-                    document.getElementById('sessionId').textContent = data.session_id.substring(0, 8) + '...';
+                    const data = await response.json();
+                    
+                    // Update session ID
+                    if (data.session_id) {
+                        sessionId = data.session_id;
+                        document.getElementById('sessionId').textContent = data.session_id.substring(0, 8) + '...';
+                    }
+
+                    // Add assistant response
+                    addMessage('assistant', data.response, data);
+
+                    // Update message count
+                    messageCount++;
+                    document.getElementById('messageCount').textContent = messageCount;
                 }
-
-                // Add assistant response
-                addMessage('assistant', data.response, data);
-
-                // Update message count
-                messageCount++;
-                document.getElementById('messageCount').textContent = messageCount;
 
             } catch (error) {
                 console.error('Error:', error);
@@ -758,6 +779,158 @@
                 
                 // Focus input
                 input.focus();
+            }
+        }
+
+        async function handleSemiAutoDiagnostic(message) {
+            if (!semiAutoDiagSession) {
+                // Start new diagnosis
+                const response = await fetch(`/api/chatbot/diagnostic/start?problem_description=${encodeURIComponent(message)}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.matched_cases && data.matched_cases.length > 0) {
+                    semiAutoDiagSession = data;
+                    displayDiagnosticCase(data.current_case, data.total_matches);
+                } else {
+                    addMessage('assistant', '❌ No matching cases found. Please provide more details or contact support.');
+                }
+            } else {
+                addMessage('assistant', '⚠️ Diagnosis already in progress. Use action buttons below.');
+            }
+        }
+
+        function displayDiagnosticCase(caseData, totalMatches) {
+            const impactColor = caseData.impact.toLowerCase().includes('high') ? '#dc3545' :
+                               caseData.impact.toLowerCase().includes('medium') ? '#ffc107' : '#28a745';
+            
+            let html = `
+                <div style="border-left: 4px solid ${impactColor}; padding-left: 15px; margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 10px 0; color: #667eea;">Case ${caseData.case_number} - ${caseData.type}</h3>
+                    <p style="margin: 5px 0;"><strong style="color: ${impactColor};">Impact:</strong> ${caseData.impact}</p>
+                    <p style="margin: 5px 0;"><strong>Problem:</strong> ${caseData.problem}</p>
+                    <p style="margin: 10px 0 15px 0;"><strong>Solution:</strong> ${caseData.solution}</p>
+            `;
+            
+            if (caseData.sql_query) {
+                html += `
+                    <div style="background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 13px; margin: 10px 0;">
+                        ${caseData.sql_query}
+                    </div>
+                    <p style="margin: 5px 0; font-size: 0.9em; color: #666;"><strong>Expected:</strong> ${caseData.expected_outcome}</p>
+                    <div class="action-buttons" style="margin-top: 15px;">
+                        <button class="action-btn" onclick="runSQLAuditInline()"><i class="fas fa-play"></i> Run SQL Audit</button>
+                        <button class="action-btn" style="background: #28a745;" onclick="markSolutionWorked()"><i class="fas fa-check"></i> This Solved It</button>
+                        <button class="action-btn" style="background: #dc3545;" onclick="tryNextSolution()"><i class="fas fa-times"></i> Not Correct</button>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="action-buttons" style="margin-top: 15px;">
+                        <button class="action-btn" style="background: #28a745;" onclick="markSolutionWorked()"><i class="fas fa-check"></i> This Solved It</button>
+                        <button class="action-btn" style="background: #dc3545;" onclick="tryNextSolution()"><i class="fas fa-times"></i> Not Correct</button>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            
+            addMessage('assistant', html);
+            messageCount++;
+            document.getElementById('messageCount').textContent = messageCount;
+        }
+
+        async function runSQLAuditInline() {
+            const sqlQuery = semiAutoDiagSession.current_case.sql_query;
+            
+            addMessage('assistant', '🔍 Running SQL audit...');
+            
+            try {
+                const response = await fetch(`/api/chatbot/diagnostic/audit-sql?sql_query=${encodeURIComponent(sqlQuery)}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    let html = `<div style="background: #d4edda; padding: 10px; border-radius: 5px; border-left: 4px solid #28a745; margin: 10px 0;">
+                        <strong>✅ Audit Complete:</strong> ${result.row_count} row(s) found
+                    </div>`;
+                    
+                    if (result.data && result.data.length > 0) {
+                        html += '<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em;">';
+                        html += '<thead><tr style="background: #667eea; color: white;">';
+                        result.columns.forEach(col => {
+                            html += `<th style="padding: 8px; text-align: left;">${col}</th>`;
+                        });
+                        html += '</tr></thead><tbody>';
+                        
+                        result.data.slice(0, 3).forEach((row, idx) => {
+                            html += `<tr style="background: ${idx % 2 ? '#f8f9fa' : 'white'};">`;
+                            result.columns.forEach(col => {
+                                html += `<td style="padding: 8px; border-bottom: 1px solid #dee2e6;">${row[col]}</td>`;
+                            });
+                            html += '</tr>';
+                        });
+                        html += '</tbody></table>';
+                        
+                        if (result.row_count > 3) {
+                            html += `<p style="font-size: 0.85em; color: #666;">Showing 3 of ${result.row_count} rows</p>`;
+                        }
+                    }
+                    
+                    addMessage('assistant', html);
+                } else {
+                    addMessage('assistant', `❌ SQL Audit Failed: ${result.error}`);
+                }
+            } catch (error) {
+                addMessage('assistant', `❌ Error running SQL audit: ${error.message}`);
+            }
+        }
+
+        async function markSolutionWorked() {
+            try {
+                const response = await fetch('/api/chatbot/diagnostic/feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_data: semiAutoDiagSession,
+                        is_correct: true
+                    })
+                });
+                
+                const result = await response.json();
+                addMessage('assistant', '✅ <strong>Problem Resolved Successfully!</strong><br>Great! The solution worked. Diagnosis session ended.');
+                semiAutoDiagSession = null;
+            } catch (error) {
+                addMessage('assistant', `❌ Error: ${error.message}`);
+            }
+        }
+
+        async function tryNextSolution() {
+            try {
+                const response = await fetch('/api/chatbot/diagnostic/feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_data: semiAutoDiagSession,
+                        is_correct: false
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'next_suggestion') {
+                    semiAutoDiagSession.current_case_index = result.current_case_index;
+                    semiAutoDiagSession.current_case = result.current_case;
+                    addMessage('assistant', '🔄 Trying next possible cause...');
+                    displayDiagnosticCase(result.current_case, semiAutoDiagSession.total_matches);
+                } else if (result.status === 'exhausted') {
+                    addMessage('assistant', '⚠️ <strong>All Known Solutions Tried</strong><br>Manual investigation required. Consider escalating to development team.');
+                    semiAutoDiagSession = null;
+                }
+            } catch (error) {
+                addMessage('assistant', `❌ Error: ${error.message}`);
             }
         }
 
@@ -873,6 +1046,9 @@
                 document.getElementById('emptyState').style.display = 'block';
                 messageCount = 0;
                 document.getElementById('messageCount').textContent = '0';
+                
+                // Reset semi-auto diagnostic session
+                semiAutoDiagSession = null;
                 
                 if (sessionId) {
                     fetch(`/api/chatbot/session/${sessionId}`, { method: 'DELETE' });

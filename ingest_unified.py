@@ -120,7 +120,7 @@ class UnifiedIngestionSystem:
                 continue
             
             # Find all document types
-            file_patterns = ['*.pdf', '*.PDF', '*.docx', '*.DOCX', '*.txt', '*.TXT']
+            file_patterns = ['*.pdf', '*.PDF', '*.docx', '*.DOCX', '*.txt', '*.TXT', '*.pptx', '*.PPTX', '*.ppt', '*.PPT']
             all_files = []
             
             for pattern in file_patterns:
@@ -152,9 +152,11 @@ class UnifiedIngestionSystem:
                 
                 # Ingest the document
                 try:
-                    # Only process PDF files for now (extend for other types)
+                    # Process based on file type
                     if file_path.suffix.lower() == '.pdf':
                         result = self.doc_processor.ingest_pdf(str(file_path), category)
+                    elif file_path.suffix.lower() in ['.pptx', '.ppt']:
+                        result = self.doc_processor.ingest_pptx(str(file_path), category)
                     else:
                         logger.info(f"      ⚠️ Unsupported format: {file_path.suffix}")
                         self.stats['documents']['skipped'] += 1

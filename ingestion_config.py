@@ -24,6 +24,9 @@ DOCUMENT_CATEGORIES = {
     "specifications": "technical_specifications",
     "sops": "standard_operating_procedures",
     
+    # Training materials
+    "training_docs/Training_Decks": "training_materials",
+    
     # Root level documents (use "." for base path)
     ".": "general_documentation"
 }

@@ -21,6 +21,7 @@ from ..services.knowledge_base_service import KnowledgeBaseService
 from ..services.sql_assistant_service import SQLAssistantService
 from ..services.diagnostic_service import DiagnosticService
 from ..services.agentic_service import get_agentic_service
+from ..services.semi_automated_diagnostic_service import SemiAutomatedDiagnosticService
 from app.shared.config.config import config
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ router = APIRouter(prefix="/api/chatbot", tags=["NEO Chatbot"])
 kb_service = KnowledgeBaseService()
 sql_service = SQLAssistantService()
 diagnostic_service = DiagnosticService()
+semi_auto_diagnostic = SemiAutomatedDiagnosticService()
 
 # Initialize agentic service if enabled
 agentic_service = get_agentic_service() if config.AGENTIC_MODE_ENABLED else None
@@ -509,4 +511,112 @@ async def submit_feedback(
         raise
     except Exception as e:
         logger.error(f"❌ Error submitting feedback: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# SEMI-AUTOMATED DIAGNOSTIC ENDPOINTS
+# ============================================================
+
+@router.post("/diagnostic/start")
+async def start_diagnosis(problem_description: str):
+    """
+    Start semi-automated diagnosis
+    
+    Args:
+        problem_description: User's problem description
+    
+    Returns:
+        Session data with matched cases
+    """
+    try:
+        result = semi_auto_diagnostic.start_diagnosis(problem_description)
+        return result
+    except Exception as e:
+        logger.error(f"❌ Error starting diagnosis: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/diagnostic/audit-sql")
+async def audit_with_sql(sql_query: str):
+    """
+    Execute SQL audit query
+    
+    Args:
+        sql_query: SQL query to execute
+    
+    Returns:
+        Query results and analysis
+    """
+    try:
+        result = semi_auto_diagnostic.execute_sql_audit(sql_query)
+        return result
+    except Exception as e:
+        logger.error(f"❌ Error executing SQL audit: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/diagnostic/analyze-results")
+async def analyze_audit_results(case: Dict[str, Any], sql_results: Dict[str, Any]):
+    """
+    Analyze SQL audit results against expected outcome
+    
+    Args:
+        case: Current diagnostic case
+        sql_results: Results from SQL audit
+    
+    Returns:
+        Analysis with recommendations
+    """
+    try:
+        analysis = semi_auto_diagnostic.analyze_sql_results(case, sql_results)
+        return analysis
+    except Exception as e:
+        logger.error(f"❌ Error analyzing results: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/diagnostic/feedback")
+async def handle_diagnostic_feedback(
+    session_data: Dict[str, Any],
+    is_correct: bool,
+    user_comment: str = None
+):
+    """
+    Handle user feedback on diagnostic suggestion
+    
+    Args:
+        session_data: Current session data
+        is_correct: Whether the solution worked
+        user_comment: Optional user feedback
+    
+    Returns:
+        Next suggestion or resolution status
+    """
+    try:
+        result = semi_auto_diagnostic.handle_user_feedback(
+            session_data, is_correct, user_comment
+        )
+        return result
+    except Exception as e:
+        logger.error(f"❌ Error handling feedback: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/diagnostic/summary")
+async def get_diagnostic_summary(session_data: Dict[str, Any]):
+    """
+    Get session summary in concise format
+    
+    Args:
+        session_data: Current session data
+    
+    Returns:
+        Formatted summary
+    """
+    try:
+        summary = semi_auto_diagnostic.get_session_summary(session_data)
+        return {"summary": summary}
+    except Exception as e:
+        logger.error(f"❌ Error getting summary: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

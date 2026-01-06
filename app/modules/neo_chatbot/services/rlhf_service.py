@@ -502,7 +502,24 @@ class RLHFService:
             # Validate chat_id exists before database insert
             if not chat_id:
                 logger.warning(f"⚠️ Skipping DB insert - chat_id missing for feedback: {feedback.get('feedback_id')}")
+                conn.close()
                 return  # Skip DB insert but still saved to JSONL above
+            
+            # Verify chat_id exists in chatbot_chat_history before inserting feedback
+            cursor.execute(
+                "SELECT COUNT(*) FROM chatbot_chat_history WHERE chat_id = %s",
+                (chat_id,)
+            )
+            chat_exists = cursor.fetchone()[0] > 0
+            
+            if not chat_exists:
+                logger.warning(
+                    f"⚠️ Skipping DB insert - chat_id '{chat_id}' does not exist in chatbot_chat_history. "
+                    f"Feedback saved to JSONL only for feedback_id: {feedback.get('feedback_id')}"
+                )
+                cursor.close()
+                conn.close()
+                return
             
             cursor.execute("""
                 INSERT INTO chatbot_feedback 
@@ -524,8 +541,24 @@ class RLHFService:
             
             logger.debug(f"💾 Feedback saved to database: {feedback.get('feedback_id')}")
             
+        except pymysql.err.OperationalError as e:
+            if e.args[0] == 2003:  # Connection timeout
+                logger.warning(
+                    f"⚠️ Database connection timeout - feedback saved to JSONL only. "
+                    f"Check network connectivity to MySQL server. Error: {e}"
+                )
+            else:
+                logger.error(f"❌ Database operational error saving feedback: {e}")
+        except pymysql.err.IntegrityError as e:
+            if e.args[0] == 1452:  # Foreign key constraint
+                logger.error(
+                    f"❌ Foreign key constraint violation - chat_id may not exist in chatbot_chat_history. "
+                    f"Feedback saved to JSONL only. Error: {e}"
+                )
+            else:
+                logger.error(f"❌ Database integrity error saving feedback: {e}")
         except Exception as e:
-            logger.error(f"❌ Error saving feedback to database: {e}", exc_info=True)
+            logger.error(f"❌ Unexpected error saving feedback to database: {e}", exc_info=True)
     
     def _load_recent_feedback(
         self,

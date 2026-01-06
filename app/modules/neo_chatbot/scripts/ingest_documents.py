@@ -22,6 +22,7 @@ from PIL import Image
 import io
 import pytesseract
 import os
+from pptx import Presentation
 
 logging.basicConfig(
     level=logging.INFO,
@@ -190,6 +191,107 @@ class DocumentProcessor:
                 embedding.append(0.0)
             
             return embedding[:1536]
+    
+    def extract_text_from_pptx(self, pptx_path: str) -> str:
+        """Extract text from PowerPoint presentation"""
+        try:
+            logger.info(f"📊 Extracting text from PowerPoint: {Path(pptx_path).name}")
+            text_content = []
+            
+            # Open presentation
+            prs = Presentation(pptx_path)
+            
+            # Iterate through slides
+            for slide_num, slide in enumerate(prs.slides, 1):
+                slide_text = [f"\n--- Slide {slide_num} ---\n"]
+                
+                # Extract text from all shapes in the slide
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text:
+                        slide_text.append(shape.text)
+                    
+                    # Extract text from tables
+                    if shape.has_table:
+                        table = shape.table
+                        for row in table.rows:
+                            row_text = []
+                            for cell in row.cells:
+                                if cell.text:
+                                    row_text.append(cell.text)
+                            if row_text:
+                                slide_text.append(" | ".join(row_text))
+                
+                # Add slide content if it has text
+                if len(slide_text) > 1:  # More than just the slide header
+                    text_content.append("\n".join(slide_text))
+            
+            full_text = "\n\n".join(text_content)
+            
+            logger.info(f"   ✅ Extracted {len(full_text)} characters from {len(prs.slides)} slides")
+            
+            return full_text
+        
+        except Exception as e:
+            logger.error(f"❌ Error extracting text from PowerPoint: {e}", exc_info=True)
+            return ""
+    
+    def ingest_pptx(self, pptx_path: str, category: str = "documentation") -> Dict[str, Any]:
+        """Ingest a PowerPoint document into vector store"""
+        try:
+            file_path = Path(pptx_path)
+            logger.info(f"📥 Ingesting PowerPoint: {file_path.name}")
+            
+            # Extract text
+            text = self.extract_text_from_pptx(pptx_path)
+            
+            if not text:
+                logger.warning(f"⚠️ No text extracted from {file_path.name}")
+                return {"status": "error", "message": "No text extracted"}
+            
+            # Split into chunks
+            logger.info("✂️ Splitting into chunks...")
+            chunks = self.chunk_text(text, chunk_size=1000, overlap=200)
+            logger.info(f"   Created {len(chunks)} chunks")
+            
+            # Process each chunk
+            documents = []
+            for i, chunk in enumerate(chunks):
+                doc_id = f"{file_path.stem}_chunk_{i}_{uuid.uuid4().hex[:8]}"
+                
+                # Get embedding
+                embedding = self.get_embedding(chunk)
+                
+                # Create document
+                doc = {
+                    "id": doc_id,
+                    "content": chunk,
+                    "embedding": embedding,
+                    "metadata": {
+                        "filename": file_path.name,
+                        "document_type": "pptx",
+                        "category": category,
+                        "chunk_index": i,
+                        "total_chunks": len(chunks)
+                    }
+                }
+                documents.append(doc)
+            
+            # Add to vector store
+            logger.info("💾 Adding to vector store...")
+            self.vector_store.add_documents_batch(documents)
+            
+            logger.info(f"✅ Successfully ingested {file_path.name} ({len(chunks)} chunks)")
+            
+            return {
+                "status": "success",
+                "filename": file_path.name,
+                "chunks": len(chunks),
+                "total_characters": len(text)
+            }
+        
+        except Exception as e:
+            logger.error(f"❌ Error ingesting PowerPoint: {e}", exc_info=True)
+            return {"status": "error", "message": str(e)}
     
     def ingest_pdf(self, pdf_path: str, category: str = "documentation") -> Dict[str, Any]:
         """Ingest a PDF document into vector store"""

@@ -124,7 +124,7 @@ Be patient, clear, and supportive. Break down complex solutions into simple step
                     rating=None,
                     comment="Intelligent diagnostic analysis",
                     metadata={
-                        "confidence": response.confidence,
+                        "confidence": response.confidence_score,
                         "analysis_type": "intelligent"
                     }
                 )
