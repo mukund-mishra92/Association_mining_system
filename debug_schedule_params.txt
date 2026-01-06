@@ -52,3 +52,30 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2025-12-05 14:44:16.452677 ===
+🔍 Received schedule data from UI: {'job_name': 'Weekly_schedule', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '07:00', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-06 12:04:39.441520 ===
+🔍 Received schedule data from UI: {'job_name': 'weekly schedule', 'job_description': 'sadsdff', 'schedule_type': 'weekly', 'schedule_time': '12:07', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 5, 'decay_rate': 0.05, 'output_table': 'article_proximity_score'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 5
+   decay_rate: 0.05
+
+=== 2026-01-06 12:04:49.078763 ===
+🔍 Received schedule data from UI: {'job_name': 'weekly schedule', 'job_description': 'sadsdff', 'schedule_type': 'weekly', 'schedule_time': '12:07', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 5, 'decay_rate': 0.05, 'output_table': 'article_proximity_score'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 5
+   decay_rate: 0.05
