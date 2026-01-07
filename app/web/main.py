@@ -9,6 +9,7 @@ import os
 import time
 import logging
 from mlxtend.frequent_patterns import apriori, association_rules
+from app.shared.database.connection import DatabaseConnection
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -38,10 +39,10 @@ if parent_dir not in sys.path:
 try:
     from app.utils.mining_logger import mining_logger
     LOGGING_AVAILABLE = True
-    print("✅ Enhanced logging system loaded")
+    print("[OK] Enhanced logging system loaded")
 except ImportError as e:
     LOGGING_AVAILABLE = False
-    print(f"⚠️ Enhanced logging system not available: {e}")
+    print(f"[WARN] Enhanced logging system not available: {e}")
     # Fallback to basic logging
     mining_logger = None
 
@@ -50,10 +51,10 @@ try:
     from app.services.history_service import HistoryService
     from app.utils.performance_monitor import JobPerformanceTracker
     HISTORY_TRACKING_AVAILABLE = True
-    print("✅ History tracking and performance monitoring loaded")
+    print("[OK] History tracking and performance monitoring loaded")
 except ImportError as e:
     HISTORY_TRACKING_AVAILABLE = False
-    print(f"⚠️ History tracking not available: {e}")
+    print(f"[WARN] History tracking not available: {e}")
     HistoryService = None
     JobPerformanceTracker = None
 
@@ -61,32 +62,32 @@ except ImportError as e:
 try:
     from app.modules.velocity_analysis.api.velocity_endpoints import register_velocity_api
     VELOCITY_ANALYSIS_AVAILABLE = True
-    print("✅ Velocity Analysis module loaded successfully")
+    print("[OK] Velocity Analysis module loaded successfully")
 except ImportError as e:
     VELOCITY_ANALYSIS_AVAILABLE = False
-    print(f"⚠️ Velocity Analysis module not available: {e}")
+    print(f"[WARN] Velocity Analysis module not available: {e}")
 except Exception as e:
     VELOCITY_ANALYSIS_AVAILABLE = False
-    print(f"⚠️ Velocity Analysis module error: {e}")
+    print(f"[WARN] Velocity Analysis module error: {e}")
 
 # Import AI insights module
 try:
     from app.modules.ai_insights.api.endpoints import register_ai_insights_routes
     AI_INSIGHTS_AVAILABLE = True
-    print("✅ AI Insights module loaded successfully")
+    print("[OK] AI Insights module loaded successfully")
 except ImportError as e:
     AI_INSIGHTS_AVAILABLE = False
-    print(f"⚠️ AI Insights module not available: {e}")
+    print(f"[WARN] AI Insights module not available: {e}")
 except Exception as e:
     AI_INSIGHTS_AVAILABLE = False
-    print(f"⚠️ AI Insights module error: {e}")
+    print(f"[WARN] AI Insights module error: {e}")
 
 app = Flask(__name__)
 
 # Register velocity analysis API if available
 if VELOCITY_ANALYSIS_AVAILABLE:
     register_velocity_api(app)
-    print("✅ Velocity Analysis API endpoints registered")
+    print("[OK] Velocity Analysis API endpoints registered")
 
 
 
@@ -122,12 +123,12 @@ try:
         'sku_master_table': config.SKU_MASTER_TABLE,
         'recommendations_table': config.RECOMMENDATIONS_TABLE
     }
-    print(f"✅ Loaded database configuration from .env file")
+    print(f"[OK] Loaded database configuration from .env file")
     print(f"   Database: {config.DB_NAME} on {config.DB_HOST}:{config.DB_PORT}")
     print(f"   Order Table: {config.ORDER_TABLE}")
     print(f"   SKU Table: {config.SKU_MASTER_TABLE}")
 except Exception as e:
-    print(f"⚠️ Could not load configuration from .env, using defaults: {e}")
+    print(f"[WARN] Could not load configuration from .env, using defaults: {e}")
     # Fallback to hardcoded configuration
     USER_DB_CONFIG = {
         'host': 'localhost',
@@ -144,9 +145,9 @@ except Exception as e:
 if AI_INSIGHTS_AVAILABLE:
     try:
         register_ai_insights_routes(app, USER_DB_CONFIG)
-        print("✅ AI Insights API endpoints registered")
+        print("[OK] AI Insights API endpoints registered")
     except Exception as e:
-        print(f"⚠️ Failed to register AI Insights API: {e}")
+        print(f"[WARN] Failed to register AI Insights API: {e}")
 
 def load_config():
     """Load database configuration"""
@@ -168,78 +169,85 @@ def test_server_connection():
         return False, str(e)
 
 def save_rules_to_database(user_config, rules_df, sku_name_to_id):
-    """Save association rules to database
-    
+    """Save association rules to database using production-ready upsert/decay logic.
+
     Args:
         user_config: Database configuration
         rules_df: DataFrame with columns sku1 (name), sku2 (name), association_composite_score
         sku_name_to_id: Dictionary mapping SKU_NAME to SKU_ID
     """
+    logger = logging.getLogger(__name__)
     try:
-        logger = logging.getLogger(__name__)
-        logger.info(f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']}")
-        
-        # Connect to database
-        connection = pymysql.connect(
-            host=user_config['host'],
-            port=user_config.get('port', 3306),
-            user=user_config['user'],
-            password=user_config['password'],
-            database=user_config['database'],
-            charset='utf8mb4'
+        logger.info(
+            f"Saving {len(rules_df)} recommendations to table: {user_config['recommendations_table']} "
+            f"using DatabaseConnection.save_recommendations"
         )
-        cursor = connection.cursor()
-        
-        # First ensure the table exists with correct schema
-        table_name = user_config['recommendations_table']
-        
-        # Drop and recreate table to ensure correct schema
-        drop_query = f"DROP TABLE IF EXISTS {table_name}"
-        cursor.execute(drop_query)
-        logger.info(f"Recreated table: {table_name}")
-        
-        create_query = f"""
-        CREATE TABLE {table_name} (
-            SCORE_ID BIGINT NOT NULL AUTO_INCREMENT,
-            PARENT_ARTICLE_ID VARCHAR(200) NOT NULL,
-            CHILD_ARTICLE_ID VARCHAR(200) NOT NULL,
-            PROXIMITY_SCORE DECIMAL(10,3) NULL,
-            PRIMARY KEY (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID),
-            KEY SCORE_ID_INDEX (SCORE_ID)
-        )
-        """
-        cursor.execute(create_query)
-        
-        # Prepare rules data for insertion
-        # Convert SKU names to SKU IDs before saving
-        recommendations_data = []
+
+        # Build recommendations DataFrame compatible with DatabaseConnection.save_recommendations
+        records = []
         for _, rule in rules_df.iterrows():
             parent_id = sku_name_to_id.get(rule['sku1'], rule['sku1'])  # Fallback to name if not found
-            child_id = sku_name_to_id.get(rule['sku2'], rule['sku2'])    # Fallback to name if not found
-            
-            recommendations_data.append((
-                parent_id,  # PARENT_ARTICLE_ID - now using SKU ID
-                child_id,   # CHILD_ARTICLE_ID - now using SKU ID
-                float(rule['association_composite_score'])  # PROXIMITY_SCORE
-            ))
-        
-        # Insert recommendations
-        insert_query = f"""
-        INSERT INTO {table_name} 
-        (PARENT_ARTICLE_ID, CHILD_ARTICLE_ID, PROXIMITY_SCORE)
-        VALUES (%s, %s, %s)
-        """
-        
-        cursor.executemany(insert_query, recommendations_data)
-        connection.commit()
-        
-        logger.info(f"Successfully saved {len(recommendations_data)} recommendations to {table_name}")
-        
-        cursor.close()
-        connection.close()
-        
+            child_id = sku_name_to_id.get(rule['sku2'], rule['sku2'])   # Fallback to name if not found
+
+            records.append({
+                "main_item": parent_id,
+                "recommended_item": child_id,
+                "main_item_name": rule['sku1'],
+                "recommended_item_name": rule['sku2'],
+                "confidence_score": float(rule.get('confidence', rule.get('confidence_score', 0.0))),
+                "lift_score": float(rule.get('lift', rule.get('lift_score', 0.0))),
+                "support_score": float(rule.get('support', rule.get('support_score', 0.0))),
+                # Use UI composite score as base; symmetric and normalized handling
+                # is applied inside DatabaseConnection.save_recommendations
+                "composite_score": float(rule['association_composite_score']),
+                "temporal_stability": 0.5,
+                "temporal_trend": 0.0,
+                "temporal_composite_score": float(rule['association_composite_score']),
+                "recommendation_rank": 1,
+            })
+
+        if not records:
+            logger.warning("No rules to save to database")
+            return False
+
+        recommendations_df = pd.DataFrame(records)
+
+        # Prepare custom DB configuration for DatabaseConnection
+        db_config = {
+            "host": user_config['host'],
+            "port": user_config.get('port', 3306),
+            "user": user_config['user'],
+            "password": user_config['password'],
+            "database": user_config['database'],
+            "order_table": user_config.get('order_table'),
+            "sku_master_table": user_config.get('sku_master_table'),
+            "recommendations_table": user_config['recommendations_table'],
+        }
+
+        db = DatabaseConnection(custom_config=db_config)
+
+        if not db.connect():
+            logger.error("DatabaseConnection.connect() failed while saving rules from UI pipeline")
+            return False
+
+        try:
+            summary = db.save_recommendations(recommendations_df)
+        finally:
+            db.disconnect()
+
+        if not summary:
+            logger.error("save_recommendations returned False/empty summary")
+            return False
+
+        logger.info(
+            "Successfully saved recommendations using production-ready logic: "
+            f"{summary.get('total_written', 0)} written, "
+            f"{summary.get('new_inserts', 0)} inserts, "
+            f"{summary.get('updated_existing', 0)} updates, "
+            f"{summary.get('decayed_not_in_current', 0)} decayed."
+        )
         return True
-        
+
     except Exception as e:
         logger.error(f"Database save error: {e}")
         return False
@@ -408,21 +416,21 @@ def direct_mining(user_config=None, days_back=30):
 @app.route('/')
 def index():
     """Main navigation dashboard"""
-    print("🔍 [ROUTE LOG] Main navigation dashboard route called")
+    print("[ROUTE LOG] Main navigation dashboard route called")
     logger.info("Main navigation dashboard route accessed")
     return render_template('navigation_dashboard.html')
 
 @app.route('/association-mining')
 def association_mining():
     """SKU Association Mining page"""
-    print("🔍 [ROUTE LOG] Association mining route called")
+    print("[ROUTE LOG] Association mining route called")
     logger.info("Association mining page accessed")
     return render_template('association_mining.html')
 
 @app.route('/velocity-analysis')
 def velocity_analysis():
     """Bin Velocity Analysis page - Enhanced Version"""
-    print("🔍 [ROUTE LOG] Velocity analysis route called")
+    print("[ROUTE LOG] Velocity analysis route called")
     logger.info("Velocity analysis page accessed")
     
     try:
@@ -434,14 +442,14 @@ def velocity_analysis():
                 user_id="system"
             )
         
-        print("✅ [VELOCITY LOG] Rendering enhanced velocity analysis template")
+        print("[OK] [VELOCITY LOG] Rendering enhanced velocity analysis template")
         logger.info("Rendering enhanced velocity analysis template")
         
         # Render the enhanced velocity analysis template
         return render_template('velocity_analysis_enhanced.html')
         
     except Exception as e:
-        print(f"❌ [VELOCITY LOG] Error loading velocity analysis: {e}")
+        print(f"[ERROR] [VELOCITY LOG] Error loading velocity analysis: {e}")
         logger.error(f"Error loading velocity analysis: {e}")
         
         # Log the error (if logging available)
@@ -458,7 +466,7 @@ def velocity_analysis():
 @app.route('/ai-insights')
 def ai_insights_dashboard():
     """AI Insights Dashboard page"""
-    print("🔍 [ROUTE LOG] AI Insights dashboard route called")
+    print("[ROUTE LOG] AI Insights dashboard route called")
     logger.info("AI Insights dashboard page accessed")
     
     try:
@@ -470,20 +478,20 @@ def ai_insights_dashboard():
                 user_id="system"
             )
         
-        print("✅ [AI INSIGHTS LOG] Rendering AI insights dashboard template")
+        print("[OK] [AI INSIGHTS LOG] Rendering AI insights dashboard template")
         logger.info("Rendering AI insights dashboard template")
         
         # Check if AI insights module is available
         if AI_INSIGHTS_AVAILABLE:
-            print("✅ [AI INSIGHTS LOG] AI Insights module is available")
+            print("[OK] [AI INSIGHTS LOG] AI Insights module is available")
         else:
-            print("⚠️ [AI INSIGHTS LOG] AI Insights module is not available")
+            print("[WARN] [AI INSIGHTS LOG] AI Insights module is not available")
         
         # Render the AI insights dashboard template
         return render_template('ai_insights_dashboard.html')
         
     except Exception as e:
-        print(f"❌ [AI INSIGHTS LOG] Error loading AI insights dashboard: {e}")
+        print(f"[ERROR] [AI INSIGHTS LOG] Error loading AI insights dashboard: {e}")
         logger.error(f"Error loading AI insights dashboard: {e}")
         
         # Log the error (if logging available)
@@ -500,7 +508,7 @@ def ai_insights_dashboard():
 @app.route('/chatbot')
 def chatbot_page():
     """NEO Chatbot page"""
-    print("🔍 [ROUTE LOG] NEO Chatbot route called")
+    print("[ROUTE LOG] NEO Chatbot route called")
     logger.info("NEO Chatbot page accessed")
     
     try:
@@ -512,14 +520,14 @@ def chatbot_page():
                 user_id="system"
             )
         
-        print("✅ [CHATBOT LOG] Rendering NEO chatbot template")
+        print("[OK] [CHATBOT LOG] Rendering NEO chatbot template")
         logger.info("Rendering NEO chatbot template")
         
         # Render the chatbot template
         return render_template('chatbot.html')
     
     except Exception as e:
-        print(f"❌ [CHATBOT ERROR] Error loading chatbot page: {e}")
+        print(f"[ERROR] [CHATBOT ERROR] Error loading chatbot page: {e}")
         logger.error(f"Error loading chatbot page: {e}")
         
         if LOGGING_AVAILABLE and mining_logger:
@@ -535,7 +543,7 @@ def chatbot_page():
 @app.route('/diagnostic-support')
 def diagnostic_support_page():
     """Diagnostic Support page"""
-    print("🔍 [ROUTE LOG] Diagnostic Support route called")
+    print("[ROUTE LOG] Diagnostic Support route called")
     logger.info("Diagnostic Support page accessed")
     
     try:
@@ -547,14 +555,14 @@ def diagnostic_support_page():
                 user_id="system"
             )
         
-        print("✅ [DIAGNOSTIC LOG] Rendering diagnostic support template")
+        print("[OK] [DIAGNOSTIC LOG] Rendering diagnostic support template")
         logger.info("Rendering diagnostic support template")
         
         # Render the diagnostic support template
         return render_template('diagnostic_support.html')
         
     except Exception as e:
-        print(f"❌ [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
+        print(f"[ERROR] [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
         logger.error(f"Error loading diagnostic support page: {e}")
         
         # Log the error (if logging available)
@@ -571,7 +579,7 @@ def diagnostic_support_page():
 @app.route('/velocity-analysis-legacy')
 def velocity_analysis_legacy():
     """Bin Velocity Analysis page - Legacy Version"""
-    print("🔍 [ROUTE LOG] Legacy velocity analysis route called")
+    print("[ROUTE LOG] Legacy velocity analysis route called")
     logger.info("Legacy velocity analysis page accessed")
     
     # Import velocity analysis UI if available
@@ -580,21 +588,21 @@ def velocity_analysis_legacy():
         try:
             from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
             velocity_content = get_velocity_analysis_section()
-            print(f"✅ [VELOCITY LOG] Velocity HTML loaded: {len(velocity_content)} characters")
+            print(f"[OK] [VELOCITY LOG] Velocity HTML loaded: {len(velocity_content)} characters")
             logger.info(f"Velocity HTML content loaded successfully: {len(velocity_content)} characters")
         except ImportError as e:
-            print(f"❌ [VELOCITY LOG] Failed to import velocity UI: {e}")
+            print(f"[ERROR] [VELOCITY LOG] Failed to import velocity UI: {e}")
             logger.error(f"Failed to import velocity UI: {e}")
             velocity_content = ""
         except Exception as e:
-            print(f"❌ [VELOCITY LOG] Error loading velocity UI: {e}")
+            print(f"[ERROR] [VELOCITY LOG] Error loading velocity UI: {e}")
             logger.error(f"Error loading velocity UI: {e}")
             velocity_content = ""
     else:
-        print("❌ [VELOCITY LOG] Velocity Analysis not available")
+        print("[ERROR] [VELOCITY LOG] Velocity Analysis not available")
         logger.warning("Velocity Analysis module not available")
     
-    print(f"🔍 [VELOCITY LOG] Rendering legacy velocity analysis template with content length: {len(velocity_content)}")
+    print(f"[VELOCITY LOG] Rendering legacy velocity analysis template with content length: {len(velocity_content)}")
     return render_template('velocity_analysis.html', velocity_analysis_content=velocity_content)
 
 @app.route('/legacy-dashboard')
@@ -606,17 +614,17 @@ def legacy_dashboard():
         try:
             from app.modules.velocity_analysis.ui.velocity_ui import get_velocity_analysis_section
             velocity_html = get_velocity_analysis_section()
-            print(f"✅ Velocity HTML loaded: {len(velocity_html)} characters")
+            print(f"[OK] Velocity HTML loaded: {len(velocity_html)} characters")
         except ImportError as e:
-            print(f"❌ Failed to import velocity UI: {e}")
+            print(f"[ERROR] Failed to import velocity UI: {e}")
             velocity_html = ""
         except Exception as e:
-            print(f"❌ Error loading velocity UI: {e}")
+            print(f"[ERROR] Error loading velocity UI: {e}")
             velocity_html = ""
     else:
-        print("❌ Velocity Analysis not available")
+        print("[ERROR] Velocity Analysis not available")
     
-    print(f"🔍 Rendering template with velocity_html length: {len(velocity_html)}")
+    print(f"[VELOCITY LOG] Rendering template with velocity_html length: {len(velocity_html)}")
     return render_template('complete_dashboard_enhanced.html', velocity_analysis_section=velocity_html)
 
 @app.route('/db-config')
@@ -1725,7 +1733,7 @@ def create_schedule():
         with open('debug_schedule_params.txt', 'a', encoding='utf-8') as f:
             from datetime import datetime
             f.write(f"\n=== {datetime.now()} ===\n")
-            f.write(f"🔍 Received schedule data from UI: {schedule_data}\n")
+            f.write(f"[DEBUG] Received schedule data from UI: {schedule_data}\n")
             
             if schedule_data:
                 f.write(f"🎯 Mining parameters from UI:\n")
@@ -1735,7 +1743,7 @@ def create_schedule():
                 f.write(f"   max_recommendations: {schedule_data.get('max_recommendations', 'NOT PROVIDED')}\n")
                 f.write(f"   decay_rate: {schedule_data.get('decay_rate', 'NOT PROVIDED')}\n")
         
-        print(f"🔍 DEBUG: Received schedule data from UI: {schedule_data}")
+        print(f"[DEBUG] Received schedule data from UI: {schedule_data}")
         
         # Log specific mining parameters
         if schedule_data:
@@ -2281,7 +2289,7 @@ def chatbot_chat():
         else:
             return jsonify({"error": f"Invalid chatbot type: {chatbot_type}"}), 400
         
-        print(f"✅ [CHATBOT] Response generated successfully")
+        print(f"[OK] [CHATBOT] Response generated successfully")
         
         # Convert response to dict
         return jsonify({
@@ -2305,7 +2313,7 @@ def chatbot_chat():
         })
         
     except Exception as e:
-        print(f"❌ [CHATBOT] Error: {e}")
+        print(f"[ERROR] [CHATBOT] Error: {e}")
         logger.error(f"Chatbot error: {e}", exc_info=True)
         return jsonify({
             "response": f"Sorry, I encountered an error: {str(e)}",
@@ -3293,8 +3301,8 @@ if __name__ == '__main__':
     with open('templates/index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    print("🚀 Starting Enhanced Association Rule Mining Dashboard...")
-    print("📍 Open your browser to: http://localhost:5000")
-    print("⚠️  FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
+    print("[START] Starting Enhanced Association Rule Mining Dashboard...")
+    print("[INFO] Open your browser to: http://localhost:5000")
+    print("[WARN] FastAPI server should be running on http://127.0.0.1:8080 for API-based mining")
     
     app.run(debug=True, host='0.0.0.0', port=5000)
