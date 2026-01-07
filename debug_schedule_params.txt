@@ -16,3 +16,102 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2026-01-07 13:45:11.314398 ===
+🔍 Received schedule data from UI: {'job_name': 'asas', 'job_description': 'asas', 'schedule_type': 'daily', 'schedule_time': '13:46', 'is_active': True, 'min_support': 0.0001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.0001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 13:45:27.254124 ===
+🔍 Received schedule data from UI: {'job_name': 'asas', 'job_description': 'asas', 'schedule_type': 'daily', 'schedule_time': '13:46', 'is_active': True, 'min_support': 0.0001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.0001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 13:48:09.921485 ===
+🔍 Received schedule data from UI: {'job_name': 'asas', 'job_description': 'asas', 'schedule_type': 'daily', 'schedule_time': '13:46', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 13:48:16.054807 ===
+🔍 Received schedule data from UI: {'job_name': 'asas', 'job_description': 'asas', 'schedule_type': 'daily', 'schedule_time': '13:46', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 13:48:41.490641 ===
+🔍 Received schedule data from UI: {'job_name': 'asdsad', 'job_description': 'assdasd', 'schedule_type': 'daily', 'schedule_time': '12:50', 'is_active': True, 'min_support': 0.001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 13:58:20.218803 ===
+🔍 Received schedule data from UI: {'job_name': 'my_schedule', 'job_description': 'aaaa', 'schedule_type': 'daily', 'schedule_time': '14:00', 'is_active': True, 'min_support': 0.001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 14:12:27.427913 ===
+🔍 Received schedule data from UI: {'job_name': 'asfdasfd', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '14:15', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 14:12:38.366256 ===
+🔍 Received schedule data from UI: {'job_name': 'asfdasfd', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '14:15', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 14:12:57.912818 ===
+🔍 Received schedule data from UI: {'job_name': 'asfdasfd', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '14:15', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 14:13:17.959081 ===
+🔍 Received schedule data from UI: {'job_name': 'asdsa', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '14:15', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-07 14:20:47.254086 ===
+🔍 Received schedule data from UI: {'job_name': 'my_schedule', 'job_description': 'adad', 'schedule_type': 'daily', 'schedule_time': '14:22', 'is_active': True, 'min_support': 0.001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations'}
+🎯 Mining parameters from UI:
+   min_support: 0.001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
