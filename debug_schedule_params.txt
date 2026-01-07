@@ -7,3 +7,12 @@
    min_lift: 1
    max_recommendations: 2
    decay_rate: 0.05
+
+=== 2026-01-07 11:59:41.517885 ===
+🔍 Received schedule data from UI: {'job_name': 'asdsasdf', 'job_description': 'asdssad', 'schedule_type': 'daily', 'schedule_time': '12:01', 'is_active': True, 'min_support': 0.001, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score'}
+🎯 Mining parameters from UI:
+   min_support: 0.001
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05

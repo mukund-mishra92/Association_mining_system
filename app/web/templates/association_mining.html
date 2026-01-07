@@ -801,15 +801,33 @@
                 password: document.getElementById('customDbPassword').value,
                 database: document.getElementById('customDbName').value,
                 order_table: document.getElementById('customOrderTable').value,
-                sku_table: document.getElementById('customSkuTable').value,
-                rules_table: document.getElementById('customRulesTable').value,
+                sku_master_table: document.getElementById('customSkuTable').value,
+                recommendations_table: document.getElementById('customRulesTable').value,
                 history_table: document.getElementById('customHistoryTable').value,
                 stats_table: document.getElementById('customStatsTable').value
             };
             
             // Save to localStorage for persistence
             localStorage.setItem('customDbConfig', JSON.stringify(config));
-            showSuccessNotification('Custom database configuration saved!');
+            
+            // Send to backend to update USER_DB_CONFIG
+            fetch('/api/db-config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification('Configuration saved! Recommendations will now be saved to: ' + config.recommendations_table);
+                    console.log('Backend config updated:', data.config);
+                } else {
+                    showWarningNotification('Saved locally but failed to update backend: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                showWarningNotification('Saved locally but could not reach backend: ' + error.message);
+            });
         }
 
         function loadCustomConfig() {
@@ -822,8 +840,8 @@
                 document.getElementById('customDbPassword').value = config.password || '';
                 document.getElementById('customDbName').value = config.database || 'neo';
                 document.getElementById('customOrderTable').value = config.order_table || 'wms_to_wcs_order_line_request_data';
-                document.getElementById('customSkuTable').value = config.sku_table || 'sku_master';
-                document.getElementById('customRulesTable').value = config.rules_table || 'sku_recommendations';
+                document.getElementById('customSkuTable').value = config.sku_master_table || config.sku_table || 'sku_master';
+                document.getElementById('customRulesTable').value = config.recommendations_table || config.rules_table || 'sku_recommendations';
                 document.getElementById('customHistoryTable').value = config.history_table || 'mining_history';
                 document.getElementById('customStatsTable').value = config.stats_table || 'mining_statistics';
             }
@@ -1103,11 +1121,22 @@
                 const status = data.status || 'unknown';
                 const statusBadge = document.getElementById('schedulerStatus');
                 
+                // If backend is not available, show offline status
+                if (!data.success) {
+                    statusBadge.textContent = 'Offline';
+                    statusBadge.className = 'badge bg-secondary';
+                    statusBadge.title = 'FastAPI backend is not running. Scheduler features are unavailable.';
+                    document.getElementById('startSchedulerBtn').style.display = 'none';
+                    document.getElementById('stopSchedulerBtn').style.display = 'none';
+                    return;
+                }
+                
                 // Update status display
                 statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
                 statusBadge.className = status === 'running' ? 'badge bg-success' : 
                                       status === 'stopped' ? 'badge bg-secondary' :
                                       'badge bg-warning';
+                statusBadge.title = '';
                 
                 // Update button visibility
                 const startBtn = document.getElementById('startSchedulerBtn');
@@ -1135,8 +1164,11 @@
             .catch(error => {
                 console.error('Error checking scheduler status:', error);
                 const statusBadge = document.getElementById('schedulerStatus');
-                statusBadge.textContent = 'Error';
-                statusBadge.className = 'badge bg-danger';
+                statusBadge.textContent = 'Offline';
+                statusBadge.className = 'badge bg-secondary';
+                statusBadge.title = 'Cannot connect to scheduler service';
+                document.getElementById('startSchedulerBtn').style.display = 'none';
+                document.getElementById('stopSchedulerBtn').style.display = 'none';
             });
         }
 

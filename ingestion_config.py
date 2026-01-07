@@ -25,7 +25,10 @@ DOCUMENT_CATEGORIES = {
     "sops": "standard_operating_procedures",
     
     # Training materials
-    "training_docs/Training_Decks": "training_materials",
+    "training_docs/Training_Decks": "CBS_training_materials",
+    "training_docs/Cross_belt_sorter_segment_wise_detailed_ppts": "CBS individual module details",
+    "training_docs/Sorting_system_pdfs": "Sorting_system_training_materials",
+    "training_docs/sorter_modules_ppts_IT": "sorter modules_IT_training_materials",
     
     # Root level documents (use "." for base path)
     ".": "general_documentation"

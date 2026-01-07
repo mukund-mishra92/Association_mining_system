@@ -678,6 +678,9 @@ def handle_db_config():
         try:
             data = request.get_json()
             
+            # Handle both 'rules_table' and 'recommendations_table' for backward compatibility
+            recommendations_table = data.get('recommendations_table') or data.get('rules_table', 'sku_recommendations')
+            
             # Update global configuration
             USER_DB_CONFIG.update({
                 'host': data.get('host', 'localhost'),
@@ -687,7 +690,7 @@ def handle_db_config():
                 'database': data.get('database', 'neo'),
                 'order_table': data.get('order_table', 'wms_to_wcs_order_line_request_data'),
                 'sku_master_table': data.get('sku_master_table', 'sku_master'),
-                'recommendations_table': data.get('recommendations_table', 'sku_recommendations')
+                'recommendations_table': recommendations_table
             })
             
             logger.info(f"Database configuration updated - recommendations table: {USER_DB_CONFIG['recommendations_table']}")

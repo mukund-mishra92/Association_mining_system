@@ -381,12 +381,20 @@ class SchedulerService:
             
             # Connect to database for data fetching
             from app.shared.database.connection import DatabaseConnection
-            data_db = DatabaseConnection()
+            # Create custom config with output_table from schedule
+            custom_db_config = {
+                'recommendations_table': schedule.get('output_table', 'sku_recommendations')
+            }
+            if self.db_config:
+                custom_db_config.update(self.db_config)
+            
+            data_db = DatabaseConnection(custom_db_config)
             
             # Debug logging for database configuration
             logger.info(f"🔍 Database config: host={data_db.db_host}, database={data_db.db_name}")
             logger.info(f"🔍 Order table: {data_db.order_table}")
             logger.info(f"🔍 SKU master table: {data_db.sku_master_table}")
+            logger.info(f"🔍 Output/Recommendations table: {data_db.recommendations_table}")
             
             if not data_db.connect():
                 raise Exception("Failed to connect to database for data fetching")
