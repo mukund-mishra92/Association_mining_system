@@ -23,6 +23,16 @@ class ScheduleCreateRequest(BaseModel):
     max_recommendations: Optional[int] = Field(10, ge=1, le=100, description="Maximum number of recommendations")
     decay_rate: Optional[float] = Field(0.050, ge=0.001, le=1.0, description="Decay rate for temporal analysis")
     
+    # Data filtering parameters
+    days_back: Optional[int] = Field(365, ge=1, le=3650, description="Number of days of historical data to use")
+    max_items: Optional[int] = Field(200, ge=10, le=1000, description="Maximum number of top items to analyze")
+    min_item_frequency: Optional[int] = Field(5, ge=1, le=100, description="Minimum item frequency in orders")
+    
+    # Enhanced mining parameters
+    use_enhanced_mining: Optional[bool] = Field(True, description="Use enhanced mining with time weighting")
+    time_weighting_method: Optional[str] = Field("exponential_decay", description="Time weighting method: exponential_decay, linear_decay, seasonal_patterns, recency_frequency, trend_adaptive")
+    time_segmentation: Optional[str] = Field("weekly", description="Time segmentation: weekly, monthly, daily")
+    
     # Job configuration
     output_table: Optional[str] = Field("sku_recommendations", max_length=255, description="Output table name")
     is_active: Optional[bool] = Field(True, description="Whether the schedule is active")
@@ -40,6 +50,16 @@ class ScheduleUpdateRequest(BaseModel):
     min_lift: Optional[float] = Field(None, ge=0.1, le=10.0)
     max_recommendations: Optional[int] = Field(None, ge=1, le=100)
     decay_rate: Optional[float] = Field(None, ge=0.001, le=1.0)
+    
+    # Data filtering parameters
+    days_back: Optional[int] = Field(None, ge=1, le=3650)
+    max_items: Optional[int] = Field(None, ge=10, le=1000)
+    min_item_frequency: Optional[int] = Field(None, ge=1, le=100)
+    
+    # Enhanced mining parameters
+    use_enhanced_mining: Optional[bool] = None
+    time_weighting_method: Optional[str] = None
+    time_segmentation: Optional[str] = None
     
     # Job configuration
     output_table: Optional[str] = Field(None, max_length=255)
@@ -197,6 +217,23 @@ async def delete_schedule(schedule_id: int):
     except Exception as e:
         logger.error(f"Failed to delete schedule: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete schedule: {str(e)}")
+
+@router.delete("/schedules", response_model=Dict[str, Any])
+async def delete_all_schedules():
+    """Delete all schedules and related data"""
+    try:
+        scheduler_service = get_scheduler_service(None)
+        result = scheduler_service.delete_all_schedules()
+        
+        return {
+            "success": True,
+            "message": "All schedules deleted successfully",
+            "data": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to delete all schedules: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete all schedules: {str(e)}")
 
 @router.post("/schedules/{schedule_id}/toggle", response_model=Dict[str, Any])
 async def toggle_schedule(schedule_id: int, db_config: Optional[Dict] = None):

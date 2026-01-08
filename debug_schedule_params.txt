@@ -115,3 +115,21 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2026-01-08 17:55:51.005450 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'abcd', 'job_description': 'sdsds', 'schedule_type': 'daily', 'schedule_time': '17:58', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-08 18:32:39.529965 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_schedule', 'job_description': 'aasas', 'schedule_type': 'daily', 'schedule_time': '18:34', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 20, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05

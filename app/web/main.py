@@ -1826,6 +1826,62 @@ def delete_schedule(schedule_id):
             'error': str(e)
         })
 
+@app.route('/api/delete-all-schedules', methods=['DELETE'])
+def delete_all_schedules():
+    """Delete all schedules"""
+    try:
+        response = requests.delete(f"{API_BASE}/scheduler/schedules")
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': response.json().get('detail', 'Unknown error')
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/clean-stuck-jobs', methods=['POST'])
+def clean_stuck_jobs():
+    """Clean stuck running jobs"""
+    try:
+        # Direct database update - mark all running jobs as failed
+        db = DatabaseConnection()
+        db.connect()
+        
+        # Get count of stuck jobs
+        db.cursor.execute("SELECT COUNT(*) FROM mining_job_logs WHERE execution_status = 'running'")
+        result = db.cursor.fetchone()
+        stuck_count = result[0] if result else 0
+        
+        # Update stuck jobs to failed
+        db.cursor.execute("""
+            UPDATE mining_job_logs 
+            SET execution_status = 'failed', 
+                error_message = 'Job was stuck in running state - cleaned up',
+                completed_at = NOW()
+            WHERE execution_status = 'running'
+        """)
+        db.connection.commit()
+        db.disconnect()
+        
+        return jsonify({
+            'success': True,
+            'cleaned_count': stuck_count
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 @app.route('/api/run-schedule/<int:schedule_id>', methods=['POST'])
 def run_schedule_now(schedule_id):
     """Manually run a schedule now"""

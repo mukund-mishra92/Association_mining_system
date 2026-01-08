@@ -518,6 +518,12 @@
                                 <button class="btn btn-outline-info" onclick="checkSchedulerStatus()">
                                     <i class="fas fa-sync me-2"></i>Check Status
                                 </button>
+                                <button class="btn btn-warning" onclick="deleteAllSchedules()">
+                                    <i class="fas fa-trash-alt me-2"></i>Clean All Schedules
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="cleanStuckJobs()">
+                                    <i class="fas fa-broom me-2"></i>Clean Stuck Jobs
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -605,11 +611,73 @@
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
                                             <label class="form-label">Max Recommendations</label>
                                             <input type="number" class="form-control" id="scheduleMaxRecommendations" value="10" min="1" max="100">
-                                            <div class="form-text">Maximum recommendations to generate (1 - 100)</div>
+                                            <div class="form-text">Maximum recommendations per SKU (1 - 100)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Top SKUs</label>
+                                            <input type="number" class="form-control" id="scheduleMaxItems" value="200" min="10" max="1000">
+                                            <div class="form-text">Number of top SKUs to analyze (10 - 1000)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Min Item Frequency</label>
+                                            <input type="number" class="form-control" id="scheduleMinItemFreq" value="5" min="2" max="100">
+                                            <div class="form-text">Minimum SKU frequency (2 - 100)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Data Filtering Parameters -->
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Days Back</label>
+                                            <input type="number" class="form-control" id="scheduleDaysBack" value="365" min="1" max="3650">
+                                            <div class="form-text">Historical data period in days (1 - 3650)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Enhanced Mining</label>
+                                            <select class="form-select" id="scheduleEnhancedMining">
+                                                <option value="true" selected>Enabled</option>
+                                                <option value="false">Disabled</option>
+                                            </select>
+                                            <div class="form-text">Use time-weighted mining</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Time Segmentation</label>
+                                            <select class="form-select" id="scheduleTimeSegmentation">
+                                                <option value="weekly" selected>Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                                <option value="daily">Daily</option>
+                                            </select>
+                                            <div class="form-text">Time period grouping</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Time Weighting Method</label>
+                                            <select class="form-select" id="scheduleTimeWeighting">
+                                                <option value="exponential_decay" selected>Exponential Decay</option>
+                                                <option value="linear_decay">Linear Decay</option>
+                                                <option value="seasonal_patterns">Seasonal Patterns</option>
+                                                <option value="recency_frequency">Recency & Frequency</option>
+                                                <option value="trend_adaptive">Trend Adaptive</option>
+                                            </select>
+                                            <div class="form-text">Method for time-based weighting</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -1172,6 +1240,69 @@
             });
         }
 
+        function deleteAllSchedules() {
+            if (!confirm('⚠️ WARNING: This will delete ALL schedules, job logs, and statistics from the database!\\n\\nThis action cannot be undone.\\n\\nType OK in the next prompt to confirm.')) {
+                return;
+            }
+            
+            const confirmation = prompt('Type OK to confirm deletion of all schedules:');
+            if (confirmation !== 'OK') {
+                showErrorNotification('Deletion cancelled - confirmation text did not match');
+                return;
+            }
+            
+            fetch('/api/delete-all-schedules', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const result = data.data;
+                    showSuccessNotification('All schedules cleaned successfully! Deleted: ' + 
+                        (result.deleted_schedules || 0) + ' schedules, ' +
+                        (result.deleted_logs || 0) + ' logs, ' +
+                        (result.deleted_stats || 0) + ' stats');
+                    loadSchedules();
+                    loadJobLogs();
+                } else {
+                    showErrorNotification('Failed to clean schedules: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error cleaning schedules:', error);
+                showErrorNotification('Error cleaning schedules: ' + error.message);
+            });
+        }
+
+        function cleanStuckJobs() {
+            if (!confirm('This will mark all "Running" jobs as "Failed". Continue?')) {
+                return;
+            }
+            
+            fetch('/api/clean-stuck-jobs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessNotification('Cleaned ' + (data.cleaned_count || 0) + ' stuck job(s)');
+                    loadJobLogs();
+                } else {
+                    showErrorNotification('Failed to clean stuck jobs: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error cleaning stuck jobs:', error);
+                showErrorNotification('Error cleaning stuck jobs: ' + error.message);
+            });
+        }
+
         function createSchedule() {
             const jobName = document.getElementById('jobName').value.trim();
             if (!jobName) {
@@ -1194,7 +1325,17 @@
                 min_lift: parseFloat(document.getElementById('scheduleMinLift').value),
                 max_recommendations: parseInt(document.getElementById('scheduleMaxRecommendations').value),
                 decay_rate: parseFloat(document.getElementById('scheduleDecayRate').value),
-                output_table: document.getElementById('outputTable').value.trim() || 'sku_recommendations'
+                output_table: document.getElementById('outputTable').value.trim() || 'sku_recommendations',
+                
+                // Data filtering parameters
+                max_items: parseInt(document.getElementById('scheduleMaxItems').value) || 200,
+                min_item_frequency: parseInt(document.getElementById('scheduleMinItemFreq').value) || 5,
+                days_back: parseInt(document.getElementById('scheduleDaysBack').value) || 365,
+                
+                // Enhanced mining parameters
+                use_enhanced_mining: document.getElementById('scheduleEnhancedMining').value === 'true',
+                time_weighting_method: document.getElementById('scheduleTimeWeighting').value || 'exponential_decay',
+                time_segmentation: document.getElementById('scheduleTimeSegmentation').value || 'weekly'
             };
             
             console.log('Creating schedule with parameters:', scheduleData);
@@ -1234,6 +1375,16 @@
             document.getElementById('scheduleMinLift').value = '1.0';
             document.getElementById('scheduleMaxRecommendations').value = '10';
             document.getElementById('scheduleDecayRate').value = '0.050';
+            
+            // Reset data filtering parameters
+            document.getElementById('scheduleMaxItems').value = '200';
+            document.getElementById('scheduleMinItemFreq').value = '5';
+            document.getElementById('scheduleDaysBack').value = '365';
+            
+            // Reset enhanced mining parameters
+            document.getElementById('scheduleEnhancedMining').value = 'true';
+            document.getElementById('scheduleTimeWeighting').value = 'exponential_decay';
+            document.getElementById('scheduleTimeSegmentation').value = 'weekly';
             
             showSuccessNotification('Schedule form reset to default values');
         }

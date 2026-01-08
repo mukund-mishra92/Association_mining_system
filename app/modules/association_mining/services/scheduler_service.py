@@ -79,7 +79,7 @@ class SchedulerService:
             # Connect to database
             self.db_connection.connect()
             
-            # Prepare schedule parameters
+            # Prepare schedule parameters with all mining parameters
             schedule_params = {
                 'job_name': schedule_data['job_name'],
                 'job_description': schedule_data.get('job_description', ''),
@@ -93,7 +93,14 @@ class SchedulerService:
                 'decay_rate': float(schedule_data.get('decay_rate', 0.050)),
                 'output_table': schedule_data.get('output_table', 'sku_recommendations'),
                 'is_active': schedule_data.get('is_active', True),
-                'created_by': schedule_data.get('created_by', 'user')
+                'created_by': schedule_data.get('created_by', 'user'),
+                # New parameters for data filtering and mining control
+                'days_back': int(schedule_data.get('days_back', 365)),
+                'max_items': int(schedule_data.get('max_items', 200)),
+                'min_item_frequency': int(schedule_data.get('min_item_frequency', 5)),
+                'use_enhanced_mining': bool(schedule_data.get('use_enhanced_mining', True)),
+                'time_weighting_method': schedule_data.get('time_weighting_method', 'exponential_decay'),
+                'time_segmentation': schedule_data.get('time_segmentation', 'weekly')
             }
             
             # Calculate next run time
@@ -104,18 +111,20 @@ class SchedulerService:
             )
             schedule_params['next_run_at'] = next_run
             
-            # Insert into database
+            # Insert into database with all parameters
             insert_query = """
                 INSERT INTO mining_schedules (
                     job_name, job_description, schedule_type, schedule_time, 
                     schedule_day_of_week, min_support, min_confidence, min_lift,
                     max_recommendations, decay_rate, output_table, is_active,
-                    created_by, next_run_at
+                    created_by, next_run_at, days_back, max_items, min_item_frequency,
+                    use_enhanced_mining, time_weighting_method, time_segmentation
                 ) VALUES (
                     %(job_name)s, %(job_description)s, %(schedule_type)s, %(schedule_time)s,
                     %(schedule_day_of_week)s, %(min_support)s, %(min_confidence)s, %(min_lift)s,
                     %(max_recommendations)s, %(decay_rate)s, %(output_table)s, %(is_active)s,
-                    %(created_by)s, %(next_run_at)s
+                    %(created_by)s, %(next_run_at)s, %(days_back)s, %(max_items)s, %(min_item_frequency)s,
+                    %(use_enhanced_mining)s, %(time_weighting_method)s, %(time_segmentation)s
                 )
             """
             
@@ -152,61 +161,73 @@ class SchedulerService:
         finally:
             self.db_connection.disconnect()
     
-    def get_schedules(self) -> List[Dict[str, Any]]:
+    def get_schedules(self):
         """Get all schedules from database"""
         try:
+            # Use the existing db_connection attribute
             self.db_connection.connect()
             
             query = """
-                SELECT s.*, st.total_executions, st.successful_executions, 
-                       st.failed_executions, st.last_success_at, st.last_failure_at
-                FROM mining_schedules s
-                LEFT JOIN mining_schedule_stats st ON s.id = st.schedule_id
-                ORDER BY s.created_at DESC
+            SELECT 
+                id,
+                job_name,
+                job_description,
+                schedule_type,
+                schedule_time,
+                is_active,
+                next_run_at,
+                last_run_at,
+                created_at,
+                min_support,
+                min_confidence,
+                min_lift,
+                max_recommendations,
+                decay_rate,
+                output_table
+            FROM mining_schedules
+            ORDER BY created_at DESC
             """
             
             self.db_connection.cursor.execute(query)
-            results = self.db_connection.cursor.fetchall()
+            schedules = self.db_connection.cursor.fetchall()
             
-            schedules = []
-            for row in results:
-                schedule = {
-                    'id': row[0],
-                    'job_name': row[1],
-                    'job_description': row[2],
-                    'schedule_type': row[3],
-                    'schedule_time': str(row[4]),
-                    'schedule_day_of_week': row[5],
-                    'min_support': float(row[6]),
-                    'min_confidence': float(row[7]),
-                    'min_lift': float(row[8]),
-                    'max_recommendations': row[9],
-                    'decay_rate': float(row[10]),
-                    'output_table': row[11],
-                    'is_active': bool(row[12]),
-                    'created_at': row[13].isoformat() if row[13] else None,
-                    'updated_at': row[14].isoformat() if row[14] else None,
-                    'last_run_at': row[15].isoformat() if row[15] else None,
-                    'next_run_at': row[16].isoformat() if row[16] else None,
-                    'created_by': row[17],
-                    'stats': {
-                        'total_executions': row[18] or 0,
-                        'successful_executions': row[19] or 0,
-                        'failed_executions': row[20] or 0,
-                        'last_success_at': row[21].isoformat() if row[21] else None,
-                        'last_failure_at': row[22].isoformat() if row[22] else None
-                    }
-                }
-                schedules.append(schedule)
+            # Helper function to safely convert datetime/time/timedelta to string
+            def safe_isoformat(dt):
+                if dt is None:
+                    return None
+                if isinstance(dt, str):
+                    return dt  # Already a string
+                if isinstance(dt, timedelta):
+                    return str(dt)  # Convert timedelta to string
+                if hasattr(dt, 'isoformat'):
+                    return dt.isoformat()  # datetime, date, or time objects
+                return str(dt)  # Fallback to string conversion
             
-            return schedules
+            result = []
+            for schedule in schedules:
+                result.append({
+                    'id': schedule[0],
+                    'job_name': schedule[1],
+                    'job_description': schedule[2],
+                    'schedule_type': schedule[3],
+                    'schedule_time': safe_isoformat(schedule[4]),  # FIX: Use helper
+                    'is_active': bool(schedule[5]),
+                    'next_run_at': safe_isoformat(schedule[6]),    # FIX: Use helper
+                    'last_run_at': safe_isoformat(schedule[7]),    # FIX: Use helper
+                    'created_at': safe_isoformat(schedule[8]),     # FIX: Use helper
+                    'min_support': float(schedule[9]) if schedule[9] else None,
+                    'min_confidence': float(schedule[10]) if schedule[10] else None,
+                    'min_lift': float(schedule[11]) if schedule[11] else None,
+                    'max_recommendations': int(schedule[12]) if schedule[12] else None,
+                    'decay_rate': float(schedule[13]) if schedule[13] else None,
+                    'output_table': schedule[14]
+                })
+            
+            return result
             
         except Exception as e:
             logger.error(f"Failed to get schedules: {str(e)}")
-            raise
-        finally:
-            self.db_connection.disconnect()
-    
+            raise    
     def update_schedule(self, schedule_id: int, schedule_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing schedule"""
         try:
@@ -305,6 +326,48 @@ class SchedulerService:
         finally:
             self.db_connection.disconnect()
     
+    def delete_all_schedules(self) -> Dict[str, Any]:
+        """Delete all schedules and related data"""
+        try:
+            self.db_connection.connect()
+            
+            # Get counts before deletion - fetchone returns tuple, not dict
+            self.db_connection.cursor.execute("SELECT COUNT(*) FROM mining_schedules")
+            result = self.db_connection.cursor.fetchone()
+            schedule_count = result[0] if result else 0
+            
+            self.db_connection.cursor.execute("SELECT COUNT(*) FROM mining_job_logs")
+            result = self.db_connection.cursor.fetchone()
+            log_count = result[0] if result else 0
+            
+            self.db_connection.cursor.execute("SELECT COUNT(*) FROM mining_schedule_stats")
+            result = self.db_connection.cursor.fetchone()
+            stats_count = result[0] if result else 0
+            
+            # Remove all jobs from scheduler
+            self.scheduler.remove_all_jobs()
+            
+            # Delete all schedules (cascade will handle logs and stats)
+            self.db_connection.cursor.execute("DELETE FROM mining_schedules")
+            self.db_connection.connection.commit()
+            
+            logger.info(f"✓ Deleted all schedules: {schedule_count} schedules, {log_count} logs, {stats_count} stats")
+            
+            return {
+                'deleted_schedules': schedule_count,
+                'deleted_logs': log_count,
+                'deleted_stats': stats_count,
+                'status': 'all_deleted'
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to delete all schedules: {str(e)}")
+            if self.db_connection.connection:
+                self.db_connection.connection.rollback()
+            raise
+        finally:
+            self.db_connection.disconnect()
+    
     def execute_mining_job(self, schedule_id: int):
         """Execute a mining job for a schedule - runs in background thread"""
         logger.info(f"🎯 Scheduling mining job for schedule {schedule_id} in background thread")
@@ -320,7 +383,11 @@ class SchedulerService:
         logger.info(f"✅ Mining job thread started for schedule {schedule_id}")
     
     def _execute_mining_job_async(self, schedule_id: int):
-        """Internal method that runs the actual mining job asynchronously"""
+        """Internal method that runs the actual mining job asynchronously
+        
+        This method now uses the shared run_mining_task() function from the API endpoints
+        to ensure scheduler and manual mining use the exact same logic and parameters.
+        """
         start_time = datetime.now()
         log_id = None
         
@@ -353,7 +420,11 @@ class SchedulerService:
                 'min_confidence': schedule['min_confidence'],
                 'min_lift': schedule['min_lift'],
                 'max_recommendations': schedule['max_recommendations'],
-                'decay_rate': schedule['decay_rate']
+                'decay_rate': schedule['decay_rate'],
+                'days_back': schedule.get('days_back', 365),
+                'use_enhanced_mining': schedule.get('use_enhanced_mining', True),
+                'time_weighting_method': schedule.get('time_weighting_method', 'exponential_decay'),
+                'time_segmentation': schedule.get('time_segmentation', 'weekly')
             }
             
             thread_db_connection.cursor.execute(log_query, (
@@ -366,21 +437,11 @@ class SchedulerService:
             thread_db_connection.connection.commit()
             
             logger.info(f"🚀 Starting mining job for schedule '{schedule['job_name']}' (ID: {schedule_id})")
+            logger.info(f"🎯 Using parameters: {execution_params}")
             
-            # Use the exact algorithm parameters provided by the user
-            algorithm_params = {
-                'min_support': schedule['min_support'],  # Use user's exact value
-                'min_confidence': schedule['min_confidence'],  # Use user's exact value
-                'min_lift': schedule['min_lift'],
-                'max_recommendations': schedule['max_recommendations'],
-                'decay_rate': schedule['decay_rate']
-            }
+            # Import the shared mining task function
+            from app.modules.association_mining.api.endpoints import run_mining_task
             
-            # Log the user-provided parameters
-            logger.info(f"🎯 Using user-provided algorithm parameters: {algorithm_params}")
-            
-            # Connect to database for data fetching
-            from app.shared.database.connection import DatabaseConnection
             # Create custom config with output_table from schedule
             custom_db_config = {
                 'recommendations_table': schedule.get('output_table', 'sku_recommendations')
@@ -388,62 +449,87 @@ class SchedulerService:
             if self.db_config:
                 custom_db_config.update(self.db_config)
             
-            data_db = DatabaseConnection(custom_db_config)
-            
-            # Debug logging for database configuration
-            logger.info(f"🔍 Database config: host={data_db.db_host}, database={data_db.db_name}")
-            logger.info(f"🔍 Order table: {data_db.order_table}")
-            logger.info(f"🔍 SKU master table: {data_db.sku_master_table}")
-            logger.info(f"🔍 Output/Recommendations table: {data_db.recommendations_table}")
-            
-            if not data_db.connect():
-                raise Exception("Failed to connect to database for data fetching")
+            # Create a minimal task manager for scheduler jobs
+            class SchedulerTaskManager:
+                """Minimal task manager for scheduler jobs that logs to mining_job_logs"""
+                def __init__(self, log_id, db_connection):
+                    self.log_id = log_id
+                    self.db_connection = db_connection
                 
-            # Fetch order data (use optimized parameters for performance)
-            days_back = schedule.get('days_back', 365)  # Default to 1 year for historical data
-            logger.info(f"🔍 Fetching order data for last {days_back} days")
-            
-            # Use optimized filtering for scheduled jobs (similar to fast mining)
-            df_basket = data_db.fetch_order_data(
-                days_back=days_back,
-                max_items=200,  # Reduced from 1000 for better performance
-                min_item_frequency=5  # Increased from 2 for better quality and performance
-            )
-            logger.info(f"🔍 Fetched data shape: {df_basket.shape if df_basket is not None else 'None'}")
-            
-            if df_basket is None or df_basket.empty:
-                logger.error(f"❌ No data found with {days_back} days - trying more lenient criteria...")
-                # Try with more lenient criteria
-                df_basket = data_db.fetch_order_data(
-                    days_back=days_back,
-                    max_items=500,  # Still reasonable
-                    min_item_frequency=2
-                )
-                logger.info(f"🔍 Second attempt data shape: {df_basket.shape if df_basket is not None else 'None'}")
+                def start_task(self, task_id, message):
+                    logger.info(f"📋 {message}")
                 
-                if df_basket is None or df_basket.empty:
-                    raise Exception("No data found for mining even with lenient criteria")
-            
-            # Create mining service
-            mining_service = CleanAssociationMiningService(
-                task_id=f"scheduled_{schedule_id}_{int(start_time.timestamp())}",
-                task_manager=None,  # No task manager for scheduled jobs
-                algorithm_params=algorithm_params
-            )
-            
-            # Run mining pipeline
-            recommendations = mining_service.run_mining_pipeline(df_basket)
-            
-            # Save recommendations to database
-            if not recommendations.empty:
-                success = data_db.save_recommendations(recommendations)
-                if not success:
-                    raise Exception("Failed to save recommendations to database")
+                def update_progress(self, task_id, progress, message):
+                    logger.info(f"⏳ Progress {int(progress*100)}%: {message}")
                 
-            results = {
-                'total_rules': len(recommendations) if not recommendations.empty else 0,
-                'records_processed': len(df_basket)
-            }
+                def complete_task(self, task_id, result=None, message=""):
+                    logger.info(f"✅ {message}")
+                    self.result = result
+                
+                def fail_task(self, task_id, error_msg):
+                    logger.error(f"❌ {error_msg}")
+                    self.error = error_msg
+            
+            # Create task manager for this job
+            task_manager = SchedulerTaskManager(log_id, thread_db_connection)
+            
+            # Temporarily replace the global task_manager
+            import app.modules.association_mining.api.endpoints as endpoints_module
+            original_task_manager = endpoints_module.task_manager
+            endpoints_module.task_manager = task_manager
+            
+            try:
+                # Call the shared mining function with timeout protection
+                timeout_seconds = 600
+                logger.info(f"⏱️ Setting {timeout_seconds} second timeout for mining job")
+                
+                import threading
+                mining_completed = threading.Event()
+                mining_error = {'error': None}
+                
+                def run_mining_with_timeout():
+                    try:
+                        run_mining_task(
+                            task_id=f"scheduled_{schedule_id}_{int(start_time.timestamp())}",
+                            days_back=schedule.get('days_back', 365),
+                            min_support=schedule['min_support'],
+                            min_confidence=schedule['min_confidence'],
+                            min_lift=schedule['min_lift'],
+                            max_recommendations=schedule['max_recommendations'],
+                            decay_rate=schedule['decay_rate'],
+                            use_enhanced_mining=schedule.get('use_enhanced_mining', True),
+                            time_weighting_method=schedule.get('time_weighting_method', 'exponential_decay'),
+                            time_segmentation=schedule.get('time_segmentation', 'weekly'),
+                            db_config=custom_db_config
+                        )
+                        mining_completed.set()
+                    except Exception as e:
+                        mining_error['error'] = e
+                        mining_completed.set()
+                
+                mining_thread = threading.Thread(target=run_mining_with_timeout, daemon=True)
+                mining_thread.start()
+                
+                # Wait for completion or timeout
+                if not mining_completed.wait(timeout=timeout_seconds):
+                    raise TimeoutError(f"Mining job exceeded {timeout_seconds} second timeout")
+                
+                if mining_error['error']:
+                    raise mining_error['error']
+                
+                # Get results from task manager
+                if hasattr(task_manager, 'result') and task_manager.result:
+                    results = task_manager.result
+                    rules_count = results.get('recommendations_count', 0)
+                    records_processed = results.get('stats', {}).get('total_orders', 0)
+                else:
+                    # If no result set, assume success with 0 rules
+                    rules_count = 0
+                    records_processed = 0
+                
+            finally:
+                # Restore original task_manager
+                endpoints_module.task_manager = original_task_manager
             
             # Calculate execution time
             end_time = datetime.now()
@@ -457,9 +543,6 @@ class SchedulerService:
                     records_processed = %s
                 WHERE id = %s
             """
-            
-            rules_count = results.get('total_rules', 0) if results else 0
-            records_processed = results.get('records_processed', 0) if results else 0
             
             thread_db_connection.cursor.execute(update_log_query, (
                 end_time, rules_count, execution_time, records_processed, log_id
