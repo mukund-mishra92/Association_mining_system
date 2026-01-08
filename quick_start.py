@@ -5,6 +5,7 @@ Starts FastAPI and Flask servers with visible terminal windows
 import subprocess
 import sys
 import time
+import os
 from pathlib import Path
 
 def check_setup():
@@ -48,6 +49,10 @@ def start_servers():
     
     print("Starting servers...\n")
     
+    # Set up environment with PYTHONPATH
+    env = os.environ.copy()
+    env['PYTHONPATH'] = str(project_dir)
+    
     # Start FastAPI server in new window
     print("[1/2] Starting FastAPI server on port 8080...")
     fastapi_cmd = [
@@ -61,6 +66,7 @@ def start_servers():
     subprocess.Popen(
         fastapi_cmd,
         cwd=str(project_dir),
+        env=env,
         creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0
     )
     
@@ -73,6 +79,7 @@ def start_servers():
     subprocess.Popen(
         flask_cmd,
         cwd=str(project_dir),
+        env=env,
         creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == 'win32' else 0
     )
     
