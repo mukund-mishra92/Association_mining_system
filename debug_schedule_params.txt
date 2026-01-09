@@ -277,3 +277,21 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2026-01-09 17:00:29.239995 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'sdsdsdsd1112121', 'job_description': 'adad', 'schedule_type': 'daily', 'schedule_time': '17:01', 'is_active': True, 'min_support': 0.05, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.05
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-09 17:03:44.917312 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'a11111', 'job_description': 'csdcfsdvdsc', 'schedule_type': 'daily', 'schedule_time': '17:04', 'is_active': True, 'min_support': 0.05, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.05
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05

@@ -1507,6 +1507,21 @@ class SchedulerService:
             endpoints_module.task_manager = task_manager
 
             try:
+                # Build complete db_config with all connection parameters
+                from app.shared.config.config import Config
+                config = Config()
+                
+                complete_db_config = {
+                    'host': config.DB_HOST,
+                    'port': config.DB_PORT,
+                    'user': config.DB_USER,
+                    'password': config.DB_PASSWORD,
+                    'database': config.DB_NAME,
+                    'order_table': config.ORDER_TABLE,
+                    'sku_master_table': config.SKU_MASTER_TABLE,
+                    'recommendations_table': schedule["output_table"]
+                }
+                
                 run_mining_task(
                     task_id=f"scheduled_{schedule_id}_{int(start_time.timestamp())}",
                     days_back=schedule.get("days_back", 365),
@@ -1520,9 +1535,7 @@ class SchedulerService:
                         "time_weighting_method", "exponential_decay"
                     ),
                     time_segmentation=schedule.get("time_segmentation", "weekly"),
-                    db_config={
-                        "recommendations_table": schedule["output_table"]
-                    },
+                    db_config=complete_db_config,
                 )
             finally:
                 endpoints_module.task_manager = original_task_manager
