@@ -1675,14 +1675,22 @@ def start_scheduler():
     """Start the scheduler service"""
     try:
         response = requests.post(f"{API_BASE}/scheduler/start")
-        return jsonify({
-            'success': True,
-            'data': response.json()
-        })
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json()
+            })
+        else:
+            error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+            error_msg = error_data.get('detail', f'HTTP {response.status_code}')
+            return jsonify({
+                'success': False,
+                'message': error_msg
+            })
     except Exception as e:
         return jsonify({
             'success': False,
-            'error': str(e)
+            'message': str(e)
         })
 
 @app.route('/api/stop-scheduler', methods=['POST'])

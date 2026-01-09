@@ -1188,14 +1188,16 @@
                 console.log('Scheduler status response:', data);
                 const status = data.status || 'unknown';
                 const statusBadge = document.getElementById('schedulerStatus');
+                const startBtn = document.getElementById('startSchedulerBtn');
+                const stopBtn = document.getElementById('stopSchedulerBtn');
                 
-                // If backend is not available, show offline status
+                // If backend is not available, show offline status but still show start button
                 if (!data.success) {
                     statusBadge.textContent = 'Offline';
                     statusBadge.className = 'badge bg-secondary';
                     statusBadge.title = 'FastAPI backend is not running. Scheduler features are unavailable.';
-                    document.getElementById('startSchedulerBtn').style.display = 'none';
-                    document.getElementById('stopSchedulerBtn').style.display = 'none';
+                    startBtn.style.display = 'block';
+                    stopBtn.style.display = 'none';
                     return;
                 }
                 
@@ -1206,14 +1208,12 @@
                                       'badge bg-warning';
                 statusBadge.title = '';
                 
-                // Update button visibility
-                const startBtn = document.getElementById('startSchedulerBtn');
-                const stopBtn = document.getElementById('stopSchedulerBtn');
-                
+                // Update button visibility based on scheduler status
                 if (status === 'running') {
                     startBtn.style.display = 'none';
                     stopBtn.style.display = 'block';
                 } else {
+                    // Show start button for stopped, offline, or unknown status
                     startBtn.style.display = 'block';
                     stopBtn.style.display = 'none';
                 }
@@ -1235,7 +1235,8 @@
                 statusBadge.textContent = 'Offline';
                 statusBadge.className = 'badge bg-secondary';
                 statusBadge.title = 'Cannot connect to scheduler service';
-                document.getElementById('startSchedulerBtn').style.display = 'none';
+                // Show start button even when there's an error
+                document.getElementById('startSchedulerBtn').style.display = 'block';
                 document.getElementById('stopSchedulerBtn').style.display = 'none';
             });
         }

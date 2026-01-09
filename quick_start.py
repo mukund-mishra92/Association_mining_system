@@ -13,7 +13,7 @@ def check_setup():
     project_dir = Path(__file__).parent
     
     # Check virtual environment
-    venv_python = project_dir / "venv" / "Scripts" / "python.exe"
+    venv_python = project_dir / ".venv" / "Scripts" / "python.exe"
     if not venv_python.exists():
         print("❌ ERROR: Virtual environment not found!")
         print("\nThis appears to be a new installation.")
@@ -36,7 +36,7 @@ def check_setup():
 def start_servers():
     """Start FastAPI and Flask servers"""
     project_dir = Path(__file__).parent
-    python_exe = project_dir / "venv" / "Scripts" / "python.exe"
+    python_exe = project_dir / ".venv" / "Scripts" / "python.exe"
     
     print("\n" + "="*60)
     print("  Association Mining System - Quick Start")
