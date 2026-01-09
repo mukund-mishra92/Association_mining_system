@@ -1593,48 +1593,88 @@ def get_task_logs(task_id):
 
 @app.route('/api/logs/live')
 def get_live_logs():
-    """Get live logs from all recent log files"""
+    """Get comprehensive mining logs from database"""
     try:
-        import glob
-        import os
-        from datetime import datetime
+        from datetime import datetime, timedelta
+        import pymysql
+        from app.shared.config.config import Config
         
-        # Look for log files from today
-        today = datetime.now().strftime('%Y%m%d')
-        log_patterns = [
-            f'logs/mining_detailed_{today}_*.log',
-            f'logs/api_detailed_{today}_*.log',
-            f'logs/performance_{today}_*.log'
-        ]
+        config = Config()
+        connection = pymysql.connect(
+            host=config.db_host,
+            user=config.db_user,
+            password=config.db_password,
+            database=config.db_name,
+            port=config.db_port,
+            cursorclass=pymysql.cursors.DictCursor
+        )
         
-        logs = []
-        for pattern in log_patterns:
-            for log_file in glob.glob(pattern):
-                try:
-                    with open(log_file, 'r', encoding='utf-8') as f:
-                        lines = f.readlines()
-                        # Get recent lines
-                        recent_lines = lines[-20:] if len(lines) > 20 else lines
-                        for line in recent_lines:
-                            if any(keyword in line for keyword in ['INFO', 'ERROR', 'WARNING']):
-                                # Parse log line format: timestamp | level | logger | message
-                                parts = line.strip().split(' | ')
-                                if len(parts) >= 4:
-                                    timestamp = parts[0]
-                                    level = parts[1]
-                                    logger_name = parts[2]
-                                    message = ' | '.join(parts[3:])
-                                    logs.append({
-                                        'timestamp': timestamp,
-                                        'level': level,
-                                        'logger': logger_name,
-                                        'message': message,
-                                        'source': os.path.basename(log_file)
-                                    })
-                except Exception as e:
-                    continue
+        cursor = connection.cursor()
         
-        # Sort logs by timestamp and return recent ones
+        # Get logs from last 24 hours
+        query = """
+        SELECT 
+            mjl.id,
+            mjl.schedule_id,
+            mjl.job_name,
+            mjl.started_at,
+            mjl.completed_at,
+            mjl.execution_status,
+            mjl.rules_generated,
+            mjl.records_processed,
+            mjl.execution_time_seconds,
+            mjl.error_message,
+            mjl.execution_parameters,
+            ms.output_table,
+            ms.schedule_type
+        FROM mining_job_logs mjl
+        LEFT JOIN mining_schedules ms ON mjl.schedule_id = ms.id
+        WHERE mjl.started_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        ORDER BY mjl.started_at DESC
+        LIMIT 50
+        """
+        
+        cursor.execute(query)
+        logs = cursor.fetchall()
+        
+        # Format logs for frontend
+        formatted_logs = []
+        for log in logs:
+            formatted_logs.append({
+                'id': log['id'],
+                'timestamp': log['started_at'].strftime('%Y-%m-%d %H:%M:%S') if log['started_at'] else '',
+                'operation': f"Mining: {log['job_name']}",
+                'status': log['execution_status'],
+                'level': 'ERROR' if log['execution_status'] == 'failed' else 'INFO',
+                'details': {
+                    'job_name': log['job_name'],
+                    'schedule_type': log['schedule_type'] or 'API',
+                    'output_table': log['output_table'] or 'N/A',
+                    'rules_generated': log['rules_generated'],
+                    'records_processed': log['records_processed'],
+                    'execution_time': f"{log['execution_time_seconds']}s",
+                    'started_at': log['started_at'].strftime('%Y-%m-%d %H:%M:%S') if log['started_at'] else '',
+                    'completed_at': log['completed_at'].strftime('%Y-%m-%d %H:%M:%S') if log['completed_at'] else 'In Progress',
+                    'parameters': log['execution_parameters'],
+                    'error_message': log['error_message']
+                },
+                'message': f"{'✓' if log['execution_status'] == 'success' else '✗'} {log['job_name']}: {log['rules_generated']} rules generated from {log['records_processed']} records → {log['output_table'] or 'sku_recommendations'}"
+            })
+        
+        cursor.close()
+        connection.close()
+        
+        return jsonify({
+            'success': True,
+            'logs': formatted_logs
+        })
+    except Exception as e:
+        print(f"Error fetching mining logs: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'logs': []
+        })
         logs.sort(key=lambda x: x['timestamp'], reverse=True)
         return jsonify(logs[:30])  # Return last 30 log entries
         

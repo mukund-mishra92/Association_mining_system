@@ -69,9 +69,53 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
                    use_enhanced_mining=True, time_weighting_method="exponential_decay", 
                    time_segmentation="weekly", db_config=None):
     """Background task to run mining pipeline with progress tracking"""
+    import json
+    from datetime import datetime
+    
+    log_id = None
+    log_db = None
+    start_time = datetime.now()
+    
     try:
         # Mark task as started
         task_manager.start_task(task_id, "Initializing mining process...")
+        
+        # Log to mining_job_logs table
+        try:
+            log_db = DatabaseConnection()
+            log_db.connect()
+            
+            execution_params = {
+                'min_support': min_support or config.MIN_SUPPORT,
+                'min_confidence': min_confidence or config.MIN_CONFIDENCE,
+                'min_lift': min_lift or config.MIN_LIFT,
+                'max_recommendations': max_recommendations or config.MAX_RECOMMENDATIONS,
+                'decay_rate': decay_rate or config.DECAY_RATE,
+                'days_back': days_back or 365,
+                'use_enhanced_mining': use_enhanced_mining,
+                'time_weighting_method': time_weighting_method,
+                'time_segmentation': time_segmentation,
+                'output_table': db_config.get('recommendations_table', 'sku_recommendations') if db_config else 'sku_recommendations'
+            }
+            
+            log_db.cursor.execute(
+                """
+                INSERT INTO mining_job_logs
+                (schedule_id, job_name, execution_parameters, started_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    0,  # 0 means API-based, not scheduler-based
+                    f"API Mining - {task_id}",
+                    json.dumps(execution_params),
+                    start_time,
+                ),
+            )
+            log_id = log_db.cursor.lastrowid
+            log_db.connection.commit()
+            logger.info(f"Created mining job log {log_id} for task {task_id}")
+        except Exception as log_error:
+            logger.warning(f"Failed to create job log: {log_error}")
         
         # Log received configuration
         if db_config:
@@ -194,6 +238,27 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
                     message=f"Mining completed: {len(recommendations)} recommendations generated and saved to database"
                 )
                 logger.info(f"Mining completed: {len(recommendations)} recommendations generated and saved to database")
+                
+                # Update job log
+                if log_id and log_db:
+                    try:
+                        end_time = datetime.now()
+                        execution_time = int((end_time - start_time).total_seconds())
+                        log_db.cursor.execute(
+                            """
+                            UPDATE mining_job_logs
+                            SET completed_at=%s,
+                                execution_status='success',
+                                rules_generated=%s,
+                                records_processed=%s,
+                                execution_time_seconds=%s
+                            WHERE id=%s
+                            """,
+                            (end_time, len(recommendations), result['stats']['total_orders'], execution_time, log_id)
+                        )
+                        log_db.connection.commit()
+                    except Exception as log_error:
+                        logger.warning(f"Failed to update job log: {log_error}")
             else:
                 task_manager.complete_task(
                     task_id, 
@@ -228,10 +293,32 @@ def run_mining_task(task_id: str, days_back=None, min_support=None, min_confiden
         error_msg = f"Error in mining task: {str(e)}"
         task_manager.fail_task(task_id, error_msg)
         logger.error(error_msg)
+        
+        # Update job log with error
+        if log_id and log_db:
+            try:
+                end_time = datetime.now()
+                execution_time = int((end_time - start_time).total_seconds())
+                log_db.cursor.execute(
+                    """
+                    UPDATE mining_job_logs
+                    SET completed_at=%s,
+                        execution_status='failed',
+                        error_message=%s,
+                        execution_time_seconds=%s
+                    WHERE id=%s
+                    """,
+                    (end_time, error_msg, execution_time, log_id)
+                )
+                log_db.connection.commit()
+            except Exception as log_error:
+                logger.warning(f"Failed to update job log with error: {log_error}")
     
     finally:
         if 'db' in locals():
             db.disconnect()
+        if log_db:
+            log_db.disconnect()
 
 def run_fast_mining_task(task_id: str, days_back=None, db_config=None):
     """

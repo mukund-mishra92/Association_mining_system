@@ -1531,10 +1531,14 @@ class SchedulerService:
             execution_time = int((end_time - start_time).total_seconds())
 
             rules_generated = 0
+            records_processed = 0
             if task_manager.result:
                 rules_generated = task_manager.result.get(
                     "recommendations_count", 0
                 )
+                # Get records_processed from stats
+                stats = task_manager.result.get("stats", {})
+                records_processed = stats.get("total_orders", 0)
 
             db.cursor.execute(
                 """
@@ -1542,12 +1546,14 @@ class SchedulerService:
                 SET completed_at=%s,
                     execution_status='success',
                     rules_generated=%s,
+                    records_processed=%s,
                     execution_time_seconds=%s
                 WHERE id=%s
                 """,
                 (
                     end_time,
                     rules_generated,
+                    records_processed,
                     execution_time,
                     log_id,
                 ),
