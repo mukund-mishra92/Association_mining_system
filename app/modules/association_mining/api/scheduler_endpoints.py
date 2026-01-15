@@ -34,7 +34,7 @@ class ScheduleCreateRequest(BaseModel):
     time_segmentation: Optional[str] = Field("weekly", description="Time segmentation: weekly, monthly, daily")
     
     # Job configuration
-    output_table: Optional[str] = Field("sku_recommendations", max_length=255, description="Output table name")
+    output_table: Optional[str] = Field("article_proximity_score", max_length=255, description="Output table name")
     is_active: Optional[bool] = Field(True, description="Whether the schedule is active")
 
 class ScheduleUpdateRequest(BaseModel):
@@ -71,7 +71,7 @@ class ScheduleResponse(BaseModel):
     job_description: str
     schedule_type: str
     schedule_time: str
-    schedule_day_of_week: Optional[int]
+    schedule_day_of_week: Optional[int] = None
     min_support: float
     min_confidence: float
     min_lift: float
@@ -79,12 +79,18 @@ class ScheduleResponse(BaseModel):
     decay_rate: float
     output_table: str
     is_active: bool
-    created_at: Optional[str]
-    updated_at: Optional[str]
-    last_run_at: Optional[str]
-    next_run_at: Optional[str]
-    created_by: str
-    stats: Dict[str, Any]
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    last_run_at: Optional[str] = None
+    next_run_at: Optional[str] = None
+    created_by: str = "system"
+    days_back: Optional[int] = 365
+    max_items: Optional[int] = 200
+    min_item_frequency: Optional[int] = 5
+    use_enhanced_mining: Optional[bool] = True
+    time_weighting_method: Optional[str] = "exponential_decay"
+    time_segmentation: Optional[str] = "weekly"
+    stats: Optional[Dict[str, Any]] = None
 
 class JobLogResponse(BaseModel):
     id: int
@@ -321,9 +327,18 @@ async def get_scheduler_status(db_config: Optional[Dict] = None):
     try:
         scheduler_service = get_scheduler_service(db_config)
         
+        # Check if scheduler is actually running by querying APScheduler directly
+        # The scheduler.running property is more reliable than our is_running flag
+        scheduler_actually_running = scheduler_service.scheduler.running
+        
+        # Update our flag if it's out of sync
+        if scheduler_actually_running and not scheduler_service.is_running:
+            scheduler_service.is_running = True
+            logger.info("Synchronized is_running flag with actual scheduler state")
+        
         # Get active jobs from APScheduler
         active_jobs = []
-        if scheduler_service.is_running:
+        if scheduler_actually_running:
             for job in scheduler_service.scheduler.get_jobs():
                 active_jobs.append({
                     "job_id": job.id,
@@ -336,7 +351,7 @@ async def get_scheduler_status(db_config: Optional[Dict] = None):
         active_schedules = [s for s in schedules if s['is_active']]
         
         return {
-            "scheduler_running": scheduler_service.is_running,
+            "scheduler_running": scheduler_actually_running,
             "total_schedules": len(schedules),
             "active_schedules": len(active_schedules),
             "scheduled_jobs": len(active_jobs),
