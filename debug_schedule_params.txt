@@ -502,3 +502,39 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2026-01-15 19:17:58.998019 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'b1', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '19:18', 'is_active': True, 'min_support': 0.3, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 2, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 1500, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.3
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 2
+   decay_rate: 0.05
+
+=== 2026-01-15 19:18:10.543969 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'b1', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '19:18', 'is_active': True, 'min_support': 0.3, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 2, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 1500, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.3
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 2
+   decay_rate: 0.05
+
+=== 2026-01-15 19:18:38.186242 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'b1', 'job_description': '', 'schedule_type': 'daily', 'schedule_time': '19:19', 'is_active': True, 'min_support': 0.3, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 2, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 800, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.3
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 2
+   decay_rate: 0.05
+
+=== 2026-01-15 20:36:27.402843 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'c1', 'job_description': 'sadsdad', 'schedule_type': 'daily', 'schedule_time': '20:37', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 500, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05

@@ -526,6 +526,27 @@ class SchedulerService:
                 db, schedule_id, True, execution_time, rules_generated
             )
 
+            # Update next_run_at for recurring schedules
+            try:
+                next_run_time = self._calculate_next_run_time(
+                    schedule['schedule_type'],
+                    schedule['schedule_time'],
+                    schedule.get('schedule_day_of_week')
+                )
+                
+                db.cursor.execute(
+                    """
+                    UPDATE mining_schedules
+                    SET last_run_at = %s,
+                        next_run_at = %s
+                    WHERE id = %s
+                    """,
+                    (end_time, next_run_time, schedule_id)
+                )
+                logger.info(f"📅 Updated next_run_at to {next_run_time.isoformat()}")
+            except Exception as update_error:
+                logger.error(f"Failed to update next_run_at: {update_error}")
+
             db.connection.commit()
             logger.info(
                 f"✅ Mining completed: {schedule['job_name']} "
