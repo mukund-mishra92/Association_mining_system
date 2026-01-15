@@ -502,3 +502,129 @@
    min_lift: 1
    max_recommendations: 10
    decay_rate: 0.05
+
+=== 2026-01-15 19:30:09.741618 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_scheduled_job', 'job_description': 'adasa', 'schedule_type': 'daily', 'schedule_time': '02:00', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:33:23.448242 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_scheduled_job', 'job_description': 'adasa', 'schedule_type': 'daily', 'schedule_time': '02:00', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:38:39.258781 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_scheduled_job', 'job_description': 'adasa', 'schedule_type': 'daily', 'schedule_time': '02:00', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'weekly'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:40:41.471575 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_schedule', 'job_description': 'asasas', 'schedule_type': 'daily', 'schedule_time': '19:42', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'sku_recommendations', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:47:10.743838 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'Daily_schedule', 'job_description': 'asasasas', 'schedule_type': 'daily', 'schedule_time': '19:48', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 500, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:50:10.732305 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_schedule', 'job_description': 'asasas', 'schedule_type': 'daily', 'schedule_time': '19:51', 'is_active': True, 'min_support': 0.01, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.01
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:56:09.741989 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_schedule', 'job_description': 'asasa', 'schedule_type': 'daily', 'schedule_time': '19:57', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 600, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:56:17.938588 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_schedule', 'job_description': 'asasa', 'schedule_type': 'daily', 'schedule_time': '19:57', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 600, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:56:27.451956 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'daily_schedule', 'job_description': 'asasa', 'schedule_type': 'daily', 'schedule_time': '19:57', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 600, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:57:31.512114 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_schedule', 'job_description': 'aaaa', 'schedule_type': 'daily', 'schedule_time': '19:58', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:57:35.234019 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_schedule', 'job_description': 'aaaa', 'schedule_type': 'daily', 'schedule_time': '19:58', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 19:57:52.790092 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_schedule', 'job_description': 'aaaa', 'schedule_type': 'daily', 'schedule_time': '19:58', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 20:01:37.830956 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_schedule', 'job_description': 'asasasa', 'schedule_type': 'daily', 'schedule_time': '02:00', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
+
+=== 2026-01-15 20:06:56.973953 ===
+[DEBUG] Received schedule data from UI: {'job_name': 'my_daily_sc', 'job_description': 'asasas', 'schedule_type': 'daily', 'schedule_time': '20:08', 'is_active': True, 'min_support': 0.1, 'min_confidence': 0.3, 'min_lift': 1, 'max_recommendations': 10, 'decay_rate': 0.05, 'output_table': 'article_proximity_score', 'max_items': 200, 'min_item_frequency': 5, 'days_back': 365, 'use_enhanced_mining': True, 'time_weighting_method': 'exponential_decay', 'time_segmentation': 'daily'}
+🎯 Mining parameters from UI:
+   min_support: 0.1
+   min_confidence: 0.3
+   min_lift: 1
+   max_recommendations: 10
+   decay_rate: 0.05
