@@ -2,10 +2,10 @@ import pymysql
 
 # Update these values as needed
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
+    'host': '10.102.246.10',
+    'port': 6033,
     'user': 'root',
-    'password': 'root',
+    'password': 'Falcon@123@WCS',
     'database': 'neo',
     'charset': 'utf8mb4'
 }
