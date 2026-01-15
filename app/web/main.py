@@ -237,7 +237,7 @@ def save_rules_to_database(user_config, rules_df, sku_name_to_id):
 
         if not summary:
             logger.error("save_recommendations returned False/empty summary")
-            return False
+            return None
 
         logger.info(
             "Successfully saved recommendations using production-ready logic: "
@@ -246,7 +246,7 @@ def save_rules_to_database(user_config, rules_df, sku_name_to_id):
             f"{summary.get('updated_existing', 0)} updates, "
             f"{summary.get('decayed_not_in_current', 0)} decayed."
         )
-        return True
+        return summary
 
     except Exception as e:
         logger.error(f"Database save error: {e}")
@@ -376,8 +376,10 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60,
                 
                 # Save to database
                 database_saved = False
+                db_summary = None
                 try:
-                    database_saved = save_rules_to_database(user_config, final_rules, sku_name_to_id)
+                    db_summary = save_rules_to_database(user_config, final_rules, sku_name_to_id)
+                    database_saved = bool(db_summary)
                 except Exception as db_error:
                     print(f"Database save failed: {db_error}")
                 
@@ -401,6 +403,17 @@ def generate_rules_top_skus(user_config=None, top_n=20, days_back=60,
                         "max": float(final_rules['association_composite_score'].max())
                     }
                 }
+                
+                # Add database statistics if available
+                if db_summary:
+                    stats["database_stats"] = {
+                        "total_generated": db_summary.get('total_generated', len(final_rules)),
+                        "valid_after_filtering": db_summary.get('valid_after_filtering', 0),
+                        "total_written": db_summary.get('total_written', 0),
+                        "new_inserts": db_summary.get('new_inserts', 0),
+                        "updated_existing": db_summary.get('updated_existing', 0),
+                        "output_table": db_summary.get('target_table', user_config.get('recommendations_table', 'unknown'))
+                    }
                 
                 return stats, final_rules.to_dict('records')
         
@@ -505,76 +518,76 @@ def ai_insights_dashboard():
         return render_template('error.html', 
                              error_message=f"Could not load AI insights dashboard: {str(e)}")
 
-@app.route('/chatbot')
-def chatbot_page():
-    """NEO Chatbot page"""
-    print("[ROUTE LOG] NEO Chatbot route called")
-    logger.info("NEO Chatbot page accessed")
+# @app.route('/chatbot')
+# def chatbot_page():
+#     """NEO Chatbot page"""
+#     print("[ROUTE LOG] NEO Chatbot route called")
+#     logger.info("NEO Chatbot page accessed")
     
-    try:
-        # Log chatbot page access (if logging available)
-        if LOGGING_AVAILABLE and mining_logger:
-            mining_logger.log_operation(
-                operation="chatbot_page_access",
-                details={"page": "neo_chatbot", "status": "success"},
-                user_id="system"
-            )
+#     try:
+#         # Log chatbot page access (if logging available)
+#         if LOGGING_AVAILABLE and mining_logger:
+#             mining_logger.log_operation(
+#                 operation="chatbot_page_access",
+#                 details={"page": "neo_chatbot", "status": "success"},
+#                 user_id="system"
+#             )
         
-        print("[OK] [CHATBOT LOG] Rendering NEO chatbot template")
-        logger.info("Rendering NEO chatbot template")
+#         print("[OK] [CHATBOT LOG] Rendering NEO chatbot template")
+#         logger.info("Rendering NEO chatbot template")
         
-        # Render the chatbot template
-        return render_template('chatbot.html')
+#         # Render the chatbot template
+#         return render_template('chatbot.html')
     
-    except Exception as e:
-        print(f"[ERROR] [CHATBOT ERROR] Error loading chatbot page: {e}")
-        logger.error(f"Error loading chatbot page: {e}")
+#     except Exception as e:
+#         print(f"[ERROR] [CHATBOT ERROR] Error loading chatbot page: {e}")
+#         logger.error(f"Error loading chatbot page: {e}")
         
-        if LOGGING_AVAILABLE and mining_logger:
-            mining_logger.log_operation(
-                operation="chatbot_page_error",
-                details={"page": "neo_chatbot", "status": "error", "error": str(e)},
-                user_id="system"
-            )
+#         if LOGGING_AVAILABLE and mining_logger:
+#             mining_logger.log_operation(
+#                 operation="chatbot_page_error",
+#                 details={"page": "neo_chatbot", "status": "error", "error": str(e)},
+#                 user_id="system"
+#             )
         
-        return render_template('error.html', 
-                             error_message=f"Could not load chatbot: {str(e)}")
+#         return render_template('error.html', 
+#                              error_message=f"Could not load chatbot: {str(e)}")
 
-@app.route('/diagnostic-support')
-def diagnostic_support_page():
-    """Diagnostic Support page"""
-    print("[ROUTE LOG] Diagnostic Support route called")
-    logger.info("Diagnostic Support page accessed")
+# @app.route('/diagnostic-support')
+# def diagnostic_support_page():
+#     """Diagnostic Support page"""
+#     print("[ROUTE LOG] Diagnostic Support route called")
+#     logger.info("Diagnostic Support page accessed")
     
-    try:
-        # Log diagnostic support page access
-        if LOGGING_AVAILABLE and mining_logger:
-            mining_logger.log_operation(
-                operation="diagnostic_support_page_access",
-                details={"page": "diagnostic_support", "status": "success"},
-                user_id="system"
-            )
+#     try:
+#         # Log diagnostic support page access
+#         if LOGGING_AVAILABLE and mining_logger:
+#             mining_logger.log_operation(
+#                 operation="diagnostic_support_page_access",
+#                 details={"page": "diagnostic_support", "status": "success"},
+#                 user_id="system"
+#             )
         
-        print("[OK] [DIAGNOSTIC LOG] Rendering diagnostic support template")
-        logger.info("Rendering diagnostic support template")
+#         print("[OK] [DIAGNOSTIC LOG] Rendering diagnostic support template")
+#         logger.info("Rendering diagnostic support template")
         
-        # Render the diagnostic support template
-        return render_template('diagnostic_support.html')
+#         # Render the diagnostic support template
+#         return render_template('diagnostic_support.html')
         
-    except Exception as e:
-        print(f"[ERROR] [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
-        logger.error(f"Error loading diagnostic support page: {e}")
+#     except Exception as e:
+#         print(f"[ERROR] [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
+#         logger.error(f"Error loading diagnostic support page: {e}")
         
-        # Log the error (if logging available)
-        if LOGGING_AVAILABLE and mining_logger:
-            mining_logger.log_operation(
-                operation="diagnostic_support_page_error",
-                details={"page": "diagnostic_support", "status": "error", "error": str(e)},
-                user_id="system"
-            )
+#         # Log the error (if logging available)
+#         if LOGGING_AVAILABLE and mining_logger:
+#             mining_logger.log_operation(
+#                 operation="diagnostic_support_page_error",
+#                 details={"page": "diagnostic_support", "status": "error", "error": str(e)},
+#                 user_id="system"
+#             )
         
-        return render_template('error.html', 
-                             error_message=f"Could not load diagnostic support: {str(e)}")
+#         return render_template('error.html', 
+#                              error_message=f"Could not load diagnostic support: {str(e)}")
 
 @app.route('/velocity-analysis-legacy')
 def velocity_analysis_legacy():
@@ -956,6 +969,11 @@ def mine_direct():
     job_id = f"direct_mining_{int(time.time())}"
     user_ip = request.remote_addr
     
+    # Variables for database logging
+    log_db = None
+    log_id = None
+    start_time_dt = datetime.now()
+    
     # Initialize history tracking and performance monitoring
     history_service = None
     performance_tracker = None
@@ -985,8 +1003,104 @@ def mine_direct():
         except Exception as e:
             print(f"History tracking initialization failed: {e}")
     
+    # Create database log entry for mining_job_logs table
+    try:
+        import pymysql
+        import json
+        from app.shared.config.config import Config
+        
+        config = Config()
+        log_db = pymysql.connect(
+            host=config.DB_HOST,
+            user=config.DB_USER,
+            password=config.DB_PASSWORD,
+            database=config.DB_NAME,
+            port=config.DB_PORT
+        )
+        log_cursor = log_db.cursor()
+        
+        execution_params = {
+            'days_back': days_back,
+            'top_skus': top_skus,
+            'min_support': algorithm_params.get('min_support'),
+            'min_confidence': algorithm_params.get('min_confidence'),
+            'min_lift': algorithm_params.get('min_lift'),
+            'max_recommendations': algorithm_params.get('max_recommendations'),
+            'decay_rate': algorithm_params.get('decay_rate'),
+            'output_table': USER_DB_CONFIG.get('recommendations_table', 'sku_recommendations')
+        }
+        
+        log_cursor.execute(
+            """
+            INSERT INTO mining_job_logs
+            (schedule_id, job_name, execution_parameters, started_at, execution_status)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (0, f"UI Direct Mining - {job_id}", json.dumps(execution_params), start_time_dt, 'running')
+        )
+        log_id = log_cursor.lastrowid
+        log_db.commit()
+        print(f"Created mining job log {log_id} for UI direct mining")
+    except Exception as log_error:
+        print(f"Failed to create job log: {log_error}")
+        if log_db:
+            try:
+                log_db.close()
+            except:
+                pass
+        log_db = None
+        log_id = None
+    
     try:
         processing_start_time = time.time()
+        
+        # Log to mining_job_logs table
+        log_id = None
+        try:
+            import pymysql
+            import json
+            from datetime import datetime
+            from app.shared.config.config import Config
+            
+            config_obj = Config()
+            log_conn = pymysql.connect(
+                host=config_obj.DB_HOST,
+                user=config_obj.DB_USER,
+                password=config_obj.DB_PASSWORD,
+                database=config_obj.DB_NAME,
+                port=config_obj.DB_PORT
+            )
+            log_cursor = log_conn.cursor()
+            
+            execution_params = {
+                'min_support': algorithm_params.get('min_support'),
+                'min_confidence': algorithm_params.get('min_confidence'),
+                'min_lift': algorithm_params.get('min_lift'),
+                'max_recommendations': algorithm_params.get('max_recommendations'),
+                'decay_rate': algorithm_params.get('decay_rate'),
+                'days_back': days_back,
+                'top_skus': top_skus,
+                'output_table': USER_DB_CONFIG.get('recommendations_table', 'sku_recommendations')
+            }
+            
+            log_cursor.execute(
+                """
+                INSERT INTO mining_job_logs
+                (schedule_id, job_name, execution_parameters, started_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (
+                    0,  # 0 means API-based
+                    f"API Direct - {job_id}",
+                    json.dumps(execution_params),
+                    datetime.now()
+                )
+            )
+            log_id = log_cursor.lastrowid
+            log_conn.commit()
+            log_conn.close()
+        except Exception as log_error:
+            logger.warning(f"Failed to create job log: {log_error}")
         
         # Log mining operation start
         if mining_logger:
@@ -1009,6 +1123,24 @@ def mine_direct():
         )
         
         if 'error' in stats:
+            # Update database log with failure
+            if log_id and log_db:
+                try:
+                    end_time = datetime.now()
+                    execution_time = int((end_time - start_time_dt).total_seconds())
+                    log_cursor = log_db.cursor()
+                    log_cursor.execute("""
+                        UPDATE mining_job_logs
+                        SET completed_at=%s, execution_status='failed',
+                            execution_time_seconds=%s
+                        WHERE id=%s
+                    """, (end_time, execution_time, log_id))
+                    log_db.commit()
+                    log_cursor.close()
+                    log_db.close()
+                except Exception as log_err:
+                    print(f"Error updating job log: {log_err}")
+            
             # Log mining failure
             if mining_logger:
                 mining_logger.log_mining_operation(
@@ -1047,6 +1179,27 @@ def mine_direct():
         if history_service and performance_metrics:
             history_service.log_performance_metrics(job_id, performance_metrics)
         
+        # Update database log with success
+        if log_id and log_db:
+            try:
+                end_time = datetime.now()
+                execution_time = int((end_time - start_time_dt).total_seconds())
+                db_stats = stats.get('database_stats', {})
+                log_cursor = log_db.cursor()
+                log_cursor.execute("""
+                    UPDATE mining_job_logs
+                    SET completed_at=%s, execution_status='success',
+                        rules_generated=%s, records_processed=%s,
+                        execution_time_seconds=%s
+                    WHERE id=%s
+                """, (end_time, db_stats.get('total_written', 0), 
+                      stats.get('total_orders', 0), execution_time, log_id))
+                log_db.commit()
+                log_cursor.close()
+                log_db.close()
+            except Exception as log_err:
+                print(f"Error updating job log: {log_err}")
+        
         # Finish job tracking with success
         if history_service:
             history_service.finish_job(job_id, status='completed', results_count=len(rules))
@@ -1079,6 +1232,24 @@ def mine_direct():
         })
     
     except Exception as e:
+        # Update database log with exception
+        if log_id and log_db:
+            try:
+                end_time = datetime.now()
+                execution_time = int((end_time - start_time_dt).total_seconds())
+                log_cursor = log_db.cursor()
+                log_cursor.execute("""
+                    UPDATE mining_job_logs
+                    SET completed_at=%s, execution_status='failed',
+                        execution_time_seconds=%s
+                    WHERE id=%s
+                """, (end_time, execution_time, log_id))
+                log_db.commit()
+                log_cursor.close()
+                log_db.close()
+            except Exception as log_err:
+                print(f"Error updating job log: {log_err}")
+        
         # Finish job tracking with error
         if history_service:
             history_service.finish_job(job_id, status='failed', error_message=str(e))
@@ -1147,6 +1318,11 @@ def mine_api():
     job_id = f"api_mining_{int(time.time())}"
     user_ip = request.remote_addr
     
+    # Database logging variables
+    log_db = None
+    log_id = None
+    start_time_dt = datetime.now()
+    
     # Initialize history tracking and performance monitoring
     history_service = None
     performance_tracker = None
@@ -1177,6 +1353,47 @@ def mine_api():
             
         except Exception as e:
             print(f"History tracking initialization failed: {e}")
+    
+    # Create database log entry
+    try:
+        from app.shared.config.config import Config
+        
+        config = Config()
+        log_db = pymysql.connect(
+            host=config.DB_HOST,
+            port=config.DB_PORT,
+            user=config.DB_USER,
+            password=config.DB_PASSWORD,
+            database=config.DB_NAME,
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        log_cursor = log_db.cursor()
+        
+        # Prepare execution parameters for logging
+        execution_params = {
+            'days_back': days_back,
+            'top_skus': top_skus,
+            'enhanced': enhanced,
+            'time_method': time_method,
+            'min_support': algorithm_params.get('min_support'),
+            'min_confidence': algorithm_params.get('min_confidence'),
+            'min_lift': algorithm_params.get('min_lift'),
+            'max_recommendations': algorithm_params.get('max_recommendations'),
+            'decay_rate': algorithm_params.get('decay_rate'),
+            'output_table': config_to_use.get('recommendations_table', 'sku_recommendations')
+        }
+        
+        log_cursor.execute("""
+            INSERT INTO mining_job_logs 
+            (schedule_id, job_name, started_at, execution_status, execution_parameters)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (0, f"UI API Mining - {job_id}", start_time_dt, 'running', json.dumps(execution_params)))
+        log_db.commit()
+        log_id = log_cursor.lastrowid
+        log_cursor.close()
+    except Exception as log_err:
+        print(f"Error creating job log: {log_err}")
     
     try:
         processing_start_time = time.time()
@@ -1232,6 +1449,24 @@ def mine_api():
         })
         
         if 'error' in stats:
+            # Update database log with failure
+            if log_id and log_db:
+                try:
+                    end_time = datetime.now()
+                    execution_time = int((end_time - start_time_dt).total_seconds())
+                    log_cursor = log_db.cursor()
+                    log_cursor.execute("""
+                        UPDATE mining_job_logs
+                        SET completed_at=%s, execution_status='failed',
+                            execution_time_seconds=%s
+                        WHERE id=%s
+                    """, (end_time, execution_time, log_id))
+                    log_db.commit()
+                    log_cursor.close()
+                    log_db.close()
+                except Exception as log_err:
+                    print(f"Error updating job log: {log_err}")
+            
             api_mining_status.update({
                 "status": "failed",
                 "message": f"Mining failed: {stats['error']}"
@@ -1267,6 +1502,27 @@ def mine_api():
             if rules:
                 rules_df = pd.DataFrame(rules)
                 performance_tracker.record_mining_results(rules_df)
+        
+        # Update database log with success
+        if log_id and log_db:
+            try:
+                end_time = datetime.now()
+                execution_time = int((end_time - start_time_dt).total_seconds())
+                db_stats = stats.get('database_stats', {})
+                log_cursor = log_db.cursor()
+                log_cursor.execute("""
+                    UPDATE mining_job_logs
+                    SET completed_at=%s, execution_status='success',
+                        rules_generated=%s, records_processed=%s,
+                        execution_time_seconds=%s
+                    WHERE id=%s
+                """, (end_time, db_stats.get('total_written', 0), 
+                      stats.get('total_orders', 0), execution_time, log_id))
+                log_db.commit()
+                log_cursor.close()
+                log_db.close()
+            except Exception as log_err:
+                print(f"Error updating job log: {log_err}")
         
         # Get final performance metrics
         performance_metrics = {}
@@ -1601,11 +1857,11 @@ def get_live_logs():
         
         config = Config()
         connection = pymysql.connect(
-            host=config.db_host,
-            user=config.db_user,
-            password=config.db_password,
-            database=config.db_name,
-            port=config.db_port,
+            host=config.DB_HOST,
+            user=config.DB_USER,
+            password=config.DB_PASSWORD,
+            database=config.DB_NAME,
+            port=config.DB_PORT,
             cursorclass=pymysql.cursors.DictCursor
         )
         
@@ -2022,19 +2278,49 @@ def get_recent_logs():
 
 @app.route('/api/logs/statistics')
 def get_log_statistics():
-    """Get logging statistics"""
+    """Get logging statistics from database"""
     try:
-        if not mining_logger:
-            return jsonify({
-                'success': False,
-                'error': 'Logging system not available'
-            })
+        from datetime import datetime, timedelta
+        import pymysql
+        from app.shared.config.config import Config
         
-        stats = mining_logger.get_log_statistics()
+        config = Config()
+        connection = pymysql.connect(
+            host=config.DB_HOST,
+            user=config.DB_USER,
+            password=config.DB_PASSWORD,
+            database=config.DB_NAME,
+            port=config.DB_PORT,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        
+        cursor = connection.cursor()
+        
+        # Get statistics from last 24 hours
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_logs,
+                SUM(CASE WHEN execution_status = 'success' THEN 1 ELSE 0 END) as success_count,
+                SUM(CASE WHEN execution_status = 'failed' THEN 1 ELSE 0 END) as failed_count,
+                MAX(started_at) as last_log_time
+            FROM mining_job_logs
+            WHERE started_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        """)
+        
+        stats = cursor.fetchone()
+        cursor.close()
+        connection.close()
         
         return jsonify({
             'success': True,
-            'statistics': stats
+            'statistics': {
+                'total_logs': stats['total_logs'] or 0,
+                'status_distribution': {
+                    'success': stats['success_count'] or 0,
+                    'failed': stats['failed_count'] or 0
+                },
+                'last_log_time': stats['last_log_time'].isoformat() if stats['last_log_time'] else None
+            }
         })
     except Exception as e:
         return jsonify({

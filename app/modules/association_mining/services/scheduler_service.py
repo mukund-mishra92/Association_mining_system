@@ -1494,12 +1494,20 @@ class SchedulerService:
                     self.result = None
                     self.error = None
 
-                def start_task(self, *_): ...
-                def update_progress(self, *_): ...
-                def complete_task(self, _, result=None, __=""):
+                def start_task(self, *args, **kwargs): 
+                    logger.info("SchedulerTaskManager.start_task called")
+                
+                def update_progress(self, *args, **kwargs): 
+                    logger.info("SchedulerTaskManager.update_progress called")
+                
+                def complete_task(self, task_id=None, result=None, message="", **kwargs):
+                    logger.info(f"SchedulerTaskManager.complete_task called with result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+                    logger.info(f"Result recommendations_count: {result.get('recommendations_count') if isinstance(result, dict) else 'N/A'}")
                     self.result = result
+                    logger.info(f"self.result set to: {self.result is not None}")
 
-                def fail_task(self, _, error_msg):
+                def fail_task(self, task_id=None, error_msg=None, **kwargs):
+                    logger.info(f"SchedulerTaskManager.fail_task called with: {error_msg}")
                     self.error = error_msg
 
             task_manager = SchedulerTaskManager()
@@ -1536,6 +1544,7 @@ class SchedulerService:
                     ),
                     time_segmentation=schedule.get("time_segmentation", "weekly"),
                     db_config=complete_db_config,
+                    skip_logging=True  # Scheduler already created log entry
                 )
             finally:
                 endpoints_module.task_manager = original_task_manager
@@ -1545,13 +1554,38 @@ class SchedulerService:
 
             rules_generated = 0
             records_processed = 0
+            
+            logger.info(f"========== DEBUG: Extracting results ==========")
+            logger.info(f"task_manager.result is None: {task_manager.result is None}")
+            logger.info(f"task_manager.error: {task_manager.error}")
+            
             if task_manager.result:
-                rules_generated = task_manager.result.get(
-                    "recommendations_count", 0
-                )
+                logger.info(f"Task result type: {type(task_manager.result)}")
+                logger.info(f"Task result keys: {list(task_manager.result.keys()) if isinstance(task_manager.result, dict) else 'Not a dict'}")
+                logger.info(f"Full result: {task_manager.result}")
+                
+                # Try to get from recommendations_count first
+                rules_generated = task_manager.result.get("recommendations_count", 0)
+                logger.info(f"recommendations_count: {rules_generated}")
+                
+                # If not found, try database_stats (from save_recommendations)
+                if rules_generated == 0:
+                    db_stats = task_manager.result.get("database_stats", {})
+                    logger.info(f"database_stats: {db_stats}")
+                    if db_stats:
+                        rules_generated = db_stats.get("total_written", 0)
+                        logger.info(f"total_written from database_stats: {rules_generated}")
+                
                 # Get records_processed from stats
                 stats = task_manager.result.get("stats", {})
+                logger.info(f"stats dict: {stats}")
                 records_processed = stats.get("total_orders", 0)
+                logger.info(f"total_orders: {records_processed}")
+                
+            logger.info(f"========== FINAL VALUES ==========")
+            logger.info(f"rules_generated: {rules_generated}")
+            logger.info(f"records_processed: {records_processed}")
+            logger.info(f"====================================")
 
             db.cursor.execute(
                 """

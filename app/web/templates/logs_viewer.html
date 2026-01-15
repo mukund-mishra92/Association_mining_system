@@ -315,17 +315,8 @@
             
             showStatus('Loading logs...', 'info');
             
-            const limit = document.getElementById('logLimit').value;
-            const type = document.getElementById('logType').value;
-            const dateFilter = document.getElementById('dateFilter').value;
-            
-            let url = `/api/logs/recent?limit=${limit}`;
-            if (type) url += `&type=${type}`;
-            
-            // If date filter is set, use date-specific endpoint
-            if (dateFilter) {
-                url = `/api/logs/by-date?date=${dateFilter}`;
-            }
+            // Use the new database-backed logs endpoint
+            const url = `/api/logs/live`;
             
             fetch(url)
                 .then(response => response.json())
@@ -334,14 +325,16 @@
                     
                     if (data.success) {
                         displayLogs(data.logs);
-                        showStatus(`Loaded ${data.count} logs successfully`, 'success');
+                        showStatus(`Loaded ${data.logs.length} logs successfully`, 'success');
                     } else {
                         showStatus(`Error loading logs: ${data.error}`, 'danger');
+                        displayLogs([]);
                     }
                 })
                 .catch(error => {
                     refreshIcon.classList.remove('refresh-btn');
                     showStatus(`Error loading logs: ${error.message}`, 'danger');
+                    displayLogs([]);
                 });
         }
 
