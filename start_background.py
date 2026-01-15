@@ -11,13 +11,19 @@ def check_setup():
     """Check if system is properly set up"""
     project_dir = Path(__file__).parent
     
-    # Check virtual environment
-    venv_python = project_dir / "venv" / "Scripts" / "python.exe"
-    if not venv_python.exists():
+    # Check for venv or .venv
+    venv_dirs = ["venv", ".venv"]
+    venv_python = None
+    for venv_name in venv_dirs:
+        candidate = project_dir / venv_name / "Scripts" / "python.exe"
+        if candidate.exists():
+            venv_python = candidate
+            break
+    if not venv_python:
         print("❌ ERROR: Virtual environment not found!")
         print("\nPlease set up the virtual environment first:")
-        print("  1. python -m venv venv")
-        print("  2. venv\\Scripts\\activate")
+        print("  1. python -m venv venv   OR   python -m venv .venv")
+        print("  2. venv\\Scripts\\activate   OR   .venv\\Scripts\\activate")
         print("  3. pip install -r requirements.txt")
         return False
     
@@ -33,7 +39,17 @@ def check_setup():
 def start_background():
     """Start FastAPI and Flask servers in background"""
     project_dir = Path(__file__).parent
-    python_exe = project_dir / "venv" / "Scripts" / "python.exe"
+    # Find python.exe in venv or .venv
+    venv_dirs = ["venv", ".venv"]
+    python_exe = None
+    for venv_name in venv_dirs:
+        candidate = project_dir / venv_name / "Scripts" / "python.exe"
+        if candidate.exists():
+            python_exe = candidate
+            break
+    if not python_exe:
+        print("❌ ERROR: Virtual environment not found!")
+        sys.exit(1)
     logs_dir = project_dir / "logs"
     logs_dir.mkdir(exist_ok=True)
     
