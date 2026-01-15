@@ -65,19 +65,10 @@ async def shutdown_event():
 
 # Include routers
 app.include_router(scheduler_router, prefix="/api/v1/scheduler", tags=["Scheduler"])
-# app.include_router(chatbot_router)  # Chatbot API routes (already has /api/chatbot prefix)
-# app.include_router(diagnostic_router)  # Diagnostic support routes (/api/diagnostic-support)
 
 @app.get("/")
 async def root():
     return {"message": "Association Rule Mining API", "version": config.API_VERSION}
-
-# @app.get("/chatbot", response_class=HTMLResponse)
-# async def chatbot_page():
-#     """Serve the chatbot UI page"""
-#     template_path = Path(__file__).parent / "web" / "templates" / "chatbot.html"
-#     with open(template_path, "r", encoding="utf-8") as f:
-#         return f.read()
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page():

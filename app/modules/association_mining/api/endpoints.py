@@ -1,8 +1,10 @@
 """
 Shared mining endpoints and task execution logic
+Uses UnifiedMiningService -> CleanAssociationMiningService for consistent mining
 """
 import logging
 from typing import Dict, Any, Optional
+from app.modules.association_mining.services.unified_mining_service import UnifiedMiningService
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,8 @@ def run_mining_task(
     """
     Execute a mining task with the given parameters.
     
-    This function wraps the mining logic from web.main to provide
-    a consistent interface for both API and scheduler usage.
+    Uses UnifiedMiningService which internally uses CleanAssociationMiningService
+    for consistent, production-grade mining across all endpoints.
     """
     global task_manager
     
@@ -40,37 +42,49 @@ def run_mining_task(
         logger.info(f"Parameters: days_back={days_back}, min_support={min_support}, "
                    f"min_confidence={min_confidence}, min_lift={min_lift}")
         
-        # Import the actual mining function from web module
-        from app.web.main import generate_rules_top_skus
-        
-        # Prepare user config from db_config
-        user_config = db_config if db_config else {}
-        
-        # Call the mining function
-        stats, rules = generate_rules_top_skus(
-            user_config=user_config,
-            top_n=200,  # Use a reasonable default
-            days_back=days_back,
-            min_support=min_support,
-            min_confidence=min_confidence,
-            min_lift=min_lift,
-            max_recommendations=max_recommendations,
-            decay_rate=decay_rate
-        )
-        
-        # Build result dictionary
-        result = {
-            "status": "success",
-            "stats": stats,
-            "recommendations_count": stats.get("total_rules", 0) if isinstance(stats, dict) else 0,
-            "database_stats": stats.get("database_stats", {}) if isinstance(stats, dict) else {}
+        # Prepare mining parameters
+        mining_params = {
+            'days_back': days_back,
+            'min_support': min_support,
+            'min_confidence': min_confidence,
+            'min_lift': min_lift,
+            'max_recommendations': max_recommendations,
+            'decay_rate': decay_rate,
+            'use_enhanced_mining': use_enhanced_mining,
+            'time_weighting_method': time_weighting_method,
+            'time_segmentation': time_segmentation,
+            'output_table': db_config.get('recommendations_table', 'sku_recommendations') if db_config else 'sku_recommendations',
+            'max_items': 200
         }
         
+        # Use unified mining service
+        mining_service = UnifiedMiningService(db_config, mining_params)
+        result = mining_service.run_mining(task_id=task_id, task_manager=task_manager)
+        
+        logger.info(f"========== ENDPOINT RESULT ==========")
+        logger.info(f"Mining service returned: {result}")
+        logger.info(f"Rules generated: {result.get('rules_generated', 0)}")
+        logger.info(f"Records processed: {result.get('records_processed', 0)}")
+        logger.info(f"=====================================")
+        
+        # Build result dictionary compatible with scheduler expectations
+        response = {
+            "status": "success" if result.get("success") else "error",
+            "stats": result.get("stats", {}),
+            "recommendations_count": result.get("rules_generated", 0),
+            "database_stats": result.get("database_stats", {}),
+            "records_processed": result.get("records_processed", 0)
+        }
+        
+        if not result.get("success"):
+            response["error"] = result.get("error", "Unknown error")
+        
         if task_manager:
-            task_manager.complete_task(task_id=task_id, result=result, message="Mining completed successfully")
+            logger.info(f"Calling task_manager.complete_task with response: {response}")
+            task_manager.complete_task(task_id=task_id, result=response, message="Mining completed successfully")
         
         logger.info(f"✅ Mining task completed: {task_id}")
-        return result
+        return response
         
     except Exception as e:
         error_msg = str(e)
@@ -83,5 +97,6 @@ def run_mining_task(
             "status": "error",
             "error": error_msg,
             "recommendations_count": 0,
-            "stats": {}
+            "stats": {},
+            "records_processed": 0
         }

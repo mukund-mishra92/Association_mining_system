@@ -518,77 +518,6 @@ def ai_insights_dashboard():
         return render_template('error.html', 
                              error_message=f"Could not load AI insights dashboard: {str(e)}")
 
-# @app.route('/chatbot')
-# def chatbot_page():
-#     """NEO Chatbot page"""
-#     print("[ROUTE LOG] NEO Chatbot route called")
-#     logger.info("NEO Chatbot page accessed")
-    
-#     try:
-#         # Log chatbot page access (if logging available)
-#         if LOGGING_AVAILABLE and mining_logger:
-#             mining_logger.log_operation(
-#                 operation="chatbot_page_access",
-#                 details={"page": "neo_chatbot", "status": "success"},
-#                 user_id="system"
-#             )
-        
-#         print("[OK] [CHATBOT LOG] Rendering NEO chatbot template")
-#         logger.info("Rendering NEO chatbot template")
-        
-#         # Render the chatbot template
-#         return render_template('chatbot.html')
-    
-#     except Exception as e:
-#         print(f"[ERROR] [CHATBOT ERROR] Error loading chatbot page: {e}")
-#         logger.error(f"Error loading chatbot page: {e}")
-        
-#         if LOGGING_AVAILABLE and mining_logger:
-#             mining_logger.log_operation(
-#                 operation="chatbot_page_error",
-#                 details={"page": "neo_chatbot", "status": "error", "error": str(e)},
-#                 user_id="system"
-#             )
-        
-#         return render_template('error.html', 
-#                              error_message=f"Could not load chatbot: {str(e)}")
-
-# @app.route('/diagnostic-support')
-# def diagnostic_support_page():
-#     """Diagnostic Support page"""
-#     print("[ROUTE LOG] Diagnostic Support route called")
-#     logger.info("Diagnostic Support page accessed")
-    
-#     try:
-#         # Log diagnostic support page access
-#         if LOGGING_AVAILABLE and mining_logger:
-#             mining_logger.log_operation(
-#                 operation="diagnostic_support_page_access",
-#                 details={"page": "diagnostic_support", "status": "success"},
-#                 user_id="system"
-#             )
-        
-#         print("[OK] [DIAGNOSTIC LOG] Rendering diagnostic support template")
-#         logger.info("Rendering diagnostic support template")
-        
-#         # Render the diagnostic support template
-#         return render_template('diagnostic_support.html')
-        
-#     except Exception as e:
-#         print(f"[ERROR] [DIAGNOSTIC ERROR] Error loading diagnostic support page: {e}")
-#         logger.error(f"Error loading diagnostic support page: {e}")
-        
-#         # Log the error (if logging available)
-#         if LOGGING_AVAILABLE and mining_logger:
-#             mining_logger.log_operation(
-#                 operation="diagnostic_support_page_error",
-#                 details={"page": "diagnostic_support", "status": "error", "error": str(e)},
-#                 user_id="system"
-#             )
-        
-#         return render_template('error.html', 
-#                              error_message=f"Could not load diagnostic support: {str(e)}")
-
 @app.route('/velocity-analysis-legacy')
 def velocity_analysis_legacy():
     """Bin Velocity Analysis page - Legacy Version"""
@@ -1059,7 +988,6 @@ def mine_direct():
         try:
             import pymysql
             import json
-            from datetime import datetime
             from app.shared.config.config import Config
             
             config_obj = Config()
@@ -1280,24 +1208,25 @@ api_mining_status = {
 
 @app.route('/api/mine-api', methods=['POST'])
 def mine_api():
-    """Enhanced API-based mining with progress tracking and temporal algorithms"""
+    """Enhanced API-based mining using UnifiedMiningService for consistency"""
     global api_mining_status
     
     data = request.get_json()
     
     # Extract parameters
     days_back = data.get('days_back', 60)
-    top_skus = data.get('top_skus', 20)
+    top_skus = data.get('top_skus', 200)
     enhanced = data.get('enhanced', False)
     time_method = data.get('time_method', 'exponential_decay')
     
-    # Extract algorithm parameters with enhanced defaults for API mining
+    # Extract algorithm parameters
     algorithm_params = {
-        'min_support': data.get('min_support', 0.01),  # Lower default for more rules
+        'min_support': data.get('min_support', 0.01),
         'min_confidence': data.get('min_confidence', 0.30),
         'min_lift': data.get('min_lift', 1.0),
         'max_recommendations': data.get('max_recommendations', 10),
-        'decay_rate': data.get('decay_rate', 0.05)
+        'decay_rate': data.get('decay_rate', 0.05),
+        'max_items': top_skus
     }
     
     # Enhanced decay rates based on time method
@@ -1323,23 +1252,21 @@ def mine_api():
     log_id = None
     start_time_dt = datetime.now()
     
-    # Initialize history tracking and performance monitoring
+    # Initialize history tracking
     history_service = None
     performance_tracker = None
     
     if HISTORY_TRACKING_AVAILABLE:
         try:
             history_service = HistoryService(config_to_use)
-            history_service.create_history_tables()  # Ensure tables exist
+            history_service.create_history_tables()
             
-            # Start job tracking
             history_service.start_job(
                 job_id=job_id,
                 job_name=f"API Mining - Enhanced: {enhanced}, Method: {time_method}",
                 mining_method="api",
                 parameters={
                     "days_back": days_back,
-                    "top_skus": top_skus,
                     "enhanced": enhanced,
                     "time_method": time_method,
                     "algorithm_params": algorithm_params
@@ -1347,7 +1274,6 @@ def mine_api():
                 user_ip=user_ip
             )
             
-            # Start performance tracking
             performance_tracker = JobPerformanceTracker(job_id)
             performance_tracker.start()
             
@@ -1370,17 +1296,11 @@ def mine_api():
         )
         log_cursor = log_db.cursor()
         
-        # Prepare execution parameters for logging
         execution_params = {
             'days_back': days_back,
-            'top_skus': top_skus,
             'enhanced': enhanced,
             'time_method': time_method,
-            'min_support': algorithm_params.get('min_support'),
-            'min_confidence': algorithm_params.get('min_confidence'),
-            'min_lift': algorithm_params.get('min_lift'),
-            'max_recommendations': algorithm_params.get('max_recommendations'),
-            'decay_rate': algorithm_params.get('decay_rate'),
+            **algorithm_params,
             'output_table': config_to_use.get('recommendations_table', 'sku_recommendations')
         }
         
@@ -1403,52 +1323,50 @@ def mine_api():
             "status": "starting",
             "task_id": job_id,
             "progress": 0,
-            "message": "Initializing enhanced mining...",
+            "message": "Initializing unified mining service...",
             "start_time": time.time()
         }
         
-        # Update progress: Starting
+        # Update progress
         api_mining_status.update({
             "status": "running",
             "progress": 10,
-            "message": "Analyzing database and top SKUs..."
+            "message": "Starting mining with CleanAssociationMiningService..."
         })
         
-        # Log mining operation start
-        if mining_logger:
-            mining_logger.log_mining_operation(
-                mining_type="api_enhanced",
-                parameters={
-                    "job_id": job_id,
-                    "days_back": days_back,
-                    "top_skus": top_skus,
-                    "enhanced": enhanced,
-                    "time_method": time_method,
-                    "algorithm_params": algorithm_params
-                }
-            )
+        # USE UNIFIED MINING SERVICE
+        from app.modules.association_mining.services.unified_mining_service import UnifiedMiningService
         
-        # Update progress: Database processing
+        mining_params = {
+            **algorithm_params,
+            'days_back': days_back,
+            'output_table': config_to_use.get('recommendations_table', 'sku_recommendations'),
+            'use_enhanced_mining': enhanced,
+            'time_weighting_method': time_method
+        }
+        
+        logger.info(f"🚀 Starting UnifiedMiningService for job {job_id}")
+        mining_service = UnifiedMiningService(config_to_use, mining_params)
+        result = mining_service.run_mining(task_id=job_id)
+        
+        processing_time = time.time() - processing_start_time
+        
+        # Update progress: Completed
         api_mining_status.update({
-            "progress": 30,
-            "message": "Processing order data with temporal weighting..."
+            "progress": 100,
+            "message": "Mining completed!"
         })
         
-        # Run enhanced mining using the same function as direct but with enhanced parameters
-        stats, rules = generate_rules_top_skus(
-            config_to_use, 
-            top_n=top_skus, 
-            days_back=days_back,
-            **algorithm_params
-        )
+        # Extract results from unified service
+        stats = result.get('stats', {})
+        rules = result.get('recommendations', [])
+        rules_generated = result.get('rules_generated', 0)
+        records_processed = result.get('records_processed', 0)
         
-        # Update progress: Rules generation
-        api_mining_status.update({
-            "progress": 70,
-            "message": "Generating association rules..."
-        })
-        
-        if 'error' in stats:
+        # Check if mining failed
+        if not result.get('success', False) or 'error' in result:
+            error_msg = result.get('error', stats.get('error', 'Unknown error'))
+            
             # Update database log with failure
             if log_id and log_db:
                 try:
@@ -1469,17 +1387,17 @@ def mine_api():
             
             api_mining_status.update({
                 "status": "failed",
-                "message": f"Mining failed: {stats['error']}"
+                "message": f"Mining failed: {error_msg}"
             })
             
             # Finish job tracking with failure
             if history_service:
-                history_service.finish_job(job_id, status='failed', error_message=stats['error'])
+                history_service.finish_job(job_id, status='failed', error_message=error_msg)
             
             # Log mining failure
             if mining_logger:
                 mining_logger.log_mining_operation(
-                    mining_type="api_enhanced",
+                    mining_type="api_unified",
                     parameters={
                         "job_id": job_id,
                         "days_back": days_back,
@@ -1489,10 +1407,10 @@ def mine_api():
                         "algorithm_params": algorithm_params
                     },
                     success=False,
-                    error=stats['error']
+                    error=error_msg
                 )
             
-            return jsonify({"success": False, "error": stats['error'], "job_id": job_id})
+            return jsonify({"success": False, "error": error_msg, "job_id": job_id})
         
         # Record processing metrics
         if performance_tracker:
@@ -1508,7 +1426,6 @@ def mine_api():
             try:
                 end_time = datetime.now()
                 execution_time = int((end_time - start_time_dt).total_seconds())
-                db_stats = stats.get('database_stats', {})
                 log_cursor = log_db.cursor()
                 log_cursor.execute("""
                     UPDATE mining_job_logs
@@ -1516,8 +1433,7 @@ def mine_api():
                         rules_generated=%s, records_processed=%s,
                         execution_time_seconds=%s
                     WHERE id=%s
-                """, (end_time, db_stats.get('total_written', 0), 
-                      stats.get('total_orders', 0), execution_time, log_id))
+                """, (end_time, rules_generated, records_processed, execution_time, log_id))
                 log_db.commit()
                 log_cursor.close()
                 log_db.close()
@@ -1547,7 +1463,7 @@ def mine_api():
         # Log successful mining
         if mining_logger:
             mining_logger.log_mining_operation(
-                mining_type="api_enhanced",
+                mining_type="api_unified",
                 parameters={
                     "job_id": job_id,
                     "days_back": days_back,
@@ -1558,6 +1474,8 @@ def mine_api():
                 },
                 results={
                     "rules_count": len(rules),
+                    "rules_generated": rules_generated,
+                    "records_processed": records_processed,
                     "stats": stats,
                     "performance_metrics": performance_metrics
                 },
@@ -1569,15 +1487,17 @@ def mine_api():
             "job_id": job_id,
             "stats": stats,
             "rules": rules[:100],  # Limit to first 100 rules for display
+            "rules_generated": rules_generated,
+            "records_processed": records_processed,
             "task_id": api_mining_status["task_id"],
             "algorithm_params": algorithm_params,
             "enhanced_features": {
                 "temporal_weighting": enhanced,
                 "time_method": time_method if enhanced else "none",
-                "decay_rate": algorithm_params['decay_rate']
+                "decay_rate": algorithm_params.get('decay_rate', 0.1)
             },
             "performance_metrics": performance_metrics if performance_metrics else None,
-            "message": f"Enhanced mining completed successfully with {len(rules)} rules found"
+            "message": f"Unified mining completed successfully with {rules_generated} rules found"
         })
     
     except Exception as e:
@@ -1593,7 +1513,7 @@ def mine_api():
         # Log mining exception
         if mining_logger:
             mining_logger.log_mining_operation(
-                mining_type="api_enhanced",
+                mining_type="api_unified",
                 parameters={
                     "job_id": job_id,
                     "days_back": days_back,
