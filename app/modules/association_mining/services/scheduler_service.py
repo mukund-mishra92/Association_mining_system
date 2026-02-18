@@ -46,19 +46,27 @@ class SchedulerService:
     # ------------------------------------------------------------------
     def start(self):
         if self.is_running:
+            logger.info("ℹ️ Scheduler already running")
             return
 
         try:
+            logger.info("🚀 Starting scheduler...")
             self.scheduler.start()
             self.is_running = True
-            logger.info("✓ Scheduler started")
+            logger.info("✅ Scheduler started successfully")
 
+            logger.info("📋 Loading schedules from database...")
             self._load_schedules_from_database()
+            
         except Exception as e:
-            logger.error(f"Failed to start scheduler: {str(e)}")
+            logger.error(f"❌ Failed to start scheduler: {str(e)}", exc_info=True)
             self.is_running = False
             if self.scheduler.running:
-                self.scheduler.shutdown(wait=False)
+                try:
+                    self.scheduler.shutdown(wait=False)
+                    logger.info("Scheduler shutdown after startup failure")
+                except Exception as shutdown_error:
+                    logger.error(f"Error during scheduler shutdown: {shutdown_error}")
             raise
 
     def stop(self):
@@ -86,7 +94,7 @@ class SchedulerService:
                 s.min_lift, s.max_recommendations, s.decay_rate, s.output_table,
                 s.days_back, s.max_items, s.min_item_frequency, s.use_enhanced_mining,
                 s.time_weighting_method, s.time_segmentation,
-                st.total_executions, st.successful_executions, st.failed_executions,
+                st.total_runs, st.successful_runs, st.failed_runs,
                 st.avg_execution_time_seconds, st.total_rules_generated
             FROM mining_schedules s
             LEFT JOIN mining_schedule_stats st ON s.id = st.schedule_id
@@ -705,18 +713,29 @@ class SchedulerService:
             db.cursor.execute("SELECT * FROM mining_schedules WHERE is_active=1")
             rows = db.cursor.fetchall()
 
+            if not rows:
+                logger.info("ℹ️ No active schedules found in database")
+                return
+
+            loaded_count = 0
+            failed_count = 0
             for row in rows:
                 try:
                     schedule = self._row_to_schedule_dict(row)
                     self._add_job_to_scheduler(schedule["id"], schedule)
                     logger.info(f"✓ Loaded schedule {schedule['id']}: {schedule['job_name']}")
+                    loaded_count += 1
                 except Exception as e:
-                    logger.error(f"Failed to load schedule {row[0]}: {str(e)}")
+                    logger.error(f"Failed to load schedule {row[0]}: {str(e)}", exc_info=True)
+                    failed_count += 1
                     # Continue loading other schedules even if one fails
                     continue
+            
+            logger.info(f"✅ Schedule loading complete: {loaded_count} loaded, {failed_count} failed")
         except Exception as e:
-            logger.error(f"Failed to load schedules from database: {str(e)}")
-            raise
+            logger.error(f"❌ Failed to load schedules from database: {str(e)}", exc_info=True)
+            # Don't raise - allow scheduler to start even if schedule loading fails
+            logger.warning("⚠️ Scheduler will continue running without pre-loaded schedules")
         finally:
             db.disconnect()
 
@@ -735,11 +754,11 @@ class SchedulerService:
             db.cursor.execute(
                 """
                 UPDATE mining_schedule_stats
-                SET total_executions = total_executions + 1,
-                    successful_executions = successful_executions + 1,
+                SET total_runs = total_runs + 1,
+                    successful_runs = successful_runs + 1,
                     avg_execution_time_seconds =
-                      (avg_execution_time_seconds * successful_executions + %s)
-                      / (successful_executions + 1),
+                      (avg_execution_time_seconds * successful_runs + %s)
+                      / (successful_runs + 1),
                     total_rules_generated = total_rules_generated + %s
                 WHERE schedule_id=%s
                 """,
@@ -749,8 +768,8 @@ class SchedulerService:
             db.cursor.execute(
                 """
                 UPDATE mining_schedule_stats
-                SET total_executions = total_executions + 1,
-                    failed_executions = failed_executions + 1
+                SET total_runs = total_runs + 1,
+                    failed_runs = failed_runs + 1
                 WHERE schedule_id=%s
                 """,
                 (schedule_id,),
@@ -760,6 +779,15 @@ class SchedulerService:
     # Utils
     # ------------------------------------------------------------------
     def _row_to_schedule_dict(self, r) -> Dict[str, Any]:
+        """
+        Convert database row to schedule dictionary.
+        Column order matches mining_schedules table:
+        id, job_name, job_description, schedule_type, schedule_time, schedule_day_of_week,
+        min_support, min_confidence, min_lift, max_recommendations, decay_rate,
+        days_back, max_items, min_item_frequency, use_enhanced_mining,
+        time_weighting_method, time_segmentation, output_table, is_active,
+        created_at, updated_at, last_run_at, next_run_at, created_by
+        """
         return {
             "id": r[0],
             "job_name": r[1],
@@ -772,19 +800,19 @@ class SchedulerService:
             "min_lift": float(r[8]),
             "max_recommendations": r[9],
             "decay_rate": float(r[10]),
-            "output_table": r[11],
-            "is_active": bool(r[12]),
-            "created_at": r[13],
-            "updated_at": r[14],
-            "last_run_at": r[15],
-            "next_run_at": r[16],
-            "created_by": r[17],
-            "days_back": r[18],
-            "max_items": r[19],
-            "min_item_frequency": r[20],
-            "use_enhanced_mining": bool(r[21]),
-            "time_weighting_method": r[22],
-            "time_segmentation": r[23],
+            "days_back": r[11],
+            "max_items": r[12],
+            "min_item_frequency": r[13],
+            "use_enhanced_mining": bool(r[14]),
+            "time_weighting_method": r[15],
+            "time_segmentation": r[16],
+            "output_table": r[17],
+            "is_active": bool(r[18]),
+            "created_at": r[19],
+            "updated_at": r[20],
+            "last_run_at": r[21],
+            "next_run_at": r[22],
+            "created_by": r[23],
         }
 
 

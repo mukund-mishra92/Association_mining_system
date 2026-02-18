@@ -4,6 +4,16 @@ Setup script for scheduler-related database tables.
 Creates all necessary tables with primary keys for the mining scheduler system.
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Add parent directory to Python path
+current_dir = Path(__file__).parent
+parent_dir = current_dir.parent
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
+
 import mysql.connector
 from app.shared.config.config import Config
 

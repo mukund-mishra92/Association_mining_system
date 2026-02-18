@@ -26,28 +26,23 @@ async def startup_event():
         # Get or create the scheduler service
         scheduler = get_scheduler_service()
         
-        # Always try to start the scheduler (it will check internally if already running)
+        # Check if scheduler is already running
+        if scheduler.is_running and scheduler.scheduler.running:
+            logger.info("ℹ️ Scheduler service already running")
+            return
+        
+        # Start the scheduler
         try:
-            # Check the actual APScheduler state
-            if not scheduler.scheduler.running:
-                scheduler.start()
-                logger.info("✅ Scheduler service started successfully")
-            else:
-                logger.info("ℹ️ Scheduler service already running (APScheduler state check)")
-                scheduler.is_running = True  # Sync our flag
+            logger.info("📋 Initializing scheduler service...")
+            scheduler.start()
+            logger.info("✅ Scheduler service started successfully")
         except Exception as start_error:
-            logger.error(f"⚠️ Error during scheduler start attempt: {start_error}")
-            # Try to force start even if there was an error
-            try:
-                scheduler.scheduler.start()
-                scheduler.is_running = True
-                logger.info("✅ Scheduler force-started successfully")
-            except Exception as force_error:
-                logger.error(f"❌ Failed to force-start scheduler: {force_error}")
+            logger.error(f"❌ Error starting scheduler: {start_error}", exc_info=True)
+            logger.warning("⚠️ Application will continue without scheduler - schedules can be managed via API")
             
     except Exception as e:
         logger.error(f"❌ Failed in startup_event: {e}", exc_info=True)
-        # Don't fail the app startup, but log the error with full traceback
+        logger.warning("⚠️ Application will continue with limited functionality")
         
 @app.on_event("shutdown")
 async def shutdown_event():
