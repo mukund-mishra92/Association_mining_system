@@ -13,7 +13,7 @@ class ScheduleCreateRequest(BaseModel):
     job_name: str = Field(..., min_length=1, max_length=255, description="Unique name for the scheduled job")
     job_description: Optional[str] = Field("", max_length=1000, description="Description of the scheduled job")
     schedule_type: str = Field(..., pattern="^(daily|weekly)$", description="Schedule type: daily or weekly")
-    schedule_time: str = Field(..., pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$", description="Time in HH:MM format (24-hour)")
+    schedule_time: str = Field(..., pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$", description="Time in HH:MM or HH:MM:SS format (24-hour)")
     schedule_day_of_week: Optional[int] = Field(None, ge=0, le=6, description="Day of week for weekly schedules (0=Monday, 6=Sunday)")
     
     # Algorithm parameters
@@ -41,7 +41,7 @@ class ScheduleUpdateRequest(BaseModel):
     job_name: Optional[str] = Field(None, min_length=1, max_length=255)
     job_description: Optional[str] = Field(None, max_length=1000)
     schedule_type: Optional[str] = Field(None, pattern="^(daily|weekly)$")
-    schedule_time: Optional[str] = Field(None, pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$")
+    schedule_time: Optional[str] = Field(None, pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$")
     schedule_day_of_week: Optional[int] = Field(None, ge=0, le=6)
     
     # Algorithm parameters

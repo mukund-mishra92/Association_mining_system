@@ -169,10 +169,15 @@ class SchedulerService:
         try:
             db.connect()
             
+            # Normalize time format (strip seconds if present)
+            schedule_time = schedule_data['schedule_time']
+            if schedule_time.count(':') == 2:  # HH:MM:SS format
+                schedule_time = ':'.join(schedule_time.split(':')[:2])  # Convert to HH:MM
+            
             # Calculate next run time
             next_run = self._calculate_next_run_time(
                 schedule_data['schedule_type'],
-                schedule_data['schedule_time'],
+                schedule_time,
                 schedule_data.get('schedule_day_of_week')
             )
             
@@ -193,7 +198,7 @@ class SchedulerService:
                 schedule_data['job_name'],
                 schedule_data['job_description'],
                 schedule_data['schedule_type'],
-                schedule_data['schedule_time'],
+                schedule_time,
                 schedule_data.get('schedule_day_of_week'),
                 schedule_data['min_support'],
                 schedule_data['min_confidence'],
